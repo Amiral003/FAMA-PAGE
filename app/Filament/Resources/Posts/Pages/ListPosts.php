@@ -28,15 +28,15 @@ class ListPosts extends ListRecords
         return [
 
             // 🔵 SOUMETTRE
-            Action::make('submit')
-                ->label('Soumettre')
-                ->icon('heroicon-o-paper-airplane')
-                ->color('warning')
-                ->requiresConfirmation()
-                ->visible(fn ($record) => Auth::user()->can('submit', $record))
-                 ->action(function (Post $record){
-                    $record->submit(Auth::user());
-                }),
+            // Action::make('submit')
+            //     ->label('Soumettre')
+            //     ->icon('heroicon-o-paper-airplane')
+            //     ->color('warning')
+            //     ->requiresConfirmation()
+            //     ->visible(fn ($record) => Auth::user()->can('submit', $record))
+            //      ->action(function (Post $record){
+            //         $record->submit(Auth::id());
+            //     }),
 
             // 🟢 APPROUVER
             Action::make('approve')
@@ -46,7 +46,7 @@ class ListPosts extends ListRecords
                 ->requiresConfirmation()
                 ->visible(fn ($record) => Auth::user()->can('approve', $record))
                 ->action(function (Post $record){
-                    $record->approve(Auth::user());
+                    $record->approve(Auth::id());
                 }),
 
             // 🔴 REJETER
@@ -57,7 +57,7 @@ class ListPosts extends ListRecords
                 ->requiresConfirmation()
                 ->visible(fn ($record) => Auth::user()->can('reject', $record))
                ->action(function (Post $record){
-                    $record->reject(Auth::user());
+                    $record->reject(Auth::id());
                 }),
         ];
     }

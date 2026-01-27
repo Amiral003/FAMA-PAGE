@@ -16,4 +16,14 @@ class EditPost extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    public function getTitle(): string 
+{
+    return "Modifier le communiqué : " . $this->record->title;
+}
+
+protected function getSaveFormActionLabel(): string
+{
+    return "Enregistrer les modifications";
+}
 }

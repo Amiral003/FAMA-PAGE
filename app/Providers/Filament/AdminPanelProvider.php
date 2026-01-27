@@ -27,6 +27,12 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName('FAMA Officiel')
+            ->favicon(asset('favicon.png'))
+            ->brandLogo(asset('images/logo-fama.png'))
+            ->renderHook(
+            'panels::footer.before',
+            fn () => null)
             ->login()
             ->colors([
                 'primary' => Color::Amber,

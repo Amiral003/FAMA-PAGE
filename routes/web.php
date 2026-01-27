@@ -4,9 +4,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\FileController;
 
-Route::get('/', [PostController:: class, 'index']);
-Route::get('/posts/{post}',[PostController::class, 'show']);
-Route::get('/files/{post}',  [FileController:: class, 'show'])->name('files.show');
+// Route::get('/', [PostController:: class, 'index']);
+// Route::get('/posts/{post}',[PostController::class, 'show']);
+// Route::get('/files/{post}',  [FileController:: class, 'show'])->name('files.show');
+
+Route::get('/files/{post}', [FileController::class, 'show'])
+    ->name('files.show');
+Route::view('/{any}', 'front')->where('any', '.*');
 
 
 

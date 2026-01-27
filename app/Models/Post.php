@@ -1,74 +1,106 @@
 <?php
 
-
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use LogicException;
 
 class Post extends Model
 {
-     public const STATUS_DRAFT = 'draft';
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_APPROVED = 'approved';
-    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_BROUILLON = 'brouillon';
+    public const STATUS_REVISION  = 'revision';
+    public const STATUS_PUBLIE    = 'publie';
 
     protected $fillable = [
         'title',
+        'slug',
         'content',
-        'file_path',
         'status',
         'user_id',
         'validated_by',
         'validated_at',
+        'published_at',
     ];
 
-    protected $casts = ['validated_at' => 'datetime',];
+    protected $casts = [
+        'validated_at' => 'datetime',
+        'published_at' => 'datetime',
+    ];
+
+    protected static function booted()
+    {
+        static::creating(function ($post) {
+            $post->slug = Str::slug($post->title);
+        });
+    }
+
+    // ================= Relations =================
+
+    public function media()
+    {
+return $this->hasMany(\App\Models\PostMedia::class)->orderBy('order');    }
+
     public function user()
-{
-    return $this->belongsTo(User::class);
-}
+    {
+        return $this->belongsTo(User::class);
+    }
 
-public function submit(User $user): void
+    // ================= Workflow =================
+
+    public function submit(): void
+    {
+        if ($this->status !== self::STATUS_BROUILLON) {
+            throw new LogicException('Seuls les brouillons peuvent être soumis.');
+        }
+
+        $this->update([
+            'status' => self::STATUS_REVISION,
+        ]);
+    }
+
+    // public function approve(int $validatorId): void
+    // {
+    //     if ($this->status !== self::STATUS_REVISION ) {
+    //         throw new LogicException('Seuls les posts en révision peuvent être publiés.');
+    //     }
+
+    //     $this->update([
+    //         'status' => self::STATUS_PUBLIE,
+    //         'validated_by' => $validatorId,
+    //         'published_at' => now(),
+    //     ]);
+    // }
+
+    public function approve(int $validatorId): void
 {
-    if ($this->status !== self::STATUS_DRAFT) {
-        throw new LogicException('Seuls les brouillons peuvent être soumis.');
+    // On définit les statuts autorisés pour la publication
+    $allowedStatuses = [self::STATUS_REVISION, self::STATUS_BROUILLON];
+
+    if (!in_array($this->status, $allowedStatuses)) {
+        throw new LogicException('Seuls les brouillons ou les posts en révision peuvent être publiés.');
     }
 
     $this->update([
-        'status' => self::STATUS_PENDING,
+        'status'       => self::STATUS_PUBLIE,
+        'validated_by' => $validatorId,
+        'published_at' => now(),
+        'validated_at' => now(), // Il est conseillé d'enregistrer aussi la date de validation
     ]);
 }
 
-public function approve(User $user): void
+
+    
+
+    // Dans app/Models/Post.php
+
+public function reject($userId)
 {
-    if ($this->status !== self::STATUS_PENDING) {
-        throw new LogicException('Seuls les posts en attente peuvent être approuvés.');
-    }
+    
 
     $this->update([
-        'status' => self::STATUS_APPROVED,
-        'validated_by' => $user->id,
-        'validated_at' => now(),
+        'status' => self::STATUS_BROUILLON,
+        // 'rejected_by' => $userId, (si tu as cette colonne)
     ]);
 }
-
-public function reject(User $user): void
-{
-    if ($this->status !== self::STATUS_PENDING) {
-        throw new LogicException('Seuls les posts en attente peuvent être rejetés.');
-    }
-
-    $this->update([
-        'status' => self::STATUS_REJECTED,
-        'validated_by' => $user->id,
-        'validated_at' => now(),
-    ]);
 }
-
-   
-
-
-}
-
