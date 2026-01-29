@@ -21,7 +21,7 @@ const closeMenu = () => {
         <div class="vigilance-content">
           <span class="pulse-dot"></span>
           <span class="vigilance-text">
-            <strong class="label">VIGILANCE :</strong> 
+            <strong class="label">VIGILANCE :</strong>
             <a href="tel:80001111" class="phone-link">80 00 11 11</a>
           </span>
         </div>
@@ -44,13 +44,14 @@ const closeMenu = () => {
 
         <ul class="nav-links" :class="{ 'is-open': isMenuOpen }">
           <li><router-link to="/" @click="closeMenu">Accueil</router-link></li>
-          <li><router-link to="/about" @click="closeMenu">À propos</router-link></li>
           <li><router-link to="/portfolio" @click="closeMenu">Communiqués</router-link></li>
+          <li><router-Link to ="/etatmajor" @click="closeMenu">Etat Major</router-link></li>
           <li><router-link to="/contact" @click="closeMenu">Contact</router-link></li>
+        <li><router-link to="/about" @click="closeMenu">À propos</router-link></li>
         </ul>
       </div>
     </div>
-    
+
     <div v-if="isMenuOpen" class="menu-overlay" @click="closeMenu"></div>
   </nav>
 </template>
@@ -142,6 +143,8 @@ const closeMenu = () => {
   font-size: 1rem;
   transition: 0.3s;
   text-transform: uppercase;
+display: block;
+width: 100%;
 }
 
 .nav-links a:hover, .nav-links a.router-link-active {
@@ -151,6 +154,7 @@ const closeMenu = () => {
 /* BOUTON HAMBURGER (VISIBILITÉ CORRIGÉE) */
 .menu-toggle {
   display: none;
+  position: relative;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -183,7 +187,12 @@ const closeMenu = () => {
 
 /* MOBILE RESPONSIVE */
 @media (max-width: 850px) {
-  .menu-toggle { display: block; }
+  .menu-toggle { display:block;
+background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  z-index: 3100;}
 
   .vigilance-text { font-size: 0.8rem; }
   .label { display: none; } /* Cache "VIGILANCE NATIONALE" sur très petit écran */
@@ -199,10 +208,12 @@ const closeMenu = () => {
     padding: 100px 40px;
     box-shadow: -5px 0 15px rgba(0,0,0,0.1);
     transition: 0.4s ease-in-out;
+    z-index: 3100;
   }
 
   .nav-links.is-open {
     right: 0; /* Affiche le menu */
+    visibility:visible /*Activation de visibilté @t*/
   }
 
   .nav-links li {

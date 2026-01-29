@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Posts;
 
-
 use App\Filament\Resources\Posts\Pages\CreatePost;
 use App\Filament\Resources\Posts\Pages\EditPost;
 use App\Filament\Resources\Posts\Pages\ListPosts;
@@ -13,92 +12,109 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
+use Illuminate\Support\Str;
+
+// Importations unifiées pour les composants de formulaire
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Grid;
-use Illuminate\Support\Str;
-use Filament\Forms\Components\Section;
-
+use Filament\Schemas\Components\Grid;
 
 class PostResource extends Resource
 {
-
-    // Traduction du titre dans le menu de navigation
-    protected static ?string $navigationLabel = 'Publications';
-
-    // Traduction du titre au singulier (utilisé pour "Créer Communiqué")
-    protected static ?string $modelLabel = 'Communiqué';
-
-    // Traduction du titre au pluriel
     protected static ?string $model = Post::class;
+
+    protected static ?string $navigationLabel = 'Publications';
+    protected static ?string $modelLabel = 'Communiqué';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'title';
 
- public static function form(Schema $schema): Schema
-{
-    return $schema->components([
-        TextInput::make('title')
-            ->label('Titre')
-            ->required()
-            ->live(onBlur: true)
-            ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([
+            // Section Titre et Slug
+            Grid::make(2)->schema([
+                TextInput::make('title')
+                    ->label('Titre du post')
+                    ->required()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
-        TextInput::make('slug')
-            ->disabled()
-            ->dehydrated()
-            ->required(),
-
-        Select::make('type')
-            ->label('Format de publication')
-            ->options([
-                'flash' => 'Flash Info',
-                'article' => 'Article Actualité',
-                'pdf' => 'Document Officiel / PDF',
-            ])
-            ->required()
-            ->reactive(),
-
-        FileUpload::make('thumbnail')
-            ->label("Image de couverture")
-            ->image()
-            ->disk('public')
-            ->directory('thumbnails'),
-
-        Textarea::make('content')
-            ->label('Texte / Description')
-            ->rows(4)
-            ->columnSpanFull(),
-
-        FileUpload::make('pdf_path')
-            ->label('Télécharger le fichier PDF')
-            ->disk('public')
-            ->directory('documents')
-            ->acceptedFileTypes(['application/pdf'])
-            ->visible(fn ($get) => $get('type') === 'pdf'),
-
-        Repeater::make('media')
-            ->label('Galerie Photos')
-            ->relationship('media')
-            ->schema([
-                FileUpload::make('file_path')
-                    ->image()
-                    ->disk('public')
-                    ->directory('posts')
+                TextInput::make('slug')
+                    ->label('Slug (URL)')
+                    ->disabled()
+                    ->dehydrated() 
                     ->required(),
-            ])
-            ->columnSpanFull(),
+            ]),
 
-        Hidden::make('user_id')
-            ->default(fn () => Filament::auth()->id()),
-    ]);
-}
+            // Type de post
+            Select::make('type')
+                ->label('Type de publication')
+                ->options([
+                    'flash' => 'Flash Info / Communiqué',
+                    'article' => 'Actualité / Article',
+                    'pdf' => 'Document Officiel / PDF',
+                ])
+                ->required()
+                ->live() 
+                ->native(false)
+                ->dehydrated(),
 
+            // Image de couverture (Thumbnail)
+            FileUpload::make('thumbnail')
+                ->label("Image de couverture (Aperçu)")
+                ->helperText("Indispensable pour l'affichage, même pour les posts de type PDF.")
+                ->image()
+                ->disk('public')
+                ->directory('thumbnails')
+                ->required()
+                ->columnSpanFull(),
+
+            // Contenu texte
+            Textarea::make('content')
+                ->label('Contenu ou Description')
+                ->rows(6)
+                ->columnSpanFull(),
+
+            // Le fichier PDF : enregistré ici pour les types PDF
+            FileUpload::make('pdf_path')
+                ->label('Fichier PDF Officiel')
+                ->disk('public')
+                ->directory('documents')
+                ->acceptedFileTypes(['application/pdf'])
+                ->visible(fn ($get) => $get('type') === 'pdf')
+                ->required(fn ($get) => $get('type') === 'pdf')
+                ->dehydrated() // Force la persistence en base
+                ->preserveFilenames()
+                ->columnSpanFull(),
+
+            // Galerie photos : cachée si c'est un PDF (puisque le PDF utilise le thumbnail + pdf_path)
+            Repeater::make('media')
+                ->label('Galerie photos additionnelles')
+                ->relationship('media')
+                ->schema([
+                    FileUpload::make('file_path')
+                        ->label('Image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('posts')
+                        ->required(),
+                ])
+                ->collapsible()
+                ->columnSpanFull()
+                ->hidden(fn ($get) => $get('type') === 'pdf'),
+
+            // ID utilisateur automatique
+            Hidden::make('user_id')
+                ->default(fn () => Filament::auth()->id())
+                ->dehydrated(),
+        ]);
+    }
 
     public static function table(Table $table): Table
     {
@@ -109,39 +125,30 @@ class PostResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                \Filament\Tables\Columns\BadgeColumn::make('status')
-                    ->label('Statut')
-                    ->formatStateUsing(fn (string $state) => match ($state) {
-                        Post::STATUS_BROUILLON => 'Brouillon',
-                        Post::STATUS_PUBLIE => 'Approuvée',
-                        Post::STATUS_REVISION => 'En Révision',
-                        default => $state,
-                    })
-                    ->colors([
-                        'secondary' => Post::STATUS_BROUILLON,
-                        'success' => Post::STATUS_PUBLIE,
-                        'danger' => Post::STATUS_REVISION,
-                    ]),
+                \Filament\Tables\Columns\TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'flash' => 'warning',
+                        'article' => 'info',
+                        'pdf' => 'danger',
+                        default => 'gray',
+                    }),
 
                 \Filament\Tables\Columns\ImageColumn::make('thumbnail')
-                    ->label('Couverture')
-                    ->circular(),
+                    ->label('Aperçu')
+                    ->square(),
 
                 \Filament\Tables\Columns\TextColumn::make('user.name')
                     ->label('Auteur')
                     ->sortable(),
                 
                 \Filament\Tables\Columns\TextColumn::make('created_at')
-                    ->label('Créé le')
-                    ->dateTime('d/m/Y H:i')
+                    ->label('Date')
+                    ->dateTime('d/m/Y')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc');
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
     }
 
     public static function getPages(): array

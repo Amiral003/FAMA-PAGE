@@ -39,11 +39,11 @@ const handleSubmit = async () => {
 
     <section class="contact-content container">
       <div class="contact-grid">
-        
+
         <div class="contact-info" data-aos="fade-right">
           <h2>Informations Officielles</h2>
           <p>Le Ministère de la Défense et des Anciens Combattants est à votre écoute.</p>
-          
+
           <div class="info-item">
             <span class="icon">📍</span>
             <div>
@@ -80,12 +80,12 @@ const handleSubmit = async () => {
           <form @submit.prevent="handleSubmit" class="contact-form" v-if="!sent">
             <div class="form-group">
               <label>Nom Complet</label>
-              <input v-model="form.name" type="text" placeholder="Ex: Moussa Traoré" required />
+              <input v-model="form.name" type="text" placeholder="Ex: leila Diallo" required />
             </div>
 
             <div class="form-group">
               <label>Email</label>
-              <input v-model="form.email" type="email" placeholder="votre@email.com" required />
+              <input v-model="form.email" type="email" placeholder="didi@gmail.com" required />
             </div>
 
             <div class="form-group">
