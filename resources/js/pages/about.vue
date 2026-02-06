@@ -58,11 +58,11 @@ useHead({
             </p>
             
             <ul class="admin-list">
-              <li><span>•</span> État-major Général des Armées (EMGA)</li>
-              <li><span>•</span> État-major de l'Armée de Terre (EMAT)</li>
-              <li><span>•</span> État-major de l'Armée de l'Air (EMAA)</li>
-              <li><span>•</span> État-major de la Garde Nationale du Mali (GNM)</li>
-              <li><span>•</span> Direction Générale de la Gendarmerie Nationale (DGGN)</li>
+              <li><span class="bullet">•</span> État-major Général des Armées (EMGA)</li>
+              <li><span class="bullet">•</span> État-major de l'Armée de Terre (EMAT)</li>
+              <li><span class="bullet">•</span> État-major de l'Armée de l'Air (EMAA)</li>
+              <li><span class="bullet">•</span> État-major de la Garde Nationale du Mali (GNM)</li>
+              <li><span class="bullet">•</span> Direction Générale de la Gendarmerie Nationale (DGGN)</li>
             </ul>
           </section>
         </article>
@@ -77,7 +77,8 @@ useHead({
 </template>
 
 <style scoped>
-.about-container { background: #f4f6f8; min-height: 100vh; padding: 40px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+/* Fond légèrement plus neutre pour faire ressortir le blanc */
+.about-container { background: #f8fafc; min-height: 100vh; padding: 40px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
 
 /* Layout */
@@ -89,22 +90,37 @@ useHead({
 }
 
 /* Style du contenu */
-.content-column { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+.content-column { 
+  background: white; 
+  padding: 40px; 
+  border-radius: 8px; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  border-top: 4px solid #14B82C; /* Rappel du vert Mali en haut */
+}
 
-.about-header h1 { font-size: 2.2rem; color: #1a1c1e; margin-bottom: 10px; }
-.header-line { width: 60px; height: 4px; background: #ce1126; margin-bottom: 30px; }
+.about-header h1 { font-size: 2.2rem; color: #1a241b; margin-bottom: 10px; font-weight: 800; }
+.header-line { width: 60px; height: 5px; background: #FFD700; margin-bottom: 30px; } /* Ligne Jaune Or */
 
-.about-text { line-height: 1.8; color: #374151; font-size: 1.05rem; }
-.lead { font-size: 1.2rem; color: #111827; margin-bottom: 30px; }
+.about-text { line-height: 1.8; color: #334155; font-size: 1.05rem; }
+.lead { font-size: 1.25rem; color: #1a241b; margin-bottom: 30px; border-left: 4px solid #14B82C; padding-left: 15px; }
 
 .text-block { margin-bottom: 35px; }
-.text-block h3 { color: #ce1126; font-size: 1.3rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+/* Titres en Vert Militaire */
+.text-block h3 { color: #14B82C; font-size: 1.3rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
 
-.highlight-box { background: #f9fafb; padding: 20px; border-left: 4px solid #1a1c1e; border-radius: 0 8px 8px 0; }
+/* Boite de mise en valeur en Vert Foncé/Noir */
+.highlight-box { 
+  background: #1a241b; 
+  color: #f8fafc;
+  padding: 25px; 
+  border-left: 4px solid #FFD700; 
+  border-radius: 0 8px 8px 0; 
+}
+.highlight-box h3 { color: #FFD700; }
 
 .admin-list { list-style: none; padding: 0; margin-top: 15px; }
-.admin-list li { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-.admin-list li span { color: #ce1126; font-weight: bold; }
+.admin-list li { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: 600; color: #1a241b; }
+.admin-list li .bullet { color: #14B82C; font-weight: bold; }
 
 /* Responsive mobile */
 @media (max-width: 640px) {

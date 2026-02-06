@@ -20,8 +20,11 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@primevue/themes": "^4.5.4",
         "@vueuse/head": "^2.0.0",
         "aos": "^2.3.4",
+        "primeicons": "^7.0.0",
+        "primevue": "^4.5.4",
         "typed.js": "^3.0.0",
         "vue": "^3.5.26",
         "vue-router": "^4.6.4"

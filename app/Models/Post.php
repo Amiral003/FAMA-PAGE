@@ -14,10 +14,14 @@ class Post extends Model
 
     protected $fillable = [
         'title',
+        
         'slug',
+        'type',
+        'thumbnail',
         'content',
         'status',
         'user_id',
+        'pdf_path',
         'validated_by',
         'validated_at',
         'published_at',

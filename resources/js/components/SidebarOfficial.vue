@@ -1,12 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-
-const props = defineProps({
-  recentDocs: {
-    type: Array,
-    default: () => []
-  }
-})
+import Button from 'primevue/button'
+import Divider from 'primevue/divider'
 
 const today = new Date().toLocaleDateString('fr-FR', {
   weekday: 'long',
@@ -17,53 +12,61 @@ const today = new Date().toLocaleDateString('fr-FR', {
 
 <template>
   <aside class="official-sidebar">
-    <div class="sidebar-card alert-dark">
+    
+    <div class="sidebar-card alert-card">
       <div class="card-header">
-        <span class="status-dot pulse"></span>
-        <h3>Vigilance Nationale</h3>
+        <span class="status-badge">
+          <span class="status-dot pulse"></span>
+          SYSTÈME ACTIF
+        </span>
       </div>
-      <p class="date-display">{{ today }}</p>
-      <div class="emergency-box">
-        <p>Centre d'appel d'urgence :</p>
-        <a href="tel:80001111" class="phone-link">80 00 11 11</a>
-      </div>
-    </div>
-
-    <div class="sidebar-card docs-dark" v-if="recentDocs.length > 0">
-      <h3>Dernières Publications</h3>
-      <ul class="doc-list">
-        <li v-for="doc in recentDocs" :key="doc.id">
-          <a :href="`/storage/${doc.pdf_path}`" download class="doc-item">
-            <span class="doc-icon">📄</span>
-            <div class="doc-info">
-              <span class="doc-title">{{ doc.title }}</span>
-              <span class="doc-meta">PDF • Officiel</span>
-            </div>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <div class="sidebar-card values-dark">
-      <h3>Notre Devise</h3>
-      <div class="devise-container">
-        <div class="motto">Un Peuple • Un But • Une Foi</div>
-        <div class="values-grid">
-          <span>HONNEUR</span>
-          <span>PATRIE</span>
-          <span>FIDÉLITÉ</span>
+      
+      <div class="info-content">
+        <p class="date-text">{{ today }}</p>
+        <h3 class="title-gold">Signalement Citoyen</h3>
+        <p class="description">
+          Aidez les FAMa à assurer votre sécurité. Transmettez toute information suspecte de manière anonyme.
+        </p>
+        
+        <div class="action-stack">
+          <Button 
+            label="Envoyer un Signalement" 
+            icon="pi pi-shield" 
+            class="w-full signal-btn"
+          />
+          <Button 
+            label="Contacter la DIRPA" 
+            icon="pi pi-info-circle" 
+            link
+            class="w-full contact-link"
+          />
         </div>
       </div>
     </div>
 
-    <div class="sidebar-card social-dark">
-      <h3>Canaux Officiels</h3>
-      <div class="social-btns">
-        <a href="#" class="s-btn">Facebook</a>
-        <a href="#" class="s-btn">Twitter (X)</a>
-        <a href="#" class="s-btn">YouTube</a>
+    <div class="sidebar-card values-card">
+      <div class="motto-container">
+        <p class="motto-label">République du Mali</p>
+        <p class="motto-main">Un Peuple • Un But • Une Foi</p>
+        <Divider class="gold-divider" />
+        <div class="values-row">
+          <div class="value-item">HONNEUR</div>
+          <div class="value-item">PATRIE</div>
+          <div class="value-item">FIDÉLITÉ</div>
+        </div>
       </div>
     </div>
+
+    <div class="sidebar-card social-card">
+      <h3 class="title-small">Canaux Officiels</h3>
+      <div class="social-flex">
+        <Button icon="pi pi-facebook" severity="secondary" rounded text class="social-icon" />
+        <Button icon="pi pi-twitter" severity="secondary" rounded text class="social-icon" />
+        <Button icon="pi pi-youtube" severity="secondary" rounded text class="social-icon" />
+        <Button icon="pi pi-instagram" severity="secondary" rounded text class="social-icon" />
+      </div>
+    </div>
+
   </aside>
 </template>
 
@@ -71,161 +74,87 @@ const today = new Date().toLocaleDateString('fr-FR', {
 .official-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
   width: 100%;
 }
 
-/* Base des cartes en thème sombre */
+/* THÈME DE COULEUR : VERT ARMÉE & OR */
 .sidebar-card {
-  background: #1a1c1e; /* Fond très sombre */
-  color: #e2e8f0;
-  padding: 24px;
+  background: #1a2421; /* Vert forêt très sombre */
+  border: 1px solid #2a3a35;
   border-radius: 12px;
-  border: 1px solid #2d3135;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  padding: 1.8rem;
+  color: #f1f5f9;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.card-header {
+/* BADGE DE STATUT */
+.status-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 5px;
-}
-
-h3 {
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
-  margin: 0;
-}
-
-.date-display {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-bottom: 15px;
-  text-transform: capitalize;
-}
-
-/* Animation Pulse pour l'alerte */
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: #ef4444;
-  border-radius: 50%;
-}
-
-.pulse {
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  animation: pulse-red 2s infinite;
-}
-
-@keyframes pulse-red {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-}
-
-/* Urgence */
-.emergency-box {
-  background: #2d1a1a;
-  border: 1px solid #451a1a;
-  padding: 15px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.phone-link {
-  display: block;
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #ef4444;
-  text-decoration: none;
-  margin-top: 5px;
-}
-
-/* Liste de documents */
-.doc-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 15px;
-}
-
-.doc-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px;
-  background: #26292d;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-  margin-bottom: 10px;
-  transition: 0.2s;
-}
-
-.doc-item:hover {
-  background: #32363b;
-  transform: translateX(5px);
-}
-
-.doc-title {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.doc-meta {
+  gap: 8px;
+  background: rgba(20, 184, 44, 0.1);
+  padding: 6px 12px;
+  border-radius: 6px;
   font-size: 0.7rem;
-  color: #2f855a;
-  font-weight: bold;
+  font-weight: 800;
+  color: #14B82C;
+  letter-spacing: 1px;
 }
 
-/* Devise */
-.devise-container {
-  text-align: center;
-  margin-top: 15px;
+.status-dot { width: 8px; height: 8px; background: #14B82C; border-radius: 50%; }
+.pulse { animation: pulse-green 2s infinite; }
+
+/* TYPOGRAPHIE */
+.date-text { font-size: 0.8rem; color: #64748b; margin: 1rem 0 0.5rem; text-transform: capitalize; }
+.title-gold { color: #d4af37; font-size: 1.2rem; font-weight: 800; margin-bottom: 1rem; }
+.title-small { font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 1.2rem; }
+.description { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin-bottom: 1.5rem; }
+
+/* BOUTONS CUSTOM */
+.signal-btn {
+  background: #14B82C !important;
+  border: none !important;
+  font-weight: 700 !important;
+  padding: 0.8rem !important;
 }
 
-.motto {
-  font-style: italic;
-  font-size: 0.9rem;
-  color: #fbbf24;
-  margin-bottom: 10px;
+.contact-link {
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+  text-decoration: none;
 }
 
-.values-grid {
+/* SECTION DEVISE */
+.values-card {
+  background: linear-gradient(145deg, #1a2421, #141c1a);
+  border-left: 4px solid #d4af37;
+}
+
+.motto-label { font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase; margin: 0; }
+.motto-main { font-size: 1rem; font-weight: 800; color: #f1f5f9; margin: 5px 0; }
+.gold-divider { border-top: 1px solid rgba(212, 175, 55, 0.2) !important; margin: 1rem 0 !important; }
+
+.values-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.7rem;
-  font-weight: 800;
+}
+
+.value-item {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #d4af37;
   letter-spacing: 2px;
-  color: #64748b;
 }
 
-/* Réseaux */
-.social-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 15px;
-}
+/* SOCIAL */
+.social-flex { display: flex; justify-content: space-between; }
+.social-icon { color: #94a3b8 !important; }
+.social-icon:hover { color: #d4af37 !important; background: rgba(212, 175, 55, 0.1) !important; }
 
-.s-btn {
-  background: #26292d;
-  padding: 10px;
-  border-radius: 6px;
-  text-align: center;
-  text-decoration: none;
-  color: #cbd5e0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border: 1px solid #32363b;
-}
-
-.s-btn:hover {
-  background: #32363b;
-  color: white;
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(20, 184, 44, 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(20, 184, 44, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(20, 184, 44, 0); }
 }
 </style>

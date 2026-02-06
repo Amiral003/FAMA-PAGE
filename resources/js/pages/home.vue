@@ -1,42 +1,27 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import Typed from 'typed.js'
 import { useHead } from '@vueuse/head'
+import Skeleton from 'primevue/skeleton'
+import Tag from 'primevue/tag'
+import Button from 'primevue/button'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
-useHead({
+useHead({ 
   title: 'Accueil | FAMa Officiel',
-  meta: [
-    { name: 'description', content: 'Plateforme officielle des Forces Armées Maliennes.' },
-  ],
+  meta: [{ name: 'description', content: 'Portail officiel des Forces Armées Maliennes.' }]
 })
 
-const typedEl = ref(null)
-let typedInstance = null
 const posts = ref([])
 const loading = ref(true)
 const router = useRouter()
 
 onMounted(async () => {
-  // Animation de texte
-  typedInstance = new Typed(typedEl.value, {
-    strings: [
-      'Le Mali ne plie pas. Le Mali se bat.',
-      'Notre terre, notre honneur, notre combat.',
-      'Debout pour la Patrie. Forts pour le Mali.'
-    ],
-    typeSpeed: 40,
-    backSpeed: 25,
-    loop: true,
-    backDelay: 2000,
-  })
-
-  // Récupération des posts
   try {
-    const res = await axios.get('/api/posts?limit=6')
-    posts.value = res.data.data.slice(0, 6)
+    const res = await axios.get('/api/posts')
+    // On récupère les données brutes, le template gérera le slice(0, 5)
+    posts.value = res.data.data
   } catch (e) {
     console.error("Erreur chargement posts:", e)
   } finally {
@@ -44,177 +29,203 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-  if (typedInstance) typedInstance.destroy()
-})
+// Gestion intelligente des images (Thumbnail pour PDF, Media[0] pour Articles)
+const getPostImage = (post) => {
+  if (post.thumbnail) return `/storage/${post.thumbnail}`;
+  if (post.media && post.media.length > 0) return `/storage/${post.media[0].file_path}`;
+  return '/assets/images/fama-placeholder.jpg';
+}
 
-// On passe les 3 derniers PDF à la sidebar en bas
-const recentPdfs = computed(() => {
-  return posts.value.filter(p => p.pdf_path).slice(0, 3)
-})
-
-const goPortfolio = () => router.push('/portfolio')
-const goToAbout = () => router.push('/about')
+const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3))
 </script>
 
 <template>
   <main class="home-page">
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-text" data-aos="fade-right">
-          <div class="badge-official">PLATEFORME OFFICIELLE</div>
-          <h1>Forces Armées <span>Maliennes</span></h1>
-          <h2 class="typed-text"><span ref="typedEl"></span></h2>
-          
-          <p class="hero-desc">
-            Garant de l'intégrité territoriale et de la souveraineté nationale, 
-            les FAMa veillent sur la paix et la sécurité de tous les Maliens depuis 1960.
+    <section class="hero-premium">
+      <div class="hero-overlay"></div>
+      <div class="container hero-content">
+        <div class="hero-text-box" data-aos="fade-up">
+          <Tag value="PORTAIL OFFICIEL" class="mb-4 custom-tag-official" />
+          <h1>Défense de la Patrie <br/>
+            <span class="text-gold">Engagement Sans Faille</span>
+          </h1>
+          <p class="hero-subtext">
+            Depuis 1960, les FAMa assurent la protection de la population malienne 
+            et la souveraineté de la République sur l'ensemble du territoire.
           </p>
-
-          <div class="hero-actions">
-            <button @click="goPortfolio" class="btn-primary">Communiqués</button>
-            <button @click="goToAbout" class="btn-secondary">Notre Histoire</button>
+          <div class="hero-btns">
+            <Button label="COMMUNIQUÉS" icon="pi pi-file" class="btn-fama-gold" @click="router.push('/portfolio')" />
+            <Button label="NOTRE HISTOIRE" icon="pi pi-shield" variant="text" class="p-button-text text-white" @click="router.push('/about')" />
           </div>
         </div>
       </div>
     </section>
 
-    <section class="home-posts">
+    <section class="news-section">
       <div class="container">
-        <div class="section-header">
-          <h2>Dernières Publications</h2>
-          <div class="red-line"></div>
+        <div class="section-header-premium">
+          <div class="header-line"></div>
+          <h2>DERNIÈRES PUBLICATIONS</h2>
+          <p>Informations vérifiées de l'État-Major Général des Armées</p>
         </div>
 
-        <div class="grid">
-          <div v-if="loading" v-for="i in 3" :key="i" class="skeleton-card">
-            <div class="skeleton-img"></div>
-            <div class="skeleton-line title"></div>
-            <div class="skeleton-line"></div>
+        <div class="news-grid">
+          <div v-if="loading" v-for="i in 6" :key="i" class="premium-card">
+             <Skeleton width="100%" height="200px"></Skeleton>
+             <div class="p-4">
+                <Skeleton width="40%" class="mb-2"></Skeleton>
+                <Skeleton width="100%" height="1.5rem"></Skeleton>
+             </div>
           </div>
 
-          <div
-            v-else
-            v-for="(post, index) in posts"
-            :key="post.id"
-            class="post-card"
-            data-aos="fade-up"
-            :data-aos-delay="index * 100"
-            @click="router.push(`/posts/${post.slug}`)"
-          >
-            <div class="img-wrapper">
-              <img
-                v-if="post.media?.length"
-                :src="`/storage/${post.media[0].file_path}`"
-                class="card-img"
-                alt="Post"
-              />
-              <div v-else class="img-placeholder">FAMa</div>
+          <template v-else>
+            <div 
+              v-for="post in posts.slice(0, 5)" 
+              :key="post.id" 
+              class="premium-card" 
+              @click="router.push(`/posts/${post.slug}`)"
+            >
+              <div class="card-media">
+                <img :src="getPostImage(post)" :alt="post.title" class="zoom-effect">
+                <div class="card-type-tag">
+                   <Tag 
+                      :value="post.type === 'pdf' ? 'DOCUMENT' : 'ACTUALITÉ'" 
+                      :severity="post.type === 'pdf' ? 'danger' : 'success'" 
+                   />
+                </div>
+              </div>
+              <div class="card-content">
+                <span class="date"><i class="pi pi-calendar"></i> {{ new Date(post.created_at).toLocaleDateString() }}</span>
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.content?.substring(0, 85) }}...</p>
+                <div class="card-footer-link">
+                  Consulter <i class="pi pi-arrow-right ml-2"></i>
+                </div>
+              </div>
             </div>
-            <div class="card-body">
-              <span class="card-date">{{ new Date(post.published_at).toLocaleDateString() }}</span>
-              <h3>{{ post.title }}</h3>
-              <p>{{ post.content?.substring(0, 80) }}...</p>
-            </div>
-          </div>
-        </div>
 
-        <div class="center-btn">
-          <button class="btn-outline" @click="goPortfolio">Tout voir →</button>
+            <div class="premium-card cta-card" @click="router.push('/portfolio')">
+                <div class="cta-content">
+                    <div class="cta-icon">
+                        <i class="pi pi-folder-open"></i>
+                    </div>
+                    <h3>Archives & Communiqués</h3>
+                    <p>Accédez à l'intégralité des documents et rapports officiels.</p>
+                    <Button label="TOUT VOIR" icon="pi pi-chevron-right" iconPos="right" class="btn-fama-gold p-button-sm" />
+                </div>
+            </div>
+          </template>
         </div>
       </div>
     </section>
 
-    <footer class="footer-sidebar" data-aos="fade-up">
+    <footer class="fama-footer">
       <div class="container footer-grid">
-        <div class="footer-info">
-          <h3>SÉCURITÉ NATIONALE</h3>
-          <p>Restez informés via les canaux officiels pour éviter les fausses informations.</p>
-          <div class="vigilance-footer">
-            <span class="dot"></span> 80 00 11 11 (Appel Gratuit)
-          </div>
+        <div class="footer-brand">
+          <h3 class="footer-title">FORCES ARMÉES MALIENNES</h3>
+          <p>La défense de la patrie est un devoir sacré. Restez connectés aux sources officielles pour des informations vérifiées.</p>
         </div>
-        
-        <div class="footer-component">
-           <SidebarOfficial :recentDocs="recentPdfs" />
+        <div class="footer-docs">
+          <SidebarOfficial :recentDocs="recentPdfs" />
         </div>
       </div>
-      <div class="bottom-bar">
-        © 2026 Forces Armées Maliennes • Un Peuple, Un But, Une Foi.
+      <div class="copyright">
+        © 2026 RÉPUBLIQUE DU MALI • UN PEUPLE • UN BUT • UNE FOI
       </div>
     </footer>
   </main>
 </template>
 
 <style scoped>
-.home-page { background: #fff; }
+/* BASES & COULEURS */
+.home-page { background: #fdfdfd; }
+.text-gold { color: #FFD700; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
 /* HERO */
-.hero {
-  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('@/assets/images/hero.jpg');
-  background-size: cover;
-  background-position: center;
-  padding: 120px 0;
-  color: white;
+.hero-premium {
+  position: relative;
   min-height: 80vh;
+  background: url('@/assets/images/hero.jpg') center/cover no-repeat;
   display: flex;
   align-items: center;
+  color: white;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #1a241b 40%, rgba(26, 36, 27, 0.4));
+}
+.hero-content { position: relative; z-index: 10; }
+.hero-text-box h1 { font-size: 3.5rem; font-weight: 900; line-height: 1.1; text-transform: uppercase; }
+.hero-subtext { max-width: 600px; font-size: 1.2rem; color: #cbd5e1; margin: 20px 0 40px; border-left: 4px solid #FFD700; padding-left: 20px; }
+.custom-tag-official { background: #14B82C !important; color: white; font-weight: 800; border-radius: 4px; }
+.btn-fama-gold { background: #FFD700 !important; color: #1a241b !important; border: none !important; font-weight: 800 !important; }
+
+/* ACTUALITÉS GRID */
+.news-section { padding: 80px 0; background: #f8fafc; }
+.section-header-premium { margin-bottom: 50px; }
+.header-line { width: 70px; height: 6px; background: #14B82C; margin-bottom: 15px; }
+.section-header-premium h2 { font-size: 1.8rem; font-weight: 900; color: #1a241b; }
+
+.news-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+  gap: 30px; 
 }
 
-.badge-official {
-  background: #ce1126;
-  display: inline-block;
-  padding: 5px 12px;
+/* CARTE STANDARD */
+.premium-card {
+  background: white;
   border-radius: 4px;
-  font-weight: 800;
-  font-size: 0.8rem;
-  margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+.premium-card:hover { transform: translateY(-10px); border-color: #FFD700; box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
 
-.hero-text h1 { font-size: 3.5rem; font-weight: 900; margin: 0; }
-.hero-text h1 span { color: #ce1126; }
-.typed-text { height: 40px; color: #cbd5e1; font-size: 1.5rem; margin: 20px 0; }
-.hero-desc { max-width: 600px; font-size: 1.1rem; line-height: 1.6; color: #e2e8f0; }
+.card-media { position: relative; height: 210px; overflow: hidden; }
+.zoom-effect { width: 100%; height: 100%; object-fit: cover; transition: 0.8s; }
+.premium-card:hover .zoom-effect { transform: scale(1.1); }
+.card-type-tag { position: absolute; top: 12px; right: 12px; }
 
-.hero-actions { margin-top: 40px; display: flex; gap: 15px; }
-.btn-primary { background: #ce1126; color: white; border: none; padding: 15px 30px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.3s; }
-.btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid white; padding: 15px 30px; font-weight: bold; border-radius: 6px; cursor: pointer; backdrop-filter: blur(5px); }
+.card-content { padding: 25px; flex-grow: 1; }
+.date { font-size: 0.8rem; font-weight: 700; color: #14B82C; }
+.card-content h3 { font-size: 1.2rem; font-weight: 800; color: #1a241b; margin: 12px 0; line-height: 1.4; height: 3.4rem; overflow: hidden; }
+.card-content p { color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; }
+.card-footer-link { font-weight: 800; color: #1a241b; font-size: 0.85rem; display: flex; align-items: center; }
 
-/* ACTUALITÉS */
-.home-posts { padding: 80px 0; background: #f8fafc; }
-.section-header { margin-bottom: 40px; }
-.red-line { width: 50px; height: 4px; background: #ce1126; margin-top: 10px; }
+/* CARTE 6 (APPEL À L'ACTION) */
+.cta-card {
+  background: #1a241b !important;
+  border: 2px dashed #FFD700 !important;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.cta-content { padding: 30px; }
+.cta-icon { 
+    width: 70px; height: 70px; background: rgba(255, 215, 0, 0.1); 
+    border-radius: 50%; display: flex; align-items: center; 
+    justify-content: center; margin: 0 auto 20px; 
+}
+.cta-icon i { font-size: 2.5rem; color: #FFD700; }
+.cta-card h3 { color: #FFD700 !important; height: auto !important; margin-bottom: 10px !important; }
+.cta-card p { color: #cbd5e1 !important; margin-bottom: 25px !important; }
 
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+/* FOOTER */
+.fama-footer { background: #1a241b; color: white; padding-top: 80px; }
+.footer-grid { display: grid; grid-template-columns: 1fr 400px; gap: 60px; padding-bottom: 60px; }
+.footer-title { color: #FFD700; font-weight: 900; margin-bottom: 25px; }
+.copyright { background: #0e140f; text-align: center; padding: 25px; font-size: 0.8rem; color: #64748b; }
 
-.post-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
-.post-card:hover { transform: translateY(-10px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-
-.img-wrapper { height: 200px; overflow: hidden; }
-.card-img { width: 100%; height: 100%; object-fit: cover; }
-.card-body { padding: 20px; }
-.card-date { font-size: 0.8rem; color: #ce1126; font-weight: bold; }
-.card-body h3 { margin: 10px 0; font-size: 1.2rem; line-height: 1.3; }
-
-.btn-outline { margin-top: 40px; padding: 12px 30px; border: 2px solid #1a1c1e; background: none; font-weight: bold; cursor: pointer; border-radius: 6px; }
-
-/* FOOTER-SIDEBAR */
-.footer-sidebar { background: #1a1c1e; color: white; padding-top: 60px; border-top: 4px solid #ce1126; }
-.footer-grid { display: grid; grid-template-columns: 1fr 350px; gap: 50px; padding-bottom: 40px; }
-
-.footer-info h3 { color: #ce1126; margin-bottom: 20px; }
-.vigilance-footer { font-size: 1.5rem; font-weight: 900; margin-top: 20px; display: flex; align-items: center; gap: 10px; }
-.dot { width: 12px; height: 12px; background: #ce1126; border-radius: 50%; animation: blink 1s infinite; }
-
-.bottom-bar { background: #111; text-align: center; padding: 20px; font-size: 0.8rem; color: #666; }
-
-@keyframes blink { 50% { opacity: 0; } }
-
-/* RESPONSIVE */
 @media (max-width: 992px) {
-  .hero-text h1 { font-size: 2.5rem; }
+  .hero-text-box h1 { font-size: 2.8rem; }
   .footer-grid { grid-template-columns: 1fr; }
-  .grid { grid-template-columns: 1fr; }
+  .news-grid { grid-template-columns: 1fr; }
 }
 </style>

@@ -1,8 +1,14 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
+
+// Import PrimeVue 4
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Skeleton from 'primevue/skeleton'
+import Image from 'primevue/image' // Ajout pour le zoom
 
 const route = useRoute()
 const router = useRouter()
@@ -21,147 +27,207 @@ onMounted(async () => {
   }
 })
 
-// Logique de partage
-const shareUrl = window.location.href
-const shareTitle = computed(() => post.value ? `FAMa : ${post.value.title}` : '')
-
-const share = (platform) => {
+const getShareLink = (platform) => {
+  if (typeof window === 'undefined' || !post.value) return '#'
+  const shareUrl = encodeURIComponent(window.location.href)
+  const shareTitle = encodeURIComponent(`FAMa : ${post.value.title}`)
   const links = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle.value)}&url=${encodeURIComponent(shareUrl)}`,
-    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle.value + ' ' + shareUrl)}`
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`
   }
-  window.open(links[platform], '_blank')
+  return links[platform]
+}
+
+const openPdf = (path) => {
+  window.open(`/storage/${path}`, '_blank')
 }
 </script>
 
 <template>
   <div class="page-background">
     <main class="main-layout container" v-if="!loading && post">
-      
+
       <div class="content-card">
-        <button @click="router.back()" class="btn-back">← Retour aux communiqués</button>
+        <Button
+          icon="pi pi-arrow-left"
+          label="Retour aux communiqués"
+          link
+          class="p-0 mb-5 text-fama"
+          @click="router.back()"
+        />
 
         <header class="post-header">
           <div class="post-meta">
-            <span class="type-badge" v-if="post.type">{{ post.type }}</span>
-            <span class="date">📅 {{ new Date(post.published_at || post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+            <Tag
+              :value="post.type || 'COMMUNIQUÉ'"
+              :severity="post.type === 'pdf' ? 'danger' : 'success'"
+            />
+            <span class="date">
+              <i class="pi pi-calendar mr-2"></i>
+              {{ new Date(post.published_at || post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+            </span>
           </div>
-          <h1>{{ post.title }}</h1>
-          
-          <div class="author-info" v-if="post.user">
-            <div class="author-avatar">{{ post.user.name.charAt(0) }}</div>
-            <span>Publié par <strong>{{ post.user.name }}</strong> (FAMa)</span>
-          </div>
+          <h1 class="post-title">{{ post.title }}</h1>
         </header>
 
-        <div class="share-bar">
-          <span>Partager ce communiqué :</span>
-          <button @click="share('facebook')" class="s-btn fb">F</button>
-          <button @click="share('twitter')" class="s-btn x">X</button>
-          <button @click="share('whatsapp')" class="s-btn wa">W</button>
-        </div>
-
-        <section class="post-gallery" v-if="post.media && post.media.length">
-          <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
-            <img 
-              :src="`/storage/${item.file_path}`" 
-              :alt="post.title"
-              class="gallery-img"
-            />
-          </div>
+        <section class="post-main-image" v-if="post.thumbnail">
+          <Image
+            :src="`/storage/${post.thumbnail}`"
+            alt="Image à la une"
+            preview
+            imageClass="main-img-fluid"
+          />
         </section>
 
-        <section class="post-content">
-          <div class="text-body">
+        <div class="share-bar">
+          <span class="share-label">Partager :</span>
+          <div class="share-buttons">
+            <a :href="getShareLink('facebook')" target="_blank" class="s-btn fb"><i class="pi pi-facebook"></i></a>
+            <a :href="getShareLink('whatsapp')" target="_blank" class="s-btn wa"><i class="pi pi-whatsapp"></i></a>
+          </div>
+        </div>
+
+        <section class="post-body">
+          <div class="text-content">
             {{ post.content }}
           </div>
-          
+
+          <div v-if="post.media && post.media.length" class="post-gallery">
+            <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
+                <Image
+                    :src="`/storage/${item.file_path}`"
+                    preview
+                    alt="Galerie FAMa"
+                    imageClass="gallery-img-styled"
+                />
+            </div>
+          </div>
+
+          <div class="post-signature-minimal" v-if="post.user">
+            <div class="signature-line"></div>
+            <p class="author-name-bottom">{{ post.user.name }}</p>
+            <p class="author-sub">Forces Armées Maliennes</p>
+          </div>
+
           <div v-if="post.pdf_path" class="pdf-section">
             <div class="pdf-card">
-              <div class="pdf-icon">📄</div>
-              <div class="pdf-details">
-                <h3>Document Officiel</h3>
-                <p>Format PDF - Téléchargement autorisé</p>
+              <div class="pdf-icon"><i class="pi pi-file-pdf"></i></div>
+              <div class="pdf-info">
+                <h3>Document source certifié</h3>
+                <p>Consultez la version officielle signée au format PDF.</p>
               </div>
-              <a :href="`/storage/${post.pdf_path}`" target="_blank" download class="btn-download">
-                Télécharger
-              </a>
+              <div class="pdf-actions">
+                <Button label="Consulter" icon="pi pi-eye" outlined class="p-button-white" @click="openPdf(post.pdf_path)" />
+                <a :href="`/storage/${post.pdf_path}`" download class="btn-download-fama">
+                  <i class="pi pi-download mr-2"></i> Télécharger
+                </a>
+              </div>
             </div>
           </div>
         </section>
       </div>
 
-      <aside class="sidebar-aside">
+      <aside class="sidebar-column">
         <SidebarOfficial />
       </aside>
-
     </main>
 
-    <div v-else-if="loading" class="loader-container">
-      <div class="spinner"></div>
-      <p>Récupération du communiqué officiel...</p>
+    <div v-else-if="loading" class="container main-layout mt-5">
+      <div class="content-card">
+        <Skeleton width="20%" height="2rem" class="mb-4"></Skeleton>
+        <Skeleton width="100%" height="30rem" class="mb-4"></Skeleton>
+        <Skeleton width="80%" class="mb-2"></Skeleton>
+        <Skeleton width="60%"></Skeleton>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page-background { background: #f3f4f6; min-height: 100vh; padding: 30px 0; }
+/* Fond et Container */
+.page-background { background: #f1f5f9; min-height: 100vh; padding: 20px 0; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
 
-/* LAYOUT RESPONSIVE */
-.main-layout { display: grid; grid-template-columns: 1fr 340px; gap: 30px; align-items: flex-start; }
+/* Layout Grid */
+.main-layout { display: grid; grid-template-columns: 1fr 320px; gap: 30px; align-items: start; }
 
-@media (max-width: 992px) {
-  .main-layout { grid-template-columns: 1fr; }
-  .sidebar-aside { display: none; }
+/* Content Card */
+.content-card {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
-/* CARTE DE CONTENU */
-.content-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+.text-fama { color: #14B82C !important; font-weight: 700; }
+.post-title { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 900; color: #1a202c; line-height: 1.2; margin-top: 15px; }
+.post-meta { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; color: #64748b; font-weight: 600; }
 
-.btn-back { background: none; border: none; color: #ce1126; cursor: pointer; font-weight: 700; margin-bottom: 25px; padding: 0; }
+/* SHARE BAR */
+.share-bar {
+  display: flex; align-items: center; gap: 15px;
+  margin: 30px 0; padding: 12px 20px;
+  background: #f8fafc; border-radius: 50px; width: fit-content;
+}
 
-.post-header h1 { font-size: 2.2rem; line-height: 1.2; margin: 15px 0; color: #1a1c1e; }
-.post-meta { display: flex; gap: 15px; align-items: center; }
-.type-badge { background: #ce1126; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
-.date { color: #6b7280; font-size: 0.9rem; }
+/* IMAGES OPTIMISÉES */
+.post-main-image { margin: 30px -40px; } /* Sort un peu du padding sur PC */
+:deep(.main-img-fluid) {
+    width: 100%;
+    max-height: 600px;
+    object-fit: cover;
+    display: block;
+}
 
-.author-info { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding: 15px 0; border-top: 1px solid #f3f4f6; font-size: 0.95rem; }
-.author-avatar { width: 35px; height: 35px; background: #1a1c1e; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+/* GALERIE RESPONSIVE */
+.post-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 40px;
+}
+.gallery-item { overflow: hidden; border-radius: 12px; height: 200px; }
+:deep(.gallery-img-styled) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+:deep(.gallery-img-styled:hover) { transform: scale(1.05); }
 
-/* PARTAGE */
-.share-bar { display: flex; align-items: center; gap: 12px; margin: 25px 0; padding: 15px; background: #f9fafb; border-radius: 8px; font-size: 0.9rem; font-weight: bold; }
-.s-btn { width: 32px; height: 32px; border-radius: 50%; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-.fb { background: #1877f2; }
-.x { background: #000; }
-.wa { background: #25d366; }
+/* TEXTE */
+.text-content { font-size: 1.15rem; line-height: 1.8; color: #334155; white-space: pre-wrap; margin-bottom: 40px; }
 
-/* GALERIE */
-.post-gallery { margin: 30px 0; }
-.gallery-img { width: 100%; border-radius: 10px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-
-/* CONTENU TEXTE */
-.post-content { font-size: 1.15rem; line-height: 1.8; color: #374151; }
-.text-body { white-space: pre-wrap; margin-bottom: 40px; }
+/* SIGNATURE */
+.post-signature-minimal { margin: 40px 0; text-align: right; }
+.signature-line { width: 100px; height: 4px; background: #14B82C; margin-left: auto; margin-bottom: 10px; }
+.author-name-bottom { font-size: 1.3rem; font-weight: 800; text-transform: uppercase; margin: 0; }
 
 /* PDF SECTION */
-.pdf-section { background: #1a1c1e; color: white; padding: 25px; border-radius: 10px; border-left: 5px solid #ce1126; }
+.pdf-section { background: #0f172a; color: white; padding: 25px; border-radius: 16px; }
 .pdf-card { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-.pdf-icon { font-size: 2.5rem; }
-.pdf-details h3 { margin: 0; font-size: 1.1rem; }
-.pdf-details p { margin: 5px 0 0; font-size: 0.85rem; opacity: 0.8; }
-.btn-download { background: #ce1126; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; margin-left: auto; }
+.pdf-icon { font-size: 2.5rem; color: #ef4444; }
+.pdf-actions { display: flex; gap: 10px; margin-left: auto; }
 
-/* LOADER */
-.loader-container { text-align: center; padding: 100px 0; color: #6b7280; }
-.spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #ce1126; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.sidebar-column
+  {
+    position: sticky;
+    top: 10px;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-self: start;
+}
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1024px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar-column { display: none; }
+    .post-main-image { margin: 30px 0; }
+}
 
-/* RESPONSIVE MOBILE */
-@media (max-width: 640px) {
-  .content-card { padding: 20px; }
-  .post-header h1 { font-size: 1.6rem; }
-  .btn-download { width: 100%; text-align: center; margin-left: 0; margin-top: 10px; }
+@media (max-width: 768px) {
+    .content-card { padding: 25px; }
+    .post-main-image { margin: 20px -25px; }
+    .pdf-actions { width: 100%; flex-direction: column; }
+    .btn-download-fama { text-align: center; }
 }
 </style>

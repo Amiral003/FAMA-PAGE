@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Filament\Forms\Components\FileUpload;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+{
+    FileUpload::configureUsing(function (FileUpload $component) {
+        $component->maxSize(10240); // Autorise jusqu'à 10MB
+    });
+}
     }
 }
