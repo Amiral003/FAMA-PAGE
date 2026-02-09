@@ -48,7 +48,7 @@ class PostResource extends Resource
             TextInput::make('slug')
                 ->label('Slug (URL)')
                 ->disabled()
-                ->dehydrated() 
+                ->dehydrated()
                 ->required(),
         ]),
 
@@ -62,7 +62,7 @@ class PostResource extends Resource
                     'pdf' => 'Document Officiel / PDF',
                 ])
                 ->required()
-                ->live() 
+                ->live()
                 ->native(false),
         ]),
 
@@ -123,7 +123,7 @@ class PostResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(50),
-                    
+
 
                 TextColumn::make('status')
                     ->label('Statut')
@@ -155,7 +155,7 @@ class PostResource extends Resource
                 TextColumn::make('user.name')
                     ->label('Auteur')
                     ->sortable(),
-                
+
                 TextColumn::make('created_at')
                     ->label('Date')
                     ->dateTime('d/m/Y')

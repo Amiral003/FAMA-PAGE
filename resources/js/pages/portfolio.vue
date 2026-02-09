@@ -5,12 +5,6 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
-// Import PrimeVue
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
-import Skeleton from 'primevue/skeleton'
-import Tag from 'primevue/tag'
-
 useHead({
   title: 'Avis & Communiqués | FAMa',
   meta: [{ name: 'description', content: 'Fil d’actualité officiel des FAMa.' }],
@@ -205,37 +199,31 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
   max-width: 900px;
   margin: 0 auto 3rem;}
 
+/* En-tête de section */
+.header-section { margin-bottom: 30px; }
+h1 { font-size: 2rem; font-weight: 800; color: #1a1c1e; margin-bottom: 20px; }
 
-.search-large:focus {
-outline: none;
-  box-shadow: none; }
-  /* wrapper PrimeVue */
-.p-input-icon-left {
-  position: relative;
+.search-bar {
   width: 100%;
+  padding: 14px 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: border-color 0.3s;
 }
+.search-bar:focus { outline: none; border-color: #ce1126; }
 
-
-.p-input-icon-left > i {
-    position: absolute;
-   left: 22px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.2rem;
-  color: #6b7280;
-  z-index: 2;
-}
-
-/* NEWS CARD */
-.news-card {
+/* --- DESIGN DES POSTS (CARTES) --- */
+.post-item {
   background: white;
-  border-radius: 20px;
   padding: 30px;
-  margin-bottom: 35px;
-  border: 1px solid #edf2f7;
-  transition: all 0.3s ease;
+  border-radius: 16px;
+  margin-bottom: 30px; /* C'est ici qu'on crée l'espace entre les posts */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.03);
 }
 .news-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
 
@@ -260,64 +248,128 @@ outline: none;
   padding-top: 20px; border-top: 1px solid #f1f5f9;
 }
 
-.action-btns { display: flex; gap: 15px; align-items: center; }
-
-.social-share { display: flex; gap: 15px; }
-.social-share a {
-  color: #a0aec0; font-size: 1.3rem; transition: color 0.2s;
-}
-.social-share a:hover { color: #14B82C; }
-
-/* UTILS */
-.skeleton-card { background: white; padding: 30px; border-radius: 20px; margin-bottom: 30px; }
-.empty-state { text-align: center; padding: 100px 0; color: #a0aec0; }
-.empty-state i { font-size: 4rem; margin-bottom: 20px; }
-
-.sidebar-column
-  {
-    position: sticky;
-    top: 10px;
-    grid-template-columns: 1fr 340px;
-    gap: 20px;
-    align-self: start;
+h2 {
+  margin: 10px 0;
+  font-size: 1.6rem;
+  line-height: 1.3;
+  color: #111;
+  font-weight: 700;
 }
 
-
-/* RESPONSIVE */
-@media (max-width: 992px) {
-  .main-layout { grid-template-columns: 1fr; }
-  .sidebar-column { display: none; }
-  .page-title { margin: 0;
-font-weight: 700;
-background: transparent;
-padding: 0;
-  border-radius: 0;}
+.post-meta {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-@media (max-width: 640px) {
-  .news-card { padding: 20px; }
-  .card-title { font-size: 1.3rem; }
-  .card-footer { flex-direction: column; gap: 20px; align-items: flex-start; }
-  .social-share { width: 100%; justify-content: flex-end; }
+/* Media Box */
+.media-box {
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3f4f6;
 }
 
-.title-wrapper {
-  background: transparent;
-  padding: 2.5rem;
-  border-radius: 20px;
-  margin-bottom: 1.5rem;
-}
-.search-input {
+.post-img {
   width: 100%;
-  height: 64px;
-  padding-left: 64px;
-  padding-right: 20px;
-  font-size: 1.1rem;
-  border-radius: 18px;
- border: none !important;     /* supprime cadre */
-  outline: none !important;
-  box-shadow: none !important;
+  max-height: 450px;
+  object-fit: cover;
+  display: block;
+}
+
+.pdf-box {
+  padding: 50px;
+  text-align: center;
+  color: #4b5563;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  font-weight: 600;
   background: #f9fafb;
 }
 
+/* Texte */
+.excerpt {
+  color: #374151;
+  line-height: 1.7;
+  margin-bottom: 25px;
+  font-size: 1.05rem;
+}
+
+/* Actions Footer */
+.footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btns { display: flex; gap: 20px; align-items: center; }
+
+.read-btn {
+  color: #ce1126;
+  font-weight: 700;
+  font-size: 0.95rem;
+  position: relative;
+}
+.read-btn::after {
+  content: ' →';
+  transition: margin-left 0.2s;
+}
+.post-item:hover .read-btn::after { margin-left: 5px; }
+
+.pdf-btn {
+  background: #065f46;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.pdf-btn:hover { opacity: 0.9; }
+
+/* Socials */
+.socials { display: flex; gap: 10px; }
+.socials a {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+.socials a:hover { transform: scale(1.1); }
+.s-fb { background: #1877f2; }
+.s-wa { background: #25d366; }
+
+/* Utils */
+.center-msg { text-align: center; padding: 60px; color: #6b7280; font-size: 1.1rem; }
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ce1126;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .post-item { padding: 20px; margin-bottom: 20px; }
+  h2 { font-size: 1.3rem; }
+  .footer-actions { flex-direction: column; gap: 15px; align-items: flex-start; }
+  .socials { width: 100%; justify-content: flex-end; }
+}
 </style>
