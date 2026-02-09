@@ -8,7 +8,7 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
-useHead({ 
+useHead({
   title: 'Accueil | FAMa Officiel',
   meta: [{ name: 'description', content: 'Portail officiel des Forces Armées Maliennes.' }]
 })
@@ -50,7 +50,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
             <span class="text-gold">Engagement Sans Faille</span>
           </h1>
           <p class="hero-subtext">
-            Depuis 1960, les FAMa assurent la protection de la population malienne 
+            Depuis 1960, les FAMa assurent la protection de la population malienne
             et la souveraineté de la République sur l'ensemble du territoire.
           </p>
           <div class="hero-btns">
@@ -79,18 +79,18 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
           </div>
 
           <template v-else>
-            <div 
-              v-for="post in posts.slice(0, 5)" 
-              :key="post.id" 
-              class="premium-card" 
+            <div
+              v-for="post in posts.slice(0, 5)"
+              :key="post.id"
+              class="premium-card"
               @click="router.push(`/posts/${post.slug}`)"
             >
               <div class="card-media">
                 <img :src="getPostImage(post)" :alt="post.title" class="zoom-effect">
                 <div class="card-type-tag">
-                   <Tag 
-                      :value="post.type === 'pdf' ? 'DOCUMENT' : 'ACTUALITÉ'" 
-                      :severity="post.type === 'pdf' ? 'danger' : 'success'" 
+                   <Tag
+                      :value="post.type === 'pdf' ? 'DOCUMENT' : 'ACTUALITÉ'"
+                      :severity="post.type === 'pdf' ? 'danger' : 'success'"
                    />
                 </div>
               </div>
@@ -168,10 +168,10 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .header-line { width: 70px; height: 6px; background: #14B82C; margin-bottom: 15px; }
 .section-header-premium h2 { font-size: 1.8rem; font-weight: 900; color: #1a241b; }
 
-.news-grid { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-  gap: 30px; 
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
 }
 
 /* CARTE STANDARD */
@@ -208,10 +208,10 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
   text-align: center;
 }
 .cta-content { padding: 30px; }
-.cta-icon { 
-    width: 70px; height: 70px; background: rgba(255, 215, 0, 0.1); 
-    border-radius: 50%; display: flex; align-items: center; 
-    justify-content: center; margin: 0 auto 20px; 
+.cta-icon {
+    width: 70px; height: 70px; background: rgba(255, 215, 0, 0.1);
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 20px;
 }
 .cta-icon i { font-size: 2.5rem; color: #FFD700; }
 .cta-card h3 { color: #FFD700 !important; height: auto !important; margin-bottom: 10px !important; }
@@ -221,7 +221,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .fama-footer { background: #1a241b; color: white; padding-top: 80px; }
 .footer-grid { display: grid; grid-template-columns: 1fr 400px; gap: 60px; padding-bottom: 60px; }
 .footer-title { color: #FFD700; font-weight: 900; margin-bottom: 25px; }
-.copyright { background: #0e140f; text-align: center; padding: 25px; font-size: 0.8rem; color: #64748b; }
+.copyright { background: #202d22; text-align: center; padding: 25px; font-size: 0.8rem; color: #64748b; }
 
 @media (max-width: 992px) {
   .hero-text-box h1 { font-size: 2.8rem; }

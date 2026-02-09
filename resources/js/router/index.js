@@ -14,6 +14,7 @@ import Dgm from '../components/Dgm.vue'
 import EtatmajorGarde from '../components/EtatmajorGarde.vue'
 import Police from '../components/police.vue'
 import Dmhta from '../components/Dmhta.vue'
+import Dcssa from '../components/Dcssa.vue'
 
 
 
@@ -26,13 +27,14 @@ const routes = [
     {path:'/etatmajorAA', component: EtatmalorAA},
     {path:'/Dttia', component: Dttia},
     {path:'/Dmhta', component: Dmhta},
-     {path:'/Dcssa', component: Dcssa},
+     {path:'/Dcssa',component: Dcssa},
     {path:'/Gendarmerie', component:Gendarmerie},
     {path:'/Dgm',component:Dgm},
     {path:'/EtatmajorGarde',component:EtatmajorGarde},
      {path:'/police',component:Police},
     { path: '/portfolio', component: Portfolio,
-    meta: { title: 'Avis & Communiqués' }, },
+   // meta: { title: 'Avis & Communiqués' },
+   },
 
      {
     path: '/posts/:slug', // Le ":slug" est la partie variable

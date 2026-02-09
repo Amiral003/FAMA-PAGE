@@ -186,5 +186,9 @@ const aboutItem = { label: 'À propos', to: '/about' }
   .sub-link:hover { color: #FFD700; }
 
   .menu-footer { margin-top: auto; padding: 2rem; text-align: center; color: #666; font-size: 0.6rem; border-top: 1px solid rgba(255, 215, 0, 0.1); }
+} .logo-box {
+  display: flex;
+  flex-direction: column; /* empile verticalement */
+  gap: 6px;               /* espace entre FAMa et le sous-titre */
 }
 </style>

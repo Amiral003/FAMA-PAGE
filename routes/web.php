@@ -38,3 +38,6 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+Route::get('/', function () {
+    return 'LARAVEL OK';
+});

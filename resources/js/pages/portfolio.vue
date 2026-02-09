@@ -84,12 +84,12 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </div>
 
           <div class="search-hero">
-            <div class="p-input-icon-left w-full">
+            <div class="p-input-icon-left search-wrapper">
               <i class="pi pi-search"></i>
               <InputText
                 v-model="search"
                 placeholder="Rechercher dans les archives officielles..."
-                class="w-full search-large"
+                class="w-full search-input"
               />
             </div>
           </div>
@@ -198,10 +198,10 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .header-section { margin-bottom: 40px; }
 .page-title { font-size: 2.2rem; font-weight: 800; color: #1a2421; margin-bottom: 25px; }
 .search-hero {
-   background: white;
-  padding: 18px;
+   background: transparent;
+  padding: 0px;
   border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  box-shadow:none ;
   max-width: 900px;
   margin: 0 auto 3rem;}
 
@@ -217,11 +217,13 @@ outline: none;
 
 
 .p-input-icon-left > i {
+    position: absolute;
    left: 22px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 1.2rem;
   color: #6b7280;
+  z-index: 2;
 }
 
 /* NEWS CARD */
@@ -312,9 +314,10 @@ padding: 0;
   padding-right: 20px;
   font-size: 1.1rem;
   border-radius: 18px;
-  border: none;
+ border: none !important;     /* supprime cadre */
+  outline: none !important;
+  box-shadow: none !important;
   background: #f9fafb;
-  box-sizing: border-box;
 }
 
 </style>
