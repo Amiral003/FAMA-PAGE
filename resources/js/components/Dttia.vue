@@ -8,6 +8,7 @@ import atImage from '@/assets/images/dttia.jpeg'
 <template>
   <div class="about-container">
     <div class="main-layout container">
+    
 
       <section class="content-column">
         <header class="about-header">
@@ -165,6 +166,7 @@ import atImage from '@/assets/images/dttia.jpeg'
     grid-template-columns: 1fr 340px;
     gap: 20px;
     align-self: start;
+
 }
 @media (max-width: 992px) {
   .main-layout { grid-template-columns: 1fr; }
@@ -193,7 +195,6 @@ import atImage from '@/assets/images/dttia.jpeg'
 .lead { font-size: 1.25rem; color: #1a241b; margin-bottom: 30px; border-left: 4px solid #14B82C; padding-left: 15px; }
 
 .text-block { margin-bottom: 35px; }
-/* Titres en Vert Militaire */
 .text-block h3 { color: #14B82C; font-size: 1.3rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
 
 /* Boite de mise en valeur en Vert Foncé/Noir */

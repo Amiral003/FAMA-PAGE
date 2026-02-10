@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
+ import InputText from 'primevue/inputtext'
 
 useHead({
   title: 'Avis & Communiqués | FAMa',
@@ -75,7 +76,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
                   <h1 class="page-title">Communiqués & Avis Officiels
 
                   </h1>
-</div>
+            </div>
 
           <div class="search-hero">
             <div class="p-input-icon-left search-wrapper">
@@ -87,7 +88,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
               />
             </div>
           </div>
- </header>
+        </header>
 
         <div v-if="loading">
           <div v-for="i in 2" :key="i" class="skeleton-card">
@@ -186,7 +187,17 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
 /* LAYOUT */
-.main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 40px; margin-top: 30px; }
+.main-layout {
+    display: flex;
+     gap: 40px;
+      margin-top: 30px;
+    align-items: flex-start;
+}
+
+    .feed-column{
+        flex: 1  auto;
+        min-width: 0;
+    }
 
 /* HEADER & SEARCH */
 .header-section { margin-bottom: 40px; }
@@ -213,6 +224,42 @@ h1 { font-size: 2rem; font-weight: 800; color: #1a1c1e; margin-bottom: 20px; }
   transition: border-color 0.3s;
 }
 .search-bar:focus { outline: none; border-color: #ce1126; }
+
+/* ====== FIX BARRE DE RECHERCHE PRIMEVUE ====== */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-wrapper .p-inputtext {
+  width: 100%;
+  height: 52px;
+  padding-left: 42px;   /* espace pour l’icône */
+  padding-right: 16px;
+  border-radius: 30px;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: block;
+}
+
+/* Icône recherche */
+.search-wrapper .pi-search {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  z-index: 2;
+}
+
+/* Focus propre */
+.search-wrapper .p-inputtext:focus {
+  outline: none;
+  border-color: #14b82c;
+  box-shadow: 0 0 0 3px rgba(20, 184, 44, 0.15);
+}
 
 /* --- DESIGN DES POSTS (CARTES) --- */
 .post-item {
@@ -363,13 +410,40 @@ h2 {
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
 }
+/* DESKTOP */
+.sidebar-column {
+  position: sticky;
+  top: 10px;
+  align-self: start;
+}
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* Mobile Adjustments */
 @media (max-width: 640px) {
+    .main-layout{
+        flex-direction: column;
+        display: flex;
+    }
+
+    .sidebar-column {
+    position: static;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    top: auto;
+    width: 100%;
+    max-width: 100%;
+    z-index: 999;
+
+    padding: 0.8rem;
+    background: transparent;
+  }
   .post-item { padding: 20px; margin-bottom: 20px; }
   h2 { font-size: 1.3rem; }
   .footer-actions { flex-direction: column; gap: 15px; align-items: flex-start; }
   .socials { width: 100%; justify-content: flex-end; }
 }
+
+
 </style>
