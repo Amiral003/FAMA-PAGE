@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::table('posts', function (Blueprint $table) {
+        Schema::table('posts', function (Blueprint $table) {
+            // On s'assure que la colonne peut accepter des valeurs NULL
+            // Note : Sous PostgreSQL, cela nécessite 'composer require doctrine/dbal'
             $table->string('file_type')->nullable()->change();
         });
     }
@@ -22,6 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('posts', function (Blueprint $table) {
+            // Retour à l'état obligatoire (NOT NULL)
             $table->string('file_type')->nullable(false)->change();
         });
     }

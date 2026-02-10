@@ -11,20 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('post_media', function (Blueprint $table) {
+        Schema::create('post_media', function (Blueprint $table) {
+            $table->id();
 
-    $table->id();
+            // Relation avec la table posts
+            $table->foreignId('post_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-    $table->foreignId('post_id')
-        ->constrained()
-        ->cascadeOnDelete();
+            $table->string('file_path');
 
-    $table->string('file_path');
-    $table->integer('order')->default(0);
+            // unsignedInteger est préférable pour un index d'ordre (pas de chiffres négatifs)
+            $table->unsignedInteger('order')->default(0);
 
-    $table->timestamps();
-});
-
+            $table->timestamps();
+        });
     }
 
     /**

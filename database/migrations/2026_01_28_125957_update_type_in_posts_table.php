@@ -7,25 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Migration neutralisée : le type 'pdf' a déjà été ajouté
+     * dans la migration précédente via SQL brut.
      */
-   public function up(): void
-{
-    Schema::table('posts', function (Blueprint $table) {
-        // Option A : Si c'est un ENUM, on ajoute 'pdf'
-        $table->enum('type', ['flash', 'article', 'pdf'])->change();
-        
-        
-    });
-}
+    public function up(): void
+    {
+        // On laisse vide pour éviter l'erreur SQLSTATE[42601]
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
-            //
-        });
+        // On laisse vide
     }
 };

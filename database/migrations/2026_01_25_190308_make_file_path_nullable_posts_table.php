@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-Schema::table('posts', function (Blueprint $table) {
+        Schema::table('posts', function (Blueprint $table) {
+            // Rend la colonne file_path optionnelle
+            // Note: nécessite 'composer require doctrine/dbal' pour PostgreSQL
             $table->string('file_path')->nullable()->change();
-        });    }
+        });
+    }
 
     /**
      * Reverse the migrations.
@@ -21,6 +24,7 @@ Schema::table('posts', function (Blueprint $table) {
     public function down(): void
     {
         Schema::table('posts', function (Blueprint $table) {
+            // Remet la colonne en obligatoire si nécessaire
             $table->string('file_path')->nullable(false)->change();
         });
     }

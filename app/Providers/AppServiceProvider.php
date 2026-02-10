@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,10 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-{
-    FileUpload::configureUsing(function (FileUpload $component) {
-        $component->maxSize(10240); // Autorise jusqu'à 10MB
-    });
-}
+        // 1. Force le HTTPS pour corriger le "Mixed Content"
+        URL::forceScheme('https');
+
+        // 2. Configuration Filament
+        FileUpload::configureUsing(function (FileUpload $component) {
+            $component->maxSize(10240); // 10MB
+        });
     }
 }

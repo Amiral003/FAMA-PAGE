@@ -34,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             'panels::footer.before',
             fn () => null)
             ->login()
+            ->authGuard('web')
             ->colors([
                 'primary' => Color::Amber,
             ])

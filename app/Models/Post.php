@@ -14,7 +14,7 @@ class Post extends Model
 
     protected $fillable = [
         'title',
-        
+
         'slug',
         'type',
         'thumbnail',
@@ -32,12 +32,23 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
-    protected static function booted()
-    {
-        static::creating(function ($post) {
+   protected static function booted()
+{
+    static::creating(function ($post) {
+        // Génération du slug
+        if (empty($post->slug)) {
             $post->slug = Str::slug($post->title);
-        });
-    }
+        }
+
+        // FORCE le statut par défaut en minuscules
+        // Cela évite que PostgreSQL n'utilise sa valeur par défaut "Brouillion"
+        // qui fait planter la contrainte CHECK
+        if (empty($post->status)) {
+            $post->status = self::STATUS_BROUILLON;
+        }
+    });
+}
+
 
     // ================= Relations =================
 
@@ -94,13 +105,13 @@ return $this->hasMany(\App\Models\PostMedia::class)->orderBy('order');    }
 }
 
 
-    
+
 
     // Dans app/Models/Post.php
 
 public function reject($userId)
 {
-    
+
 
     $this->update([
         'status' => self::STATUS_BROUILLON,

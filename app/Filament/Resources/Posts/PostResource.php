@@ -64,6 +64,10 @@ class PostResource extends Resource
                 ->required()
                 ->live()
                 ->native(false),
+
+                //Status brouillon
+
+
         ]),
 
         // Image de couverture - MODIFICATION ICI

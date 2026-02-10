@@ -12,12 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('posts', function (Blueprint $table) {
-          if(!Schema::hasColumn('posts','validated_at')){
-           $table->timestamp('validated_at')->nullable();
-          }
-          if(!Schema::hasColumn('posts', 'validated_by')){
-           $table->foreignid('validate_by')->nullable()->constrained('users');
-          }
+            // Vérifie si la colonne n'existe pas avant de la créer
+            if (!Schema::hasColumn('posts', 'validated_at')) {
+                $table->timestamp('validated_at')->nullable();
+            }
+
+            // Vérifie si la colonne n'existe pas avant de la créer
+            // Correction du nom : validated_by (avec un 'd') pour rester cohérent
+            if (!Schema::hasColumn('posts', 'validated_by')) {
+                $table->foreignId('validated_by')
+                    ->nullable()
+                    ->constrained('users')
+                    ->nullOnDelete();
+            }
         });
     }
 
@@ -27,7 +34,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('posts', function (Blueprint $table) {
-            //
+            // Suppression des colonnes si on revient en arrière
+            $table->dropForeign(['validated_by']);
+            $table->dropColumn(['validated_at', 'validated_by']);
         });
     }
 };

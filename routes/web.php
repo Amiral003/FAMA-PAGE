@@ -4,40 +4,32 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\FileController;
 
-// Route::get('/', [PostController:: class, 'index']);
-// Route::get('/posts/{post}',[PostController::class, 'show']);
-// Route::get('/files/{post}',  [FileController:: class, 'show'])->name('files.show');
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/files/{post}', [FileController::class, 'show'])
-    ->name('files.show');
-Route::view('/{any}', 'front')->where('any', '.*');
+// 1. Routes de fichiers
+Route::get('/files/{post}', [FileController::class, 'show'])->name('files.show');
 
-
-
-// Route::get('/', function () {
-//     return view('home');
-// });
-
-// Route::get('/', function () {
-//     return view('front.home');
-// });
-
-// Route::get('/', function () {
-//     return view('front.about');
-// });
-
-//     Route::get('/', function () {
-//         return view('front.contact');
-//     });
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
+// 2. Gestion du conflit Jetstream / Filament
+// On redirige les anciennes routes Jetstream vers l'interface Filament
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        return redirect('/admin');
     })->name('dashboard');
 });
+
+// Force le login vers Filament
+Route::redirect('/login', '/admin/login')->name('login');
+
+// 3. Route d'accueil (Test ou Front)
 Route::get('/', function () {
-    return 'LARAVEL OK';
+    return view('front'); // Change en return 'LARAVEL OK'; si tu veux juste le texte
 });
+
+// 4. Capture du Front-end (SPA)
+// Le "where" empêche cette route d'intercepter les requêtes admin ou livewire
+Route::view('/{any}', 'front')
+    ->where('any', '^(?!admin|livewire).*$');
