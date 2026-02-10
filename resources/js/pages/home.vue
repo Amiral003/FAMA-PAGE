@@ -8,10 +8,31 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
+// --- BLOC SEO AJOUTÉ ---
 useHead({
-  title: 'Accueil | FAMa Officiel',
-  meta: [{ name: 'description', content: 'Portail officiel des Forces Armées Maliennes.' }]
+  title: 'Accueil | FAMa - Portail Officiel des Forces Armées Maliennes',
+  meta: [
+    // SEO Standard
+    { 
+      name: 'description', 
+      content: "Portail officiel des FAMa. Retrouvez les communiqués de l'État-Major, l'actualité de la défense et les rapports officiels sur la sécurité du Mali." 
+    },
+    { name: 'keywords', content: 'FAMa, Armée Malienne, Défense Mali, Sécurité Mali, Communiqués officiels' },
+    
+    // Réseaux Sociaux (Open Graph)
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://votre-site-fama.ml/' },
+    { property: 'og:title', content: 'FAMa - Engagement Sans Faille pour la Patrie' },
+    { property: 'og:description', content: 'Information vérifiée de l’État-Major Général des Armées du Mali.' },
+    { property: 'og:image', content: '/assets/images/hero.jpg' }, 
+
+    // Twitter
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'FAMa Officiel | Forces Armées Maliennes' },
+    { name: 'twitter:image', content: '/assets/images/hero.jpg' }
+  ]
 })
+// -----------------------
 
 const posts = ref([])
 const loading = ref(true)
@@ -20,7 +41,6 @@ const router = useRouter()
 onMounted(async () => {
   try {
     const res = await axios.get('/api/posts')
-    // On récupère les données brutes, le template gérera le slice(0, 5)
     posts.value = res.data.data
   } catch (e) {
     console.error("Erreur chargement posts:", e)
@@ -29,7 +49,6 @@ onMounted(async () => {
   }
 })
 
-// Gestion intelligente des images (Thumbnail pour PDF, Media[0] pour Articles)
 const getPostImage = (post) => {
   if (post.thumbnail) return `/storage/${post.thumbnail}`;
   if (post.media && post.media.length > 0) return `/storage/${post.media[0].file_path}`;
@@ -199,7 +218,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .card-content p { color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; }
 .card-footer-link { font-weight: 800; color: #1a241b; font-size: 0.85rem; display: flex; align-items: center; }
 
-/* CARTE 6 (APPEL À L'ACTION) */
+/* CARTE CTA */
 .cta-card {
   background: #1a241b !important;
   border: 2px dashed #FFD700 !important;
