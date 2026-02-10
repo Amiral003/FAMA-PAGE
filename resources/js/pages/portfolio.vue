@@ -13,9 +13,9 @@ import InputText from 'primevue/inputtext'
 useHead({
   title: 'Avis & Communiqués | FAMa - Portail Officiel',
   meta: [
-    { 
-      name: 'description', 
-      content: 'Consultez les archives officielles des FAMa : communiqués de presse, avis de recrutement et rapports de situation de l’État-Major Général des Armées du Mali.' 
+    {
+      name: 'description',
+      content: 'Consultez les archives officielles des FAMa : communiqués de presse, avis de recrutement et rapports de situation de l’État-Major Général des Armées du Mali.'
     },
     { property: 'og:title', content: 'Communiqués & Avis Officiels - FAMa' },
     { property: 'og:description', content: 'Accédez aux informations vérifiées et aux documents officiels des Forces Armées Maliennes.' },
@@ -203,9 +203,9 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 .search-hero { margin-bottom: 3rem; }
 .search-wrapper { position: relative; width: 100%; }
-.search-input { 
-    padding: 1rem 1rem 1rem 3rem !important; 
-    border-radius: 12px !important; 
+.search-input {
+    padding: 1rem 1rem 1rem 3rem !important;
+    border-radius: 12px !important;
     border: 1px solid #d1d5db !important;
 }
 

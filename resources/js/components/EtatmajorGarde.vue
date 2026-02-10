@@ -101,7 +101,8 @@ La garde nationale compte également un groupement de maintien de l’ordre (GMO
 }
 @media (max-width: 992px) {
   .main-layout { grid-template-columns: 1fr; }
-  .sidebar-column { display: none; }
+  .sidebar-column { display: none;
+  position: sticky;}
 }
 
 /* Style du contenu */
@@ -117,7 +118,7 @@ La garde nationale compte également un groupement de maintien de l’ordre (GMO
 .header-line { width: 60px; height: 5px; background: #FFD700; margin-bottom: 0px; } /* Ligne Jaune Or */
 
 .about-text { line-height: 1.8; color: #334155; font-size: 1.05rem;
-padding-inline-start: 01px;}
+}
 .lead { font-size: 1.25rem; color: #1a241b; margin-bottom: 30px; border-left: 4px solid #14B82C; padding-left: 15px; }
 
 .text-block { margin-bottom: 35px; }

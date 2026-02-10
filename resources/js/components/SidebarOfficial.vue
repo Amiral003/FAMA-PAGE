@@ -12,7 +12,7 @@ const today = new Date().toLocaleDateString('fr-FR', {
 
 <template>
   <aside class="official-sidebar">
-    
+
     <div class="sidebar-card alert-card">
       <div class="card-header">
         <span class="status-badge">
@@ -20,23 +20,23 @@ const today = new Date().toLocaleDateString('fr-FR', {
           SYSTÈME ACTIF
         </span>
       </div>
-      
+
       <div class="info-content">
         <p class="date-text">{{ today }}</p>
         <h3 class="title-gold">Signalement Citoyen</h3>
         <p class="description">
           Aidez les FAMa à assurer votre sécurité. Transmettez toute information suspecte de manière anonyme.
         </p>
-        
+
         <div class="action-stack">
-          <Button 
-            label="Envoyer un Signalement" 
-            icon="pi pi-shield" 
+          <Button
+            label="Envoyer un Signalement"
+            icon="pi pi-shield"
             class="w-full signal-btn"
           />
-          <Button 
-            label="Contacter la DIRPA" 
-            icon="pi pi-info-circle" 
+          <Button
+            label="Contacter la DIRPA"
+            icon="pi pi-info-circle"
             link
             class="w-full contact-link"
           />
