@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted} from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
@@ -8,23 +8,27 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
+import heroImg from '@/assets/images/hero.jpg'
+import famaImg from '@/assets/images/fam.png'
+import maliImg from '@/assets/images/fa.jpg'
+
 // --- BLOC SEO AJOUTÉ ---
 useHead({
   title: 'Accueil | FAMa - Portail Officiel des Forces Armées Maliennes',
   meta: [
     // SEO Standard
-    { 
-      name: 'description', 
-      content: "Portail officiel des FAMa. Retrouvez les communiqués de l'État-Major, l'actualité de la défense et les rapports officiels sur la sécurité du Mali." 
+    {
+      name: 'description',
+      content: "Portail officiel des FAMa. Retrouvez les communiqués de l'État-Major, l'actualité de la défense et les rapports officiels sur la sécurité du Mali."
     },
     { name: 'keywords', content: 'FAMa, Armée Malienne, Défense Mali, Sécurité Mali, Communiqués officiels' },
-    
+
     // Réseaux Sociaux (Open Graph)
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: 'https://votre-site-fama.ml/' },
     { property: 'og:title', content: 'FAMa - Engagement Sans Faille pour la Patrie' },
     { property: 'og:description', content: 'Information vérifiée de l’État-Major Général des Armées du Mali.' },
-    { property: 'og:image', content: '/assets/images/hero.jpg' }, 
+    { property: 'og:image', content: '/assets/images/hero.jpg' },
 
     // Twitter
     { name: 'twitter:card', content: 'summary_large_image' },
@@ -32,6 +36,16 @@ useHead({
     { name: 'twitter:image', content: '/assets/images/hero.jpg' }
   ]
 })
+// --- LOGIQUE DIAPORAMA ---
+const currentBgIndex = ref(0)
+const backgroundImages = [
+  heroImg,
+  famaImg,
+  maliImg,
+
+]
+// AJOUTE CETTE LIGNE ICI :
+let backgroundInterval = null
 // -----------------------
 
 const posts = ref([])
@@ -39,6 +53,19 @@ const loading = ref(true)
 const router = useRouter()
 
 onMounted(async () => {
+
+     // Préchargement des images pour éviter les flashs blancs
+  backgroundImages.forEach(src => {
+    const img = new Image()
+    img.src = src
+  })
+
+  // Changement d'image toutes les 10 secondes
+  backgroundInterval = setInterval(() => {
+  currentBgIndex.value = (currentBgIndex.value + 1) % backgroundImages.length
+}, 5000)
+
+
   try {
     const res = await axios.get('/api/posts')
     posts.value = res.data.data
@@ -47,6 +74,11 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+// Arrêter le timer si on change de page (très important)
+onUnmounted(() => {
+  if (backgroundInterval) clearInterval(backgroundInterval)
 })
 
 const getPostImage = (post) => {
@@ -61,6 +93,13 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 <template>
   <main class="home-page">
     <section class="hero-premium">
+         <div
+    v-for="(img, index) in backgroundImages"
+    :key="index"
+    class="hero-bg-layer"
+    :class="{ 'active': currentBgIndex === index }"
+    :style="{ backgroundImage: `url(${img})` }"
+  ></div>
       <div class="hero-overlay"></div>
       <div class="container hero-content">
         <div class="hero-text-box" data-aos="fade-up">
@@ -163,20 +202,39 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 /* HERO */
 .hero-premium {
-  position: relative;
-  min-height: 80vh;
-  background: url('@/assets/images/hero.jpg') center/cover no-repeat;
+   position: relative;
+  height: 80vh;
+  width: 100%;
+  overflow: hidden;
+  background: #1d261e;
   display: flex;
   align-items: center;
-  color: white;
+}
+/* Chaque calque d'image est identique et empilé */
+.hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  opacity: 0; /* Invisible par défaut */
+  transition: opacity 1.5s ease-in-out; /* Transition douce */
+  z-index: 0;
+}
+/* Seule l'image active est visible */
+.hero-bg-layer.active {
+  opacity: 1;
 }
 .hero-overlay {
   position: absolute;
+  z-index: 1;
   inset: 0;
-  background: linear-gradient(to right, #1a241b 40%, rgba(26, 36, 27, 0.4));
+  background: linear-gradient(to right,
+   #2e362f 15%,
+    rgba(30, 37, 31, 0.4));
 }
 .hero-content { position: relative; z-index: 10; }
-.hero-text-box h1 { font-size: 3.5rem; font-weight: 900; line-height: 1.1; text-transform: uppercase; }
+.hero-text-box h1 { font-size: 3.5rem; font-weight: 900; line-height: 1.1; text-transform: uppercase;color: #cbd5e1; }
 .hero-subtext { max-width: 600px; font-size: 1.2rem; color: #cbd5e1; margin: 20px 0 40px; border-left: 4px solid #FFD700; padding-left: 20px; }
 .custom-tag-official { background: #14B82C !important; color: white; font-weight: 800; border-radius: 4px; }
 .btn-fama-gold { background: #FFD700 !important; color: #1a241b !important; border: none !important; font-weight: 800 !important; }

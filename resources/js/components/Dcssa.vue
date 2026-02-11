@@ -15,7 +15,7 @@ import DcssaImage from '@/assets/images/dcssa.png'
           <div class="header-line"></div>
         </header>
         <article class="about-text">
-            <h2>D.C.S.S.A</h2>
+            <h2 class="center">D.C.S.S.A</h2>
             <div class="centre">
                 <img :src="DcssaImage" alt="Genie Militaire">
             </div>
@@ -30,7 +30,7 @@ import DcssaImage from '@/assets/images/dcssa.png'
 
   <h3>Missions et Activités clés</h3>
 
-  <p>
+
 
 <ul>
     <li> <strong>Création et évolution </strong>Bien que les forces armées aient été créées en 1960, la gouvernance centralisée du service de santé s'est consolidée au début des années 1960. Elle a évolué en regroupant
@@ -48,7 +48,7 @@ import DcssaImage from '@/assets/images/dcssa.png'
         </li>
 </ul>
     La DCSSA s'inscrit dans le cadre global du renforcement des FAMa, visant une meilleure prise en charge sanitaire de la troupe et des familles.
-  </p>
+
 
 </section>
 
@@ -96,6 +96,9 @@ import DcssaImage from '@/assets/images/dcssa.png'
   .main-layout { grid-template-columns: 1fr; }
   .sidebar-column { display: none; }
 }
+/* .center{
+    text-align: center;
+} */
 
 /* Style du contenu */
 .content-column {
