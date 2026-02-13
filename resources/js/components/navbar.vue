@@ -40,7 +40,7 @@ const aboutItem = { label: 'À propos', to: '/about' }
       <div class="nav-content">
         <div class="logo-box" @click="router.push('/')" style="cursor: pointer;">
           <span class="fama">FAM<span class="gold">a</span></span>
-          <span class="sub">ÉTAT-MAJOR GÉNÉRAL</span>
+          <span class="sub">Forces Armées Maliennes</span>
         </div>
 
         <ul class="nav-links">
