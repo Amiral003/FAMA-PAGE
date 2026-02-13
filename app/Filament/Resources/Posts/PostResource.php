@@ -34,89 +34,91 @@ class PostResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static ?string $recordTitleAttribute = 'title';
 
-    public static function form(Schema $schema): Schema
-{
-    return $schema->components([
-        // Section Titre et Slug
-        Grid::make(2)->schema([
+public static function form(Schema $schema): Schema
+    {
+        return $schema->components([
+            // 1. On commence par le Type et le Statut (Ligne du haut)
+            Grid::make(2)->schema([
+                Select::make('type')
+                    ->label('Type de publication')
+                    ->options([
+                        'flash' => 'Flash Info / Communiqué',
+                        'article' => 'Actualité / Article',
+                        'pdf' => 'Document Officiel / PDF',
+                    ])
+                    ->required()
+                    ->live()
+                    ->native(false),
+
+                
+            ]),
+
+            // 2. Le Titre allongé sur toute la largeur (Full Width)
             TextInput::make('title')
                 ->label('Titre du post')
+                ->placeholder('Entrez le titre complet ici...')
                 ->required()
                 ->live(onBlur: true)
+                ->columnSpanFull() // Étire le champ sur toute la ligne
                 ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
+            // 3. Le Slug juste en dessous, un peu plus discret
             TextInput::make('slug')
-                ->label('Slug (URL)')
+                ->label('Lien URL (Slug)')
                 ->disabled()
                 ->dehydrated()
-                ->required(),
-        ]),
-
-        // Type et Statut
-        Grid::make(2)->schema([
-            Select::make('type')
-                ->label('Type de publication')
-                ->options([
-                    'flash' => 'Flash Info / Communiqué',
-                    'article' => 'Actualité / Article',
-                    'pdf' => 'Document Officiel / PDF',
-                ])
                 ->required()
-                ->live()
-                ->native(false),
+                ->columnSpanFull(),
 
-                //Status brouillon
+            // 4. Image de couverture (Toujours visible pour la cohérence du front-end)
+            FileUpload::make('thumbnail')
+                ->label("Image de couverture principale")
+                ->image()
+                ->disk('public')
+                ->directory('thumbnails')
+                ->imageEditor()
+                ->required() // Recommandé pour le design du site
+                ->columnSpanFull(),
 
+            // 5. Contenu texte
+            Textarea::make('content')
+                ->label('Corps du communiqué / Description')
+                ->rows(8)
+                ->required()
+                ->columnSpanFull(),
 
-        ]),
+            // 6. Section PDF (Conditionnelle)
+            FileUpload::make('pdf_path')
+                ->label('Fichier PDF Officiel')
+                ->disk('public')
+                ->directory('documents')
+                ->acceptedFileTypes(['application/pdf'])
+                ->visible(fn ($get) => $get('type') === 'pdf')
+                ->required(fn ($get) => $get('type') === 'pdf')
+                ->columnSpanFull(),
 
-        // Image de couverture - MODIFICATION ICI
-        FileUpload::make('thumbnail')
-            ->label("Image de couverture (Aperçu)")
-            ->image()
-            ->disk('public')
-            ->directory('thumbnails')
-            ->visible(fn ($get) => $get('type') === 'pdf') // Apparaît seulement si PDF est choisi
-            ->required(fn ($get) => $get('type') === 'pdf')
-            ->columnSpanFull(),
+            // 7. Galerie photos (Masquée si c'est uniquement un PDF)
+            Repeater::make('media')
+                ->label('Galerie photos additionnelles')
+                ->relationship('media')
+                ->schema([
+                    FileUpload::make('file_path')
+                        ->label('Image')
+                        ->image()
+                        ->disk('public')
+                        ->directory('posts')
+                        ->required(),
+                ])
+                ->collapsible()
+                ->grid(3) // Organise les miniatures en grille de 3
+                ->columnSpanFull()
+                ->hidden(fn ($get) => $get('type') === 'pdf'),
 
-        // Contenu texte
-        Textarea::make('content')
-            ->label('Contenu ou Description')
-            ->rows(6)
-            ->columnSpanFull(),
-
-        // Le fichier PDF
-        FileUpload::make('pdf_path')
-            ->label('Fichier PDF Officiel')
-            ->disk('public')
-            ->directory('documents')
-            ->acceptedFileTypes(['application/pdf'])
-            ->visible(fn ($get) => $get('type') === 'pdf')
-            ->required(fn ($get) => $get('type') === 'pdf')
-            ->columnSpanFull(),
-
-        // Galerie photos
-        Repeater::make('media')
-            ->label('Galerie photos additionnelles')
-            ->relationship('media')
-            ->schema([
-                FileUpload::make('file_path')
-                    ->label('Image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('posts')
-                    ->required(),
-            ])
-            ->collapsible()
-            ->columnSpanFull()
-            ->hidden(fn ($get) => $get('type') === 'pdf'),
-
-        Hidden::make('user_id')
-            ->default(fn () => Filament::auth()->id())
-            ->dehydrated(),
-    ]);
-}
+            Hidden::make('user_id')
+                ->default(fn () => Filament::auth()->id())
+                ->dehydrated(),
+        ]);
+    }
 
     public static function table(Table $table): Table
     {

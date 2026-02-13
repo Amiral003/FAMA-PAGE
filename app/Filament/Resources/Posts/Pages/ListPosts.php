@@ -5,11 +5,9 @@ namespace App\Filament\Resources\Posts\Pages;
 use App\Filament\Resources\Posts\PostResource;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\CreateAction;
-use Filament\Actions\Action;
+use Filament\Actions\Action; // On utilise l'action de table ici
 use Illuminate\Support\Facades\Auth;
-
 use App\Models\Post;
-
 
 class ListPosts extends ListRecords
 {
@@ -19,24 +17,22 @@ class ListPosts extends ListRecords
     {
         return [
             CreateAction::make()
-                ->visible(fn () => Auth::user()->can('create', \App\Models\Post::class)),
+                ->visible(fn () => Auth::user()->can('create', Post::class)),
         ];
     }
 
+    // Ta méthode personnalisée pour les actions de ligne
     protected function getTableActions(): array
     {
         return [
-
-            // 🔵 SOUMETTRE
-            // Action::make('submit')
-            //     ->label('Soumettre')
-            //     ->icon('heroicon-o-paper-airplane')
-            //     ->color('warning')
-            //     ->requiresConfirmation()
-            //     ->visible(fn ($record) => Auth::user()->can('submit', $record))
-            //      ->action(function (Post $record){
-            //         $record->submit(Auth::id());
-            //     }),
+            // 👁️ PRÉVISUALISATION DANS UNE MODALE
+        Action::make('preview')
+    ->icon('heroicon-o-eye')
+    ->color('gray') // Couleur plus sobre pour l'œil
+    ->modalWidth('4xl') // On l'élargit pour que ça ressemble à un article
+    ->modalContent(fn (Post $record) => view('filament.components.post-preview', ['post' => $record]))
+    ->modalSubmitAction(false)
+    ->modalCancelActionLabel('Fermer'),
 
             // 🟢 APPROUVER
             Action::make('approve')
@@ -44,8 +40,8 @@ class ListPosts extends ListRecords
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn ($record) => Auth::user()->can('approve', $record))
-                ->action(function (Post $record){
+                ->visible(fn (Post $record) => Auth::user()->can('approve', $record))
+                ->action(function (Post $record) {
                     $record->approve(Auth::id());
                 }),
 
@@ -55,8 +51,8 @@ class ListPosts extends ListRecords
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->visible(fn ($record) => Auth::user()->can('reject', $record))
-               ->action(function (Post $record){
+                ->visible(fn (Post $record) => Auth::user()->can('reject', $record))
+                ->action(function (Post $record) {
                     $record->reject(Auth::id());
                 }),
         ];

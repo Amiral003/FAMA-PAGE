@@ -30,6 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('FAMA Officiel')
             ->favicon(asset('favicon.png'))
             ->brandLogo(asset('images/logo-fama.png'))
+            ->brandLogoHeight('5rem')
             ->renderHook(
             'panels::footer.before',
             fn () => null)

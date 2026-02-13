@@ -1,11 +1,14 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import axios from 'axios'
+
+// --- LOGIQUE DATE & COMPOSANTS ---
+import { formatDistanceToNow } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
-// Import PrimeVue 4
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import Skeleton from 'primevue/skeleton'
@@ -15,24 +18,17 @@ const route = useRoute()
 const router = useRouter()
 const post = ref(null)
 const loading = ref(true)
+const baseUrl = window.location.origin
 
-// SEO DYNAMIQUE
+// --- SEO DYNAMIQUE ---
 useHead({
-  title: () => post.value ? `${post.value.title} | FAMa` : 'Chargement... | FAMa',
+  title: computed(() => post.value ? `${post.value.title} | FAMa` : 'Chargement...'),
   meta: [
-    {
-      name: 'description',
-      content: () => post.value ? post.value.content?.substring(0, 160) : 'Actualité des Forces Armées Maliennes.'
-    },
-    // Open Graph (Facebook, WhatsApp)
-    { property: 'og:title', content: () => post.value?.title },
-    { property: 'og:description', content: () => post.value?.content?.substring(0, 160) },
-    { property: 'og:image', content: () => post.value?.thumbnail ? `/storage/${post.value.thumbnail}` : '/assets/images/hero.jpg' },
+    { name: 'description', content: computed(() => post.value?.content?.substring(0, 160)) },
+    { property: 'og:title', content: computed(() => post.value?.title) },
+    { property: 'og:image', content: computed(() => post.value?.thumbnail ? `${baseUrl}/storage/${post.value.thumbnail}` : `${baseUrl}/assets/images/hero.jpg`) },
     { property: 'og:type', content: 'article' },
-    // Twitter
-    { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: () => post.value?.title },
-    { name: 'twitter:image', content: () => post.value?.thumbnail ? `/storage/${post.value.thumbnail}` : '/assets/images/hero.jpg' }
+    { name: 'twitter:card', content: 'summary_large_image' }
   ]
 })
 
@@ -48,15 +44,20 @@ onMounted(async () => {
   }
 })
 
+// --- FONCTIONS ---
+const getRelativeDate = (date) => {
+  if (!date) return ''
+  try {
+    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
+  } catch (e) { return "Date inconnue" }
+}
+
 const getShareLink = (platform) => {
-  if (typeof window === 'undefined' || !post.value) return '#'
   const shareUrl = encodeURIComponent(window.location.href)
-  const shareTitle = encodeURIComponent(`FAMa : ${post.value.title}`)
-  const links = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
-    whatsapp: `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`
-  }
-  return links[platform]
+  const shareTitle = encodeURIComponent(`FAMa : ${post.value?.title}`)
+  return platform === 'facebook' 
+    ? `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`
+    : `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`
 }
 
 const openPdf = (path) => {
@@ -67,38 +68,33 @@ const openPdf = (path) => {
 <template>
   <div class="page-background">
     <main class="main-layout container" v-if="!loading && post">
-
       <div class="content-card">
-        <Button
-          icon="pi pi-arrow-left"
-          label="Retour aux communiqués"
-          link
-          class="p-0 mb-5 text-fama"
-          @click="router.back()"
+        <Button 
+          icon="pi pi-arrow-left" 
+          label="Retour aux communiqués" 
+          link 
+          class="back-btn" 
+          @click="router.back()" 
         />
 
         <header class="post-header">
           <div class="post-meta">
-            <Tag
-              :value="post.type === 'pdf' ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ'"
-              :severity="post.type === 'pdf' ? 'danger' : 'success'"
+            <Tag 
+              :value="post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ'" 
+              :severity="post.pdf_path ? 'danger' : 'success'" 
+              class="fama-tag"
             />
             <span class="date">
-              <i class="pi pi-calendar mr-2"></i>
-              {{ new Date(post.published_at || post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+              <i class="pi pi-clock mr-2"></i>
+              {{ getRelativeDate(post.published_at || post.created_at) }}
             </span>
           </div>
           <h1 class="post-title">{{ post.title }}</h1>
         </header>
 
-        <section class="post-main-image" v-if="post.thumbnail">
-          <Image
-            :src="`/storage/${post.thumbnail}`"
-            alt="Image à la une"
-            preview
-            imageClass="main-img-fluid"
-          />
-        </section>
+        <div class="post-main-image" v-if="post.thumbnail">
+          <Image :src="`/storage/${post.thumbnail}`" preview imageClass="main-img-fluid" />
+        </div>
 
         <div class="share-bar">
           <span class="share-label">Partager :</span>
@@ -113,14 +109,9 @@ const openPdf = (path) => {
             {{ post.content }}
           </div>
 
-          <div v-if="post.media && post.media.length" class="post-gallery">
+          <div v-if="post.media?.length" class="post-gallery">
             <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
-                <Image
-                    :src="`/storage/${item.file_path}`"
-                    preview
-                    alt="Galerie FAMa"
-                    imageClass="gallery-img-styled"
-                />
+              <Image :src="`/storage/${item.file_path}`" preview imageClass="gallery-img" />
             </div>
           </div>
 
@@ -130,17 +121,23 @@ const openPdf = (path) => {
             <p class="author-sub">Direction de l'Information et des Relations Publiques des Armées</p>
           </div>
 
-          <div v-if="post.pdf_path" class="pdf-section">
-            <div class="pdf-card">
-              <div class="pdf-icon"><i class="pi pi-file-pdf"></i></div>
-              <div class="pdf-info">
-                <h3>Document source certifié</h3>
-                <p>Consultez la version officielle signée au format PDF.</p>
+          <div v-if="post.pdf_path" class="pdf-download-wrapper">
+            <div class="pdf-minimal-bar">
+              <div class="pdf-label">
+                <i class="pi pi-file-pdf"></i>
+                <span>Communiqué officiel (PDF)</span>
               </div>
-              <div class="pdf-actions">
-                <Button label="Voir le PDF" icon="pi pi-eye" outlined class="p-button-plain" @click="openPdf(post.pdf_path)" />
-                <a :href="`/storage/${post.pdf_path}`" download class="btn-download-fama">
-                  <i class="pi pi-download mr-2"></i> Télécharger
+              <div class="pdf-buttons">
+                <Button 
+                  label="Consulter" 
+                  icon="pi pi-eye" 
+                  text 
+                  class="p-button-sm btn-view" 
+                  @click="openPdf(post.pdf_path)" 
+                />
+                <a :href="`/storage/${post.pdf_path}`" download class="btn-download-fama-mini">
+                  <i class="pi pi-download"></i>
+                  <span>Télécharger</span>
                 </a>
               </div>
             </div>
@@ -155,93 +152,90 @@ const openPdf = (path) => {
 
     <div v-else-if="loading" class="container main-layout mt-5">
       <div class="content-card">
-        <Skeleton width="20%" height="2rem" class="mb-4"></Skeleton>
-        <Skeleton width="100%" height="30rem" class="mb-4"></Skeleton>
-        <Skeleton width="80%" height="1.5rem" class="mb-2"></Skeleton>
-        <Skeleton width="60%" height="1.5rem"></Skeleton>
+        <Skeleton width="150px" height="2rem" class="mb-5"></Skeleton>
+        <Skeleton width="100%" height="400px" class="mb-5"></Skeleton>
+        <Skeleton width="80%" height="2rem" class="mb-3"></Skeleton>
+        <Skeleton width="60%" height="2rem"></Skeleton>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Fond et Container */
-.page-background { background: #f1f5f9; min-height: 100vh; padding: 20px 0; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+.page-background { background: #f8fafc; min-height: 100vh; padding: 40px 0; }
+.container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+.main-layout { display: grid; grid-template-columns: 1fr 340px; gap: 40px; }
+.content-card { background: white; padding: 50px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
 
-/* Layout Grid */
-.main-layout { display: grid; grid-template-columns: 1fr 320px; gap: 30px; align-items: start; }
+/* Boutons & Meta */
+.back-btn { color: #14B82C !important; padding: 0 !important; font-weight: 700; transition: 0.2s; margin-bottom: 20px; }
+.back-btn:hover { transform: translateX(-5px); }
+.post-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: #0f172a; line-height: 1.1; margin: 20px 0; letter-spacing: -1px; }
+.post-meta { display: flex; gap: 20px; align-items: center; color: #64748b; font-size: 0.95rem; }
 
-/* Content Card */
-.content-card {
-  background: white;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+/* Media */
+.post-main-image { margin: 40px -50px; overflow: hidden; }
+:deep(.main-img-fluid) { width: 100%; max-height: 650px; object-fit: cover; }
+.post-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 40px 0; }
+.gallery-item { border-radius: 12px; overflow: hidden; height: 200px; }
+:deep(.gallery-img) { width: 100%; height: 100%; object-fit: cover; }
+
+/* Partage */
+.share-bar { display: flex; align-items: center; gap: 15px; background: #f1f5f9; padding: 10px 20px; border-radius: 50px; width: fit-content; margin-bottom: 40px; }
+.s-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s; }
+.fb { background: #1877f2; } .wa { background: #22c55e; }
+
+/* Texte & Signature */
+.text-content { font-size: 1.25rem; line-height: 1.9; color: #334155; white-space: pre-wrap; margin-bottom: 50px; }
+.post-signature-minimal { border-top: 2px solid #f1f5f9; padding-top: 30px; margin-top: 60px; text-align: right; }
+.signature-line { width: 60px; height: 4px; background: #14B82C; margin-left: auto; margin-bottom: 15px; }
+.author-name-bottom { font-size: 1.3rem; font-weight: 900; color: #1e293b; text-transform: uppercase; margin: 0; }
+
+/* STYLE PDF MINIMALISTE */
+.pdf-download-wrapper {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px dashed #e2e8f0;
 }
-
-.text-fama { color: #14B82C !important; font-weight: 700; }
-.post-title { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 900; color: #1a202c; line-height: 1.2; margin-top: 15px; }
-.post-meta { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; color: #64748b; font-weight: 600; }
-
-/* SHARE BAR */
-.share-bar {
-  display: flex; align-items: center; gap: 15px;
-  margin: 30px 0; padding: 12px 20px;
-  background: #f8fafc; border-radius: 50px; width: fit-content;
+.pdf-minimal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid #edf2f7;
 }
-.share-buttons { display: flex; gap: 10px; }
-.s-btn { 
-    width: 35px; height: 35px; border-radius: 50%; display: flex; 
-    align-items: center; justify-content: center; color: white; text-decoration: none;
+.pdf-label { display: flex; align-items: center; gap: 12px; color: #475569; font-weight: 600; font-size: 0.95rem; }
+.pdf-label i { color: #ef4444; font-size: 1.2rem; }
+.pdf-buttons { display: flex; align-items: center; gap: 10px; }
+.btn-view { color: #64748b !important; }
+.btn-download-fama-mini {
+  background: #14B82C;
+  color: white;
+  padding: 7px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
 }
-.fb { background: #1877f2; }
-.wa { background: #25d366; }
+.btn-download-fama-mini:hover { background: #119e25; transform: translateY(-1px); }
 
-/* IMAGES */
-.post-main-image { margin: 30px -40px; }
-:deep(.main-img-fluid) { width: 100%; max-height: 600px; object-fit: cover; display: block; }
+/* Sidebar & Mobile */
+.sidebar-column { position: sticky; top: 100px; height: fit-content; }
 
-.post-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
-    margin-top: 40px;
+@media (max-width: 1100px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .sidebar-column { display: none; }
 }
-.gallery-item { overflow: hidden; border-radius: 12px; height: 200px; border: 1px solid #eee; }
-:deep(.gallery-img-styled) { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-
-/* TEXTE */
-.text-content { font-size: 1.15rem; line-height: 1.8; color: #334155; white-space: pre-wrap; margin-bottom: 40px; }
-
-/* SIGNATURE */
-.post-signature-minimal { margin: 40px 0; text-align: right; }
-.signature-line { width: 80px; height: 4px; background: #14B82C; margin-left: auto; margin-bottom: 10px; }
-.author-name-bottom { font-size: 1.2rem; font-weight: 800; text-transform: uppercase; }
-.author-sub { font-size: 0.9rem; color: #64748b; }
-
-/* PDF SECTION */
-.pdf-section { background: #1e293b; color: white; padding: 30px; border-radius: 16px; margin-top: 50px; }
-.pdf-card { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-.pdf-icon { font-size: 2.5rem; color: #ef4444; }
-.pdf-info h3 { margin: 0; font-size: 1.2rem; color: #FFD700; }
-.pdf-actions { display: flex; gap: 15px; margin-left: auto; }
-
-.btn-download-fama { 
-    background: #14B82C; color: white; padding: 10px 20px; 
-    border-radius: 8px; text-decoration: none; font-weight: 700;
-}
-
-.sidebar-column { position: sticky; top: 20px; }
-
-@media (max-width: 1024px) {
-    .main-layout { grid-template-columns: 1fr; }
-    .sidebar-column { display: none; }
-}
-
 @media (max-width: 768px) {
-    .content-card { padding: 25px; }
-    .post-main-image { margin: 20px -25px; }
-    .pdf-actions { width: 100%; flex-direction: column; }
+  .content-card { padding: 30px 20px; }
+  .post-main-image { margin: 30px -20px; }
+  .pdf-minimal-bar { flex-direction: column; gap: 15px; align-items: flex-start; }
+  .pdf-buttons { width: 100%; justify-content: space-between; }
 }
 </style>

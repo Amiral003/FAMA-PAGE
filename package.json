@@ -23,6 +23,7 @@
         "@primevue/themes": "^4.5.4",
         "@vueuse/head": "^2.0.0",
         "aos": "^2.3.4",
+        "date-fns": "^4.1.0",
         "primeicons": "^7.0.0",
         "primevue": "^4.5.4",
         "typed.js": "^3.0.0",

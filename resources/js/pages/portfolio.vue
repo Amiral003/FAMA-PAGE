@@ -3,12 +3,32 @@ import { useHead } from '@vueuse/head'
 import { useRouter } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+
+// --- IMPORT POUR LA DATE RELATIVE ---
+import { formatDistanceToNow } from 'date-fns'
+import { fr } from 'date-fns/locale'
+
+// --- IMPORTS DES COMPOSANTS ---
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
- import InputText from 'primevue/inputtext'
+import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
+import Tag from 'primevue/tag'
+import Skeleton from 'primevue/skeleton'
+
+// --- CONFIGURATION SEO ---
+const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
 useHead({
   title: 'Avis & Communiqués | FAMa',
-  meta: [{ name: 'description', content: 'Fil d’actualité officiel des FAMa.' }],
+  meta: [
+    { name: 'description', content: 'Fil d’actualité officiel des Forces Armées Maliennes (FAMa).' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: 'Avis & Communiqués Officiels | FAMa' },
+    { property: 'og:description', content: 'Accédez aux derniers communiqués de presse et documents certifiés des FAMa.' },
+    { property: 'og:image', content: `${baseUrl}/assets/images/hero.jpg` },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'Avis & Communiqués | FAMa' }
+  ],
 })
 
 const posts = ref([])
@@ -27,10 +47,19 @@ onMounted(async () => {
   }
 })
 
-// Fonctions utilitaires
+// --- LOGIQUE DATE RELATIVE ---
+const getRelativeDate = (date) => {
+  if (!date) return ''
+  try {
+    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
+  } catch (e) {
+    return "Date inconnue"
+  }
+}
+
 const getPostImage = (post) => {
   if (post.thumbnail) return `/storage/${post.thumbnail}`;
-  if (post.media && post.media.length > 0) return `/storage/${post.media[0].file_path}`;
+  if (post.media?.length > 0) return `/storage/${post.media[0].file_path}`;
   return null;
 }
 
@@ -38,29 +67,26 @@ const downloadPDF = (path) => {
   if (!path) return;
   const link = document.createElement('a');
   link.href = `/storage/${path}`;
-  link.download = '';
+  link.setAttribute('download', 'communique-fama.pdf');
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
+  link.remove();
 };
 
 const getShareLink = (platform, post) => {
-  if (typeof window === 'undefined') return '#';
-  const url = window.location.origin + '/posts/' + post.slug;
-  const text = encodeURIComponent(`FAMa : ${post.title}`);
-  const links = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
-    whatsapp: `https://api.whatsapp.com/send?text=${text}%20${url}`
-  };
-  return links[platform];
+  const url = encodeURIComponent(`${baseUrl}/posts/${post.slug}`);
+  const text = encodeURIComponent(`FAMa Officiel : ${post.title}`);
+  return platform === 'facebook' 
+    ? `https://www.facebook.com/sharer/sharer.php?u=${url}`
+    : `https://api.whatsapp.com/send?text=${text}%20${url}`;
 }
 
 const filteredPosts = computed(() => {
-  if (!search.value) return posts.value
-  const q = search.value.toLowerCase()
-  return posts.value.filter(post =>
-    (post.title?.toLowerCase().includes(q) || post.content?.toLowerCase().includes(q))
-  )
+  const q = search.value.toLowerCase().trim();
+  if (!q) return posts.value;
+  return posts.value.filter(post => 
+    post.title?.toLowerCase().includes(q) || post.content?.toLowerCase().includes(q)
+  );
 })
 
 const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3))
@@ -68,39 +94,33 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 <template>
   <div class="portfolio-container">
-    <div class="main-layout container">
-
+    <div class="container main-layout">
+      
       <section class="feed-column">
         <header class="header-section">
-            <div class="title-wrapper">
-                  <h1 class="page-title">Communiqués & Avis Officiels
-
-                  </h1>
-            </div>
-
-          <div class="search-hero">
-            <div class="p-input-icon-left search-wrapper">
-              <i class="pi pi-search"></i>
-              <InputText
-                v-model="search"
-                placeholder="Rechercher dans les archives officielles..."
-                class="w-full search-input"
-              />
-            </div>
+          <h1 class="page-title">Communiqués & Avis Officiels</h1>
+          
+          <div class="search-wrapper">
+            <i class="pi pi-search"></i>
+            <InputText
+              v-model="search"
+              placeholder="Rechercher un communiqué ou un mot-clé..."
+              class="search-input"
+            />
           </div>
         </header>
 
-        <div v-if="loading">
-          <div v-for="i in 2" :key="i" class="skeleton-card">
-            <Skeleton width="30%" height="1.5rem" class="mb-4"></Skeleton>
-            <Skeleton width="100%" height="250px" class="mb-4"></Skeleton>
-            <Skeleton width="80%" height="1rem" class="mb-2"></Skeleton>
-            <Skeleton width="60%" height="1rem"></Skeleton>
+        <div v-if="loading" class="loading-grid">
+          <div v-for="i in 3" :key="i" class="news-card skeleton">
+            <Skeleton width="40%" height="1.2rem" class="mb-4"></Skeleton>
+            <Skeleton width="100%" height="200px" class="mb-4"></Skeleton>
+            <Skeleton width="90%" class="mb-2"></Skeleton>
+            <Skeleton width="70%"></Skeleton>
           </div>
         </div>
 
         <div v-else>
-          <div v-if="filteredPosts.length > 0">
+          <TransitionGroup name="list" tag="div" v-if="filteredPosts.length > 0">
             <article
               v-for="post in filteredPosts"
               :key="post.id"
@@ -108,64 +128,41 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
               @click="router.push(`/posts/${post.slug}`)"
             >
               <div class="card-meta">
-                <Tag
-                  :value="post.type || 'OFFICIEL'"
-                  :severity="post.type === 'pdf' ? 'danger' : 'info'"
-                />
+                <Tag :value="post.pdf_path ? 'PDF OFFICIEL' : 'INFO'" :severity="post.pdf_path ? 'danger' : 'success'" />
                 <span class="date-text">
-                  <i class="pi pi-calendar mr-1"></i>
-                  {{ new Date(post.published_at || post.created_at).toLocaleDateString('fr-FR') }}
+                  <i class="pi pi-clock mr-1"></i>
+                  {{ getRelativeDate(post.published_at || post.created_at) }}
                 </span>
               </div>
 
               <h2 class="card-title">{{ post.title }}</h2>
 
               <div class="card-media" v-if="getPostImage(post) || post.pdf_path">
-                <img
-                  v-if="getPostImage(post)"
-                  :src="getPostImage(post)"
-                  class="featured-img"
-                  alt="Actualité FAMa"
-                />
+                <img v-if="getPostImage(post)" :src="getPostImage(post)" class="featured-img" loading="lazy" />
                 <div v-else-if="post.pdf_path" class="pdf-strip">
                   <i class="pi pi-file-pdf"></i>
-                  <span>DOCUMENT OFFICIEL DISPONIBLE</span>
+                  <span>DOCUMENT PDF DISPONIBLE</span>
                 </div>
               </div>
 
-              <p class="card-excerpt">{{ post.content?.substring(0, 200) }}...</p>
+              <p class="card-excerpt">{{ post.content?.substring(0, 180) }}...</p>
 
               <div class="card-footer" @click.stop>
                 <div class="action-btns">
-                  <Button
-                    label="Consulter l'article"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
-                    text
-                    class="p-button-success"
-                    @click="router.push(`/posts/${post.slug}`)"
-                  />
-                  <Button
-                    v-if="post.pdf_path"
-                    icon="pi pi-download"
-                    label="Télécharger PDF"
-                    severity="secondary"
-                    outlined
-                    size="small"
-                    @click="downloadPDF(post.pdf_path)"
-                  />
+                  <Button label="Consulter" icon="pi pi-chevron-right" iconPos="right" text @click="router.push(`/posts/${post.slug}`)" />
+                  <Button v-if="post.pdf_path" icon="pi pi-download" severity="secondary" outlined size="small" @click="downloadPDF(post.pdf_path)" />
                 </div>
                 <div class="social-share">
-                  <a :href="getShareLink('facebook', post)" target="_blank" title="Partager sur Facebook"><i class="pi pi-facebook"></i></a>
-                  <a :href="getShareLink('whatsapp', post)" target="_blank" title="Partager sur WhatsApp"><i class="pi pi-whatsapp"></i></a>
+                  <a :href="getShareLink('facebook', post)" target="_blank" class="s-fb" title="Partager sur Facebook"><i class="pi pi-facebook"></i></a>
+                  <a :href="getShareLink('whatsapp', post)" target="_blank" class="s-wa" title="Partager sur WhatsApp"><i class="pi pi-whatsapp"></i></a>
                 </div>
               </div>
             </article>
-          </div>
+          </TransitionGroup>
 
           <div v-else class="empty-state">
-            <i class="pi pi-info-circle"></i>
-            <p>Aucun résultat pour cette recherche.</p>
+            <i class="pi pi-search-minus"></i>
+            <p>Aucun communiqué trouvé pour "{{ search }}".</p>
           </div>
         </div>
       </section>
@@ -179,276 +176,67 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </template>
 
 <style scoped>
-.portfolio-container {
-  background: #f4f7f6;
-  min-height: 100vh;
-  padding-bottom: 50px;
-}
+/* TA STRUCTURE ORIGINALE PRÉSERVÉE */
+.portfolio-container { background: #f8fafc; min-height: 100vh; padding: 40px 0; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.main-layout { display: flex; gap: 40px; align-items: flex-start; }
 
-/* LAYOUT */
-.main-layout {
-    display: flex;
-     gap: 40px;
-      margin-top: 30px;
-    align-items: flex-start;
-}
+.feed-column { flex: 1; min-width: 0; }
+.sidebar-column { width: 320px; position: sticky; top: 100px; }
 
-    .feed-column{
-        flex: 1  auto;
-        min-width: 0;
-    }
-
-/* HEADER & SEARCH */
 .header-section { margin-bottom: 40px; }
-.page-title { font-size: 2.2rem; font-weight: 800; color: #1a2421; margin-bottom: 25px; }
-.search-hero {
-   background: transparent;
-  padding: 0px;
-  border-radius: 20px;
-  box-shadow:none ;
-  max-width: 900px;
-  margin: 0 auto 3rem;}
+.page-title { font-size: 2.2rem; font-weight: 900; color: #1e293b; margin-bottom: 25px; }
 
-/* En-tête de section */
-.header-section { margin-bottom: 30px; }
-h1 { font-size: 2rem; font-weight: 800; color: #1a1c1e; margin-bottom: 20px; }
-
-.search-bar {
-  width: 100%;
-  padding: 14px 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 1rem;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-  transition: border-color 0.3s;
-}
-.search-bar:focus { outline: none; border-color: #ce1126; }
-
-/* ====== FIX BARRE DE RECHERCHE PRIMEVUE ====== */
-.search-wrapper {
-  position: relative;
-  width: 100%;
+.search-wrapper { position: relative; max-width: 600px; }
+.search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; z-index: 1; }
+.search-input { 
+  width: 100%; 
+  padding: 12px 12px 12px 45px !important; 
+  border-radius: 12px !important; 
+  border: 1px solid #e2e8f0 !important; 
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
 }
 
-.search-wrapper .p-inputtext {
-  width: 100%;
-  height: 52px;
-  padding-left: 42px;   /* espace pour l’icône */
-  padding-right: 16px;
-  border-radius: 30px;
-  border: 1px solid #e5e7eb;
-  font-size: 1rem;
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  display: block;
-}
-
-/* Icône recherche */
-.search-wrapper .pi-search {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6b7280;
-  z-index: 2;
-}
-
-/* Focus propre */
-.search-wrapper .p-inputtext:focus {
-  outline: none;
-  border-color: #14b82c;
-  box-shadow: 0 0 0 3px rgba(20, 184, 44, 0.15);
-}
-
-/* --- DESIGN DES POSTS (CARTES) --- */
-.news-card {
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  margin-bottom: 30px; /* C'est ici qu'on crée l'espace entre les posts */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.news-card { 
+  background: white; border-radius: 16px; padding: 25px; margin-bottom: 30px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s ease; border: 1px solid #f1f5f9;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid rgba(0,0,0,0.03);
 }
-.news-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+.news-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); border-color: #14b82c; }
 
-.card-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.date-text { font-size: 0.85rem; color: #718096; font-weight: 500; }
+.card-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.85rem; }
+.date-text { color: #64748b; font-weight: 600; }
 
-.card-title { font-size: 1.7rem; font-weight: 900; color: #1a202c; line-height: 1.3; margin-bottom: 20px; }
+.card-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-bottom: 15px; line-height: 1.3; }
 
-.card-media { border-radius: 15px; overflow: hidden; margin-bottom: 25px; background: #f8fafc; border: 1px solid #f1f5f9; }
-.featured-img { width: 100%; max-height: 480px; object-fit: cover; display: block; }
+.card-media { border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #f1f5f9; }
+.featured-img { width: 100%; height: 350px; object-fit: cover; }
 
-.pdf-strip {
-  padding: 40px; text-align: center; color: #2d3748; font-weight: 700;
-  display: flex; flex-direction: column; gap: 10px; background: #ebf8ff;
+.pdf-strip { padding: 40px; background: #fef2f2; color: #991b1b; text-align: center; display: flex; flex-direction: column; gap: 10px; font-weight: 700; }
+.pdf-strip i { font-size: 2rem; }
+
+.card-excerpt { color: #475569; line-height: 1.7; margin-bottom: 25px; }
+
+.card-footer { display: flex; justify-content: space-between; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+.action-btns { display: flex; gap: 10px; }
+
+.social-share { display: flex; gap: 8px; }
+.social-share a { 
+  width: 36px; height: 36px; border-radius: 50%; display: flex; 
+  align-items: center; justify-content: center; color: white; transition: 0.2s;
 }
-.pdf-strip i { font-size: 2.5rem; color: #e53e3e; }
-
-.card-excerpt { font-size: 1.05rem; color: #4a5568; line-height: 1.8; margin-bottom: 30px; }
-
-.card-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  padding-top: 20px; border-top: 1px solid #f1f5f9;
-}
-
-h2 {
-  margin: 10px 0;
-  font-size: 1.6rem;
-  line-height: 1.3;
-  color: #111;
-  font-weight: 700;
-}
-
-.post-meta {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* Media Box */
-.media-box {
-  margin: 20px 0;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #f3f4f6;
-}
-
-.post-img {
-  width: 100%;
-  max-height: 450px;
-  object-fit: cover;
-  display: block;
-}
-
-.pdf-box {
-  padding: 50px;
-  text-align: center;
-  color: #4b5563;
-  border: 2px dashed #d1d5db;
-  border-radius: 12px;
-  font-weight: 600;
-  background: #f9fafb;
-}
-
-/* Texte */
-.excerpt {
-  color: #374151;
-  line-height: 1.7;
-  margin-bottom: 25px;
-  font-size: 1.05rem;
-}
-
-/* Actions Footer */
-.footer-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 20px;
-  border-top: 1px solid #f3f4f6;
-}
-
-.btns { display: flex; gap: 20px; align-items: center; }
-
-.read-btn {
-  color: #ce1126;
-  font-weight: 700;
-  font-size: 0.95rem;
-  position: relative;
-}
-.read-btn::after {
-  content: ' →';
-  transition: margin-left 0.2s;
-}
-.post-item:hover .read-btn::after { margin-left: 5px; }
-
-.pdf-btn {
-  background: #065f46;
-  color: white;
-  padding: 6px 14px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
-.pdf-btn:hover { opacity: 0.9; }
-
-/* Socials */
-.socials { display: flex; gap: 10px; }
-.socials a {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  font-size: 0.8rem;
-  font-weight: bold;
-  transition: transform 0.2s;
-}
-.socials a:hover { transform: scale(1.1); }
 .s-fb { background: #1877f2; }
-.s-wa { background: #25d366; }
+.s-wa { background: #22c55e; }
+.social-share a:hover { transform: scale(1.1); opacity: 0.9; }
 
-/* Utils */
-.center-msg { text-align: center; padding: 60px; color: #6b7280; font-size: 1.1rem; }
-.spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #ce1126;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+.list-enter-active, .list-leave-active { transition: all 0.4s ease; }
+.list-enter-from, .list-leave-to { opacity: 0; transform: translateY(20px); }
+
+.empty-state { text-align: center; padding: 60px; color: #94a3b8; }
+.empty-state i { font-size: 3rem; margin-bottom: 15px; }
+
+@media (max-width: 992px) {
+  .main-layout { flex-direction: column; }
+  .sidebar-column { width: 100%; position: static; }
 }
-/* DESKTOP */
-.sidebar-column {
-  position: sticky;
-  top: 10px;
-  align-self: start;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-/* Mobile Adjustments */
-@media (max-width: 640px) {
-    .main-layout{
-        grid-template-columns: 1fr;
-    }
-    .sidebar-column{
-        display: none;
-        position: sticky;
-    }
-    /* .main-layout{
-        flex-direction: column;
-        display: flex;
-    }
-
-    .sidebar-column {
-    position: static;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    top: auto;
-    width: 100%;
-    max-width: 100%;
-    z-index: 999;
-    padding: 0.8rem;
-    background: transparent;
-  } */
-  .post-item { padding: 20px; margin-bottom: 20px; }
-  h2 { font-size: 1.3rem; }
-  .footer-actions { flex-direction: column; gap: 15px; align-items: flex-start; }
-  .socials { width: 100%; justify-content: flex-end; }
-}
-
 </style>
