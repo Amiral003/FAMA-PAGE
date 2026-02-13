@@ -74,7 +74,7 @@ const aboutItem = { label: 'À propos', to: '/about' }
     <div class="mobile-wrapper" :class="{ 'is-active': isMenuOpen }" @click="isMenuOpen = false">
       <div class="side-menu" @click.stop>
         <div class="menu-header">
-           <div class="logo-box"><span class="fama">FAM<span class="gold">A</span></span></div>
+           <div class="logo-box"><span class="fama">FAM<span class="gold">a</span></span></div>
            <Button icon="pi pi-times" class="close-btn" text @click="isMenuOpen = false" />
         </div>
 
