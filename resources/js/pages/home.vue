@@ -237,7 +237,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .hero-text-box h1 { font-size: 3.5rem; font-weight: 900; line-height: 1.1; text-transform: uppercase;color: #cbd5e1; }
 .hero-subtext { max-width: 600px; font-size: 1.2rem; color: #cbd5e1; margin: 20px 0 40px; border-left: 4px solid #FFD700; padding-left: 20px; }
 .custom-tag-official { background: #14B82C !important; color: white; font-weight: 800; border-radius: 4px; }
-.btn-fama-gold { background: #FFD700 !important; color: #1a241b !important; border: none !important; font-weight: 800 !important; }
+.btn-fama-gold { background: #FFD700 !important; color: #1a241b !important; border: none !important; font-weight: bold !important; }
 
 /* ACTUALITÉS GRID */
 .news-section { padding: 80px 0; background: #f8fafc; }
