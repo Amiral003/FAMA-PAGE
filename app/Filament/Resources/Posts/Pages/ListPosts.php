@@ -72,11 +72,11 @@ class ListPosts extends ListRecords
     ->action(function (Post $record, array $data) {
         $record->update([
             'status' => 'revision',
-            'rejection_notes' => $data['rejection_notes'], // C'est ici que le lien se fait
+            'rejection_notes' => $data['rejection_notes'], 
             'validator_id' => Auth::id(),
         ]);
 
-        // Optionnel : notification de succès
+        //  notification de succès
         \Filament\Notifications\Notification::make()
             ->title('Post renvoyé pour correction')
             ->danger()

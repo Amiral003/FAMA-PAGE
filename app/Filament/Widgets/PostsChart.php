@@ -6,60 +6,53 @@ use App\Models\Post;
 use Filament\Widgets\ChartWidget;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PostsChart extends ChartWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
+    protected ?string $maxHeight = '200px'; // Très compact pour éviter le scroll
+    public ?string $filter = '30'; 
 
-    public function getHeading(): string
+    public static function canView(): bool
     {
-        return 'Publications validées (30 derniers jours)';
+        return Auth::user()->hasAnyRole(['super-admin', 'validateur']);
+    }
+
+    public function getHeading(): string { return 'Historique des publications validées'; }
+
+    protected function getFilters(): ?array
+    {
+        return ['7' => '7 jours', '30' => '30 jours', '90' => '90 jours'];
     }
 
     protected function getData(): array
     {
-        // 1. On génère les dates des 30 derniers jours
-        $days = collect(range(0, 29))
+        $activeFilter = (int) $this->filter;
+        $days = collect(range(0, $activeFilter - 1))
             ->map(fn ($i) => now()->subDays($i)->format('Y-m-d'))
             ->reverse();
 
-        // 2. On récupère les données groupées par jour
         $counts = Post::where('status', 'publie')
-            ->whereDate('validated_at', '>=', now()->subDays(29))
+            ->whereNotNull('validated_at') 
+            ->whereDate('validated_at', '>=', now()->subDays($activeFilter - 1))
             ->select(DB::raw("DATE(validated_at) as date"), DB::raw('count(*) as aggregate'))
             ->groupBy(DB::raw("DATE(validated_at)"))
             ->pluck('aggregate', 'date');
 
-        // 3. On remplit les jours vides avec des zéros
-        $data = $days->map(function ($date) use ($counts) {
-            return $counts->get($date, 0);
-        });
-
         return [
-            'datasets' => [
-                [
-                    'label' => 'Articles validés',
-                    'data' => $data->values()->toArray(),
-                    'fill' => 'start',
-                    'borderColor' => '#14a44d', 
-                    'backgroundColor' => 'rgba(20, 164, 77, 0.1)',
-                    'tension' => 0.3,
-                ],
-            ],
+            'datasets' => [[
+                'label' => 'Articles validés',
+                'data' => $days->map(fn ($date) => $counts->get($date, 0))->values()->toArray(),
+                'fill' => 'start',
+                'borderColor' => '#14a44d', 
+                'backgroundColor' => 'rgba(20, 164, 77, 0.1)',
+                'tension' => 0.3,
+            ]],
             'labels' => $days->map(fn ($date) => Carbon::parse($date)->format('d/m'))->values()->toArray(),
         ];
     }
 
-    protected function getType(): string
-    {
-        return 'line';
-    }
-
-    /**
-     * Changé en PUBLIC pour corriger l'erreur FatalError
-     */
-    public function getColumnSpan(): int | string | array
-    {
-        return 'full';
-    }
+    protected function getType(): string { return 'line'; }
+    public function getColumnSpan(): int | string | array { return 'full'; }
 }

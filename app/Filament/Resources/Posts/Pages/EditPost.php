@@ -26,4 +26,16 @@ protected function getSaveFormActionLabel(): string
 {
     return "Enregistrer les modifications";
 }
+
+protected function mutateFormDataBeforeSave(array $data): array
+{
+    // Dès qu'on enregistre une modification, le statut repasse en brouillon
+    $data['status'] = 'brouillon';
+
+    // Optionnel : On peut aussi vider la date de validation
+    $data['validated_at'] = null;
+
+    return $data;
 }
+}
+
