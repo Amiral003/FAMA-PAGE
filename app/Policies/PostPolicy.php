@@ -35,19 +35,18 @@ class PostPolicy
      * Autorise la modification.
      */
     public function update(User $user, Post $post)
-    {
-        // Le rédacteur modifie son propre brouillon
-        if ($user->hasRole('redacteur') && $post->user_id === $user->id && $post->status === 'brouillon') {
-            return true;
-        }
-
-        // Le validateur peut modifier n'importe quel post (pour corriger ou changer le statut)
-        if ($user->hasRole('validateur')) {
-            return true;
-        }
-
-        return false;
+{
+    if ($user->hasRole('redacteur') && $post->user_id === $user->id) {
+        // Autoriser si c'est un brouillon OU si c'est en révision (rejeté)
+        return in_array($post->status, ['brouillon', 'revision']);
     }
+
+    if ($user->hasRole('validateur')) {
+        return true;
+    }
+
+    return false;
+}
 
     /**
      * Approuver : Autorise le validateur quel que soit le statut.

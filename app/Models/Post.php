@@ -14,7 +14,6 @@ class Post extends Model
 
     protected $fillable = [
         'title',
-
         'slug',
         'type',
         'thumbnail',
@@ -25,6 +24,7 @@ class Post extends Model
         'validated_by',
         'validated_at',
         'published_at',
+        'rejection_notes',
     ];
 
     protected $casts = [

@@ -14,14 +14,15 @@ use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 
-// Importations
+// --- IMPORTATIONS CORRIGÉES ---
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Hidden;
-use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section; // Section spécifique aux formulaires
+use Filament\Schemas\Components\Grid;    // Grid spécifique aux formulaires
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
@@ -34,10 +35,26 @@ class PostResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static ?string $recordTitleAttribute = 'title';
 
-public static function form(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            // 1. On commence par le Type et le Statut (Ligne du haut)
+
+            // ⚠️ Section de correction (N'apparaît que si nécessaire)
+            Section::make('⚠️ Correction demandée')
+                ->description('.')
+                ->aside()
+                // On s'assure que la section est visible si le statut est 'revision'
+                ->visible(fn (?Post $record) => $record !== null && $record->status === 'revision' && !empty($record->rejection_notes))
+                ->schema([
+                    // On ajoute un Placeholder pour afficher le texte de rejet en gras/rouge
+                    \Filament\Forms\Components\Placeholder::make('rejection_notes_display')
+                        ->label('Motif du rejet :')
+                        ->content(fn (?Post $record) => $record?->rejection_notes)
+                        ->extraAttributes(['class' => 'text-danger-600 font-bold']),
+                ])
+                ->columnSpanFull(),
+
+            // 1. Type de publication
             Grid::make(2)->schema([
                 Select::make('type')
                     ->label('Type de publication')
@@ -49,20 +66,16 @@ public static function form(Schema $schema): Schema
                     ->required()
                     ->live()
                     ->native(false),
-
-                
             ]),
 
-            // 2. Le Titre allongé sur toute la largeur (Full Width)
+            // 2. Titre et Slug
             TextInput::make('title')
                 ->label('Titre du post')
-                ->placeholder('Entrez le titre complet ici...')
                 ->required()
                 ->live(onBlur: true)
-                ->columnSpanFull() // Étire le champ sur toute la ligne
+                ->columnSpanFull()
                 ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
-            // 3. Le Slug juste en dessous, un peu plus discret
             TextInput::make('slug')
                 ->label('Lien URL (Slug)')
                 ->disabled()
@@ -70,24 +83,25 @@ public static function form(Schema $schema): Schema
                 ->required()
                 ->columnSpanFull(),
 
-            // 4. Image de couverture (Toujours visible pour la cohérence du front-end)
+            // 3. Image de couverture (Conditionnelle au PDF)
             FileUpload::make('thumbnail')
-                ->label("Image de couverture principale")
+                ->label("Image de couverture du document (Miniature)")
                 ->image()
                 ->disk('public')
                 ->directory('thumbnails')
                 ->imageEditor()
-                ->required() // Recommandé pour le design du site
-                ->columnSpanFull(),
+                ->columnSpanFull()
+                ->visible(fn ($get) => $get('type') === 'pdf') 
+                ->required(fn ($get) => $get('type') === 'pdf'),
 
-            // 5. Contenu texte
+            // 4. Contenu
             Textarea::make('content')
                 ->label('Corps du communiqué / Description')
                 ->rows(8)
                 ->required()
                 ->columnSpanFull(),
 
-            // 6. Section PDF (Conditionnelle)
+            // 5. Fichier PDF
             FileUpload::make('pdf_path')
                 ->label('Fichier PDF Officiel')
                 ->disk('public')
@@ -97,23 +111,24 @@ public static function form(Schema $schema): Schema
                 ->required(fn ($get) => $get('type') === 'pdf')
                 ->columnSpanFull(),
 
-            // 7. Galerie photos (Masquée si c'est uniquement un PDF)
+            // 6. Galerie Médias
             Repeater::make('media')
-                ->label('Galerie photos additionnelles')
+                ->label('Médias additionnels (Images ou Vidéos)')
                 ->relationship('media')
                 ->schema([
                     FileUpload::make('file_path')
-                        ->label('Image')
-                        ->image()
+                        ->label('Fichier')
+                        ->acceptedFileTypes(['image/*', 'video/*']) 
                         ->disk('public')
                         ->directory('posts')
                         ->required(),
                 ])
                 ->collapsible()
-                ->grid(3) // Organise les miniatures en grille de 3
+                ->grid(3)
                 ->columnSpanFull()
                 ->hidden(fn ($get) => $get('type') === 'pdf'),
 
+            // 7. Auteur (Automatique)
             Hidden::make('user_id')
                 ->default(fn () => Filament::auth()->id())
                 ->dehydrated(),
@@ -130,6 +145,12 @@ public static function form(Schema $schema): Schema
                     ->sortable()
                     ->limit(50),
 
+                TextColumn::make('rejection_notes')
+                    ->label('Notes du validateur')
+                    ->searchable()
+                    ->wrap()
+                    ->color('danger')
+                    ->visible(fn ($record) => $record?->status === 'revision'),
 
                 TextColumn::make('status')
                     ->label('Statut')
@@ -153,10 +174,6 @@ public static function form(Schema $schema): Schema
                         default => 'heroicon-m-question-mark-circle',
                     })
                     ->sortable(),
-
-                // ImageColumn::make('thumbnail')
-                //     ->label('Aperçu')
-                //     ->circular(),
 
                 TextColumn::make('user.name')
                     ->label('Auteur')
