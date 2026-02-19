@@ -73,18 +73,19 @@ const downloadPDF = (path) => {
   link.remove();
 };
 
+// --- LOGIQUE DE PARTAGE FLOTTANT ---
 const getShareLink = (platform, post) => {
-  const url = encodeURIComponent(`${baseUrl}/posts/${post.slug}`);
-  const text = encodeURIComponent(`FAMa Officiel : ${post.title}`);
-  return platform === 'facebook' 
-    ? `https://www.facebook.com/sharer/sharer.php?u=${url}`
-    : `https://api.whatsapp.com/send?text=${text}%20${url}`;
+  const shareUrl = encodeURIComponent(`${baseUrl}/posts/${post.slug}`)
+  const shareTitle = encodeURIComponent(`FAMa : ${post.title}`)
+  return platform === 'facebook'
+    ? `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`
+    : `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`
 }
 
 const filteredPosts = computed(() => {
   const q = search.value.toLowerCase().trim();
   if (!q) return posts.value;
-  return posts.value.filter(post => 
+  return posts.value.filter(post =>
     post.title?.toLowerCase().includes(q) || post.content?.toLowerCase().includes(q)
   );
 })
@@ -95,11 +96,11 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 <template>
   <div class="portfolio-container">
     <div class="container main-layout">
-      
+
       <section class="feed-column">
         <header class="header-section">
           <h1 class="page-title">Communiqués & Avis Officiels</h1>
-          
+
           <div class="search-wrapper">
             <i class="pi pi-search"></i>
             <InputText
@@ -128,7 +129,9 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
               @click="router.push(`/posts/${post.slug}`)"
             >
               <div class="card-meta">
-                <Tag :value="post.pdf_path ? 'PDF OFFICIEL' : 'INFO'" :severity="post.pdf_path ? 'danger' : 'success'" />
+                <Tag :value="post.type ? post.type.toUpperCase() : (post.pdf_path ? 'PDF OFFICIEL' : 'INFO')"
+                     :severity="post.pdf_path ? 'danger' : 'success'" />
+
                 <span class="date-text">
                   <i class="pi pi-clock mr-1"></i>
                   {{ getRelativeDate(post.published_at || post.created_at) }}
@@ -152,9 +155,13 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
                   <Button label="Consulter" icon="pi pi-chevron-right" iconPos="right" text @click="router.push(`/posts/${post.slug}`)" />
                   <Button v-if="post.pdf_path" icon="pi pi-download" severity="secondary" outlined size="small" @click="downloadPDF(post.pdf_path)" />
                 </div>
-                <div class="social-share">
-                  <a :href="getShareLink('facebook', post)" target="_blank" class="s-fb" title="Partager sur Facebook"><i class="pi pi-facebook"></i></a>
-                  <a :href="getShareLink('whatsapp', post)" target="_blank" class="s-wa" title="Partager sur WhatsApp"><i class="pi pi-whatsapp"></i></a>
+
+                <div class="share-wrapper">
+                  <Button icon="pi pi-share-alt" class="share-trigger-btn" rounded severity="secondary" size="small" />
+                  <div class="share-floating-menu">
+                    <a :href="getShareLink('facebook', post)" target="_blank" class="s-btn fb"><i class="pi pi-facebook"></i></a>
+                    <a :href="getShareLink('whatsapp', post)" target="_blank" class="s-btn wa"><i class="pi pi-whatsapp"></i></a>
+                  </div>
                 </div>
               </div>
             </article>
@@ -176,7 +183,49 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </template>
 
 <style scoped>
-/* TA STRUCTURE ORIGINALE PRÉSERVÉE */
+/* --- STYLE DU PARTAGE FLOTTANT --- */
+.share-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.share-floating-menu {
+  position: absolute;
+  top: 50%;
+  right: 45px; /* Apparaît à gauche du bouton Share */
+  transform: translateY(-50%) translateX(10px);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.share-wrapper:hover .share-floating-menu {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  pointer-events: auto;
+}
+
+.s-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+
+.fb { background: #1877f2; }
+.wa { background: #22c55e; }
+.s-btn:hover { transform: scale(1.15); filter: brightness(1.1); }
+
+/* --- RESTE DU STYLE --- */
 .portfolio-container { background: #f8fafc; min-height: 100vh; padding: 40px 0; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 .main-layout { display: flex; gap: 40px; align-items: flex-start; }
@@ -189,16 +238,15 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 .search-wrapper { position: relative; max-width: 600px; }
 .search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; z-index: 1; }
-.search-input { 
-  width: 100%; 
-  padding: 12px 12px 12px 45px !important; 
-  border-radius: 12px !important; 
-  border: 1px solid #e2e8f0 !important; 
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+.search-input {
+  width: 100%;
+  padding: 12px 12px 12px 45px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
-.news-card { 
-  background: white; border-radius: 16px; padding: 25px; margin-bottom: 30px; 
+.news-card {
+  background: white; border-radius: 16px; padding: 25px; margin-bottom: 30px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s ease; border: 1px solid #f1f5f9;
   cursor: pointer;
 }
@@ -217,26 +265,11 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 .card-excerpt { color: #475569; line-height: 1.7; margin-bottom: 25px; }
 
-.card-footer { display: flex; justify-content: space-between; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+.card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid #f1f5f9; }
 .action-btns { display: flex; gap: 10px; }
-
-.social-share { display: flex; gap: 8px; }
-.social-share a { 
-  width: 36px; height: 36px; border-radius: 50%; display: flex; 
-  align-items: center; justify-content: center; color: white; transition: 0.2s;
-}
-.s-fb { background: #1877f2; }
-.s-wa { background: #22c55e; }
-.social-share a:hover { transform: scale(1.1); opacity: 0.9; }
-
-.list-enter-active, .list-leave-active { transition: all 0.4s ease; }
-.list-enter-from, .list-leave-to { opacity: 0; transform: translateY(20px); }
-
-.empty-state { text-align: center; padding: 60px; color: #94a3b8; }
-.empty-state i { font-size: 3rem; margin-bottom: 15px; }
 
 @media (max-width: 992px) {
   .main-layout { flex-direction: column; }
-  .sidebar-column { width: 100%; position: static; }
+  .sidebar-column { display: none; }
 }
 </style>

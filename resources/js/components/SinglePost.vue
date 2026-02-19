@@ -99,7 +99,7 @@ const openPdf = (path) => {
               {{ getRelativeDate(post.published_at || post.created_at) }}
             </span>
           </div>
-          <h1 class="post-title">{{ post.title }}</h1>
+          <h3 class="post-title">{{ post.title }}</h3>
         </header>
 
         <!-- <div class="post-main-image" v-if="post.thumbnail">
@@ -250,7 +250,12 @@ const openPdf = (path) => {
 /* Boutons & Meta */
 .back-btn { color: #14B82C !important; padding: 0 !important; font-weight: 700; transition: 0.2s; margin-bottom: 20px; }
 .back-btn:hover { transform: translateX(-5px); }
-.post-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: #0f172a; line-height: 1.1; margin: 20px 0; letter-spacing: -1px; }
+.post-title {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2; margin: 15px 0;
+     letter-spacing: -0.5px; }
 .post-meta { display: flex; gap: 20px; align-items: center; color: #64748b; font-size: 0.95rem; }
 
 .share-wrapper {
