@@ -108,8 +108,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
             <span class="text-gold">Engagement Sans Faille</span>
           </h1>
           <p class="hero-subtext">
-            Depuis 1960, les FAMa assurent la protection de la population malienne
-            et la souveraineté de la République sur l'ensemble du territoire.
+            Les Forces Armées Maliennes sont l’expression vivante du devoir, du courage et de la fidélité à la Patrie. Servir dans les FAMA, c’est protéger le Mali, défendre son peuple et garantir sa souveraineté.
           </p>
           <div class="hero-btns">
             <Button label="COMMUNIQUÉS" icon="pi pi-file" class="btn-fama-gold" @click="router.push('/portfolio')" />
@@ -181,8 +180,33 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
       <div class="container footer-grid">
         <div class="footer-brand">
           <h3 class="footer-title">FORCES ARMÉES MALIENNES</h3>
-          <p>La défense de la patrie est un devoir sacré. Restez connectés aux sources officielles pour des informations vérifiées.</p>
+          <p>La défense de la patrie est un devoir sacré.
+            Restez connectés aux sources officielles pour des informations vérifiées.</p>
+
+            <div class="soldier-honor-card">
+  <div class="card-glow"></div>
+  <i class="pi pi-shield soldier-icon"></i>
+  <div class="honor-content">
+    <h3>Etre FAMa!!!</h3>
+    <p class="honor-text"> « C’est répondre à l’appel de la Patrie avec loyauté et sens du devoir.
+         c’est accepter la noble mission de défendre l’intégrité territoriale,
+         la souveraineté nationale et la sécurité des populations,
+          dans le respect des valeurs républicaines et de l’éthique militaire.»</p>
+    <p class="honor-text">
+      «  Etre un pilier de la stabilité nationale. Agir avec discipline, courage et professionnalisme face aux menaces
+       qui pèsent sur la Nation. Chaque mission, qu’elle soit de défense, de sécurisation ou d’assistance aux populations,
+       est accomplie avec détermination et abnégation, au service exclusif du Mali. »
+    </p>
+
+    <div class="honor-footer">
+      <span class="honor-rank">Valeurs Fondamentales</span>
+      <span class="honor-separator"></span>
+      <span class="honor-motto">Honneur - Patrie</span>
+    </div>
+  </div>
+</div>
         </div>
+
         <div class="footer-docs">
           <SidebarOfficial :recentDocs="recentPdfs" />
         </div>
@@ -195,6 +219,86 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </template>
 
 <style scoped>
+/* --- BLOC HONORABLE DU SOLDAT --- */
+.soldier-honor-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.3); /* Bordure dorée subtile */
+  border-left: 5px solid #d4af37; /* Ligne d'accentuation or */
+  padding: 40px;
+  border-radius: 12px;
+  margin-top: 40px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  gap: 25px;
+  align-items: flex-start;
+}
+
+/* Effet de lueur en arrière-plan */
+.card-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.soldier-icon {
+  font-size: 2.5rem;
+  color: #d4af37;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+}
+
+.honor-text {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: #e2e8f0;
+  font-style: italic;
+  font-weight: 400;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.honor-footer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.honor-rank {
+  color: #d4af37;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.8rem;
+}
+
+.honor-separator {
+  width: 40px;
+  height: 1px;
+  background: rgba(212, 175, 55, 0.5);
+}
+
+.honor-motto {
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+/* Animation au survol */
+.soldier-honor-card:hover {
+  border-color: rgba(212, 175, 55, 0.8);
+  transform: translateY(-5px);
+  transition: all 0.4s ease;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 15px rgba(212, 175, 55, 0.1);
+}
 /* BASES & COULEURS */
 .home-page { background: #fdfdfd; }
 .text-gold { color: #FFD700; }
