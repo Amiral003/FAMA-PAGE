@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import axios from 'axios'
-
+import Carousel from 'primevue/carousel';
 // --- LOGIQUE DATE & COMPOSANTS ---
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -19,6 +19,16 @@ const router = useRouter()
 const post = ref(null)
 const loading = ref(true)
 const baseUrl = window.location.origin
+const allMedia = computed(() => {
+  const images = [];
+  if (post.value?.thumbnail) {
+    images.push({ file_path: post.value.thumbnail, isThumbnail: true });
+  }
+  if (post.value?.media?.length) {
+    images.push(...post.value.media);
+  }
+  return images;
+});
 
 // --- SEO DYNAMIQUE ---
 useHead({
@@ -55,7 +65,7 @@ const getRelativeDate = (date) => {
 const getShareLink = (platform) => {
   const shareUrl = encodeURIComponent(window.location.href)
   const shareTitle = encodeURIComponent(`FAMa : ${post.value?.title}`)
-  return platform === 'facebook' 
+  return platform === 'facebook'
     ? `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`
     : `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`
 }
@@ -69,19 +79,19 @@ const openPdf = (path) => {
   <div class="page-background">
     <main class="main-layout container" v-if="!loading && post">
       <div class="content-card">
-        <Button 
-          icon="pi pi-arrow-left" 
-          label="Retour aux communiqués" 
-          link 
-          class="back-btn" 
-          @click="router.back()" 
+        <Button
+          icon="pi pi-arrow-left"
+          label="Retour aux communiqués"
+          link
+          class="back-btn"
+          @click="router.back()"
         />
 
         <header class="post-header">
           <div class="post-meta">
-            <Tag 
-              :value="post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ'" 
-              :severity="post.pdf_path ? 'danger' : 'success'" 
+            <Tag
+              :value="post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ'"
+              :severity="post.pdf_path ? 'danger' : 'success'"
               class="fama-tag"
             />
             <span class="date">
@@ -92,33 +102,48 @@ const openPdf = (path) => {
           <h1 class="post-title">{{ post.title }}</h1>
         </header>
 
-        <div class="post-main-image" v-if="post.thumbnail">
+        <!-- <div class="post-main-image" v-if="post.thumbnail">
           <Image :src="`/storage/${post.thumbnail}`" preview imageClass="main-img-fluid" />
-        </div>
-
-        <div class="share-bar">
-          <span class="share-label">Partager :</span>
-          <div class="share-buttons">
-            <a :href="getShareLink('facebook')" target="_blank" class="s-btn fb"><i class="pi pi-facebook"></i></a>
-            <a :href="getShareLink('whatsapp')" target="_blank" class="s-btn wa"><i class="pi pi-whatsapp"></i></a>
-          </div>
-        </div>
+        </div> -->
 
         <section class="post-body">
           <div class="text-content">
             {{ post.content }}
           </div>
 
-          <div v-if="post.media?.length" class="post-gallery">
+          <!-- <div v-if="post.media?.length" class="post-gallery">
             <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
               <Image :src="`/storage/${item.file_path}`" preview imageClass="gallery-img" />
             </div>
-          </div>
+          </div> -->
+<div class="instagram-carousel-wrapper" v-if="allMedia.length > 0">
+  <Carousel :value="allMedia" :numVisible="1" :numScroll="1" :circular="false" :responsiveOptions="responsiveOptions">
+    <template #item="slotProps">
+      <div class="carousel-image-container">
+        <div class="carousel-counter">
+           {{ allMedia.findIndex(m => m.file_path === slotProps.data.file_path) + 1 }} / {{ allMedia.length }}
+        </div>
 
+        <Image
+          :src="`/storage/${slotProps.data.file_path}`"
+          preview
+          imageClass="instagram-img"
+        />
+      </div>
+    </template>
+  </Carousel>
+</div>
           <div class="post-signature-minimal" v-if="post.user">
             <div class="signature-line"></div>
             <p class="author-name-bottom">{{ post.user.name }}</p>
             <p class="author-sub">Direction de l'Information et des Relations Publiques des Armées</p>
+                    <div class="share-wrapper">
+  <Button icon="pi pi-share-alt" class="share-trigger-btn" rounded severity="secondary" />
+  <div class="share-floating-menu">
+    <a :href="getShareLink('facebook')" target="_blank" class="s-btn fb"><i class="pi pi-facebook"></i></a>
+    <a :href="getShareLink('whatsapp')" target="_blank" class="s-btn wa"><i class="pi pi-whatsapp"></i></a>
+  </div>
+</div>
           </div>
 
           <div v-if="post.pdf_path" class="pdf-download-wrapper">
@@ -128,12 +153,12 @@ const openPdf = (path) => {
                 <span>Communiqué officiel (PDF)</span>
               </div>
               <div class="pdf-buttons">
-                <Button 
-                  label="Consulter" 
-                  icon="pi pi-eye" 
-                  text 
-                  class="p-button-sm btn-view" 
-                  @click="openPdf(post.pdf_path)" 
+                <Button
+                  label="Consulter"
+                  icon="pi pi-eye"
+                  text
+                  class="p-button-sm btn-view"
+                  @click="openPdf(post.pdf_path)"
                 />
                 <a :href="`/storage/${post.pdf_path}`" download class="btn-download-fama-mini">
                   <i class="pi pi-download"></i>
@@ -162,6 +187,61 @@ const openPdf = (path) => {
 </template>
 
 <style scoped>
+
+.carousel-counter {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent; /* Changé de #000 à transparent */
+  border: none;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  z-index: 10;
+  pointer-events: none;
+}
+.carousel-image-container { position: relative; } /* Important pour le positionnement du badge */
+/* Container principal du carrousel */
+.instagram-carousel-wrapper {
+ margin: 30px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: transparent; /* Changé de #000 à transparent */
+  border: none;
+}
+
+/* Fixer la hauteur pour que toutes les images s'alignent */
+.carousel-image-container {
+ height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+:deep(.instagram-img) {
+  width: 100%;
+  height: 500px;
+  object-fit: contain; /* L'image entière est visible sans être rognée */
+  display: block;
+}
+
+/* Personnalisation des indicateurs (petits points) */
+:deep(.p-carousel-indicators) {
+  padding: 1rem;
+}
+
+:deep(.p-carousel-indicator button) {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50%;
+  background-color: #cbd5e1 !important;
+}
+
+:deep(.p-carousel-indicator.p-highlight button) {
+  background-color: #14B82C !important; /* Ta couleur verte FAMa */
+}
 .page-background { background: #f8fafc; min-height: 100vh; padding: 40px 0; }
 .container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
 .main-layout { display: grid; grid-template-columns: 1fr 340px; gap: 40px; }
@@ -173,12 +253,46 @@ const openPdf = (path) => {
 .post-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: #0f172a; line-height: 1.1; margin: 20px 0; letter-spacing: -1px; }
 .post-meta { display: flex; gap: 20px; align-items: center; color: #64748b; font-size: 0.95rem; }
 
+.share-wrapper {
+     position: relative;
+     display:flex;
+     margin-bottom: 30px;
+    padding: 10px 0; }
+.share-floating-menu {
+  position: absolute;
+  top: 0;
+  left: 50px;
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: 0.3s;
+  pointer-events: none;
+}
+
+/* Apparaît quand on survole le bouton ou le wrapper */
+.share-wrapper:hover .share-floating-menu {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.image-container-fixed {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 /* Media */
-.post-main-image { margin: 40px -50px; overflow: hidden; }
-:deep(.main-img-fluid) { width: 100%; max-height: 650px; object-fit: cover; }
-.post-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 40px 0; }
+
+
+:deep(.main-img-fluid) {
+    height: auto;
+     width: 100%; max-height: 700px;
+      object-fit: contain !important; }
+/* .post-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 40px 0; } */
 .gallery-item { border-radius: 12px; overflow: hidden; height: 200px; }
-:deep(.gallery-img) { width: 100%; height: 100%; object-fit: cover; }
+:deep(.gallery-img) { width: 100%; height: 100%; object-fit: contain; }
 
 /* Partage */
 .share-bar { display: flex; align-items: center; gap: 15px; background: #f1f5f9; padding: 10px 20px; border-radius: 50px; width: fit-content; margin-bottom: 40px; }
@@ -237,5 +351,11 @@ const openPdf = (path) => {
   .post-main-image { margin: 30px -20px; }
   .pdf-minimal-bar { flex-direction: column; gap: 15px; align-items: flex-start; }
   .pdf-buttons { width: 100%; justify-content: space-between; }
+  .carousel-image-container, :deep(.instagram-img) {
+    height: 400px;
+  }
+  :deep(.p-carousel-prev), :deep(.p-carousel-next) {
+    display: none;
+  }
 }
 </style>
