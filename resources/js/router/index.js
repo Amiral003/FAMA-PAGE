@@ -14,6 +14,10 @@ import EtatmajorGarde from '../components/EtatmajorGarde.vue'
 import Police from '../components/police.vue'
 import Dmhta from '../components/Dmhta.vue'
 import Dcssa from '../components/Dcssa.vue'
+import Actualite from '../pages/Actualite.vue'
+import Compos from '../pages/compos.vue'
+import Photo from '../pages/photo.vue'
+
 
 
 
@@ -32,8 +36,16 @@ const routes = [
     {path:'/EtatmajorGarde',component:EtatmajorGarde},
      {path:'/police',component:Police},
     { path: '/portfolio', component: Portfolio,
-   // meta: { title: 'Avis & Communiqués' },
    },
+//    {path:'/portfolio',component:Portfolio},
+
+//
+// Change '/Phototheque' en '/phototheque' (tout en minuscule)
+{ path: '/phototheque', component: Photo, name: 'phototheque' },
+   //{path:'/flahinfo',component:FlashInfo},
+
+
+   {path:'/Compos',component:Compos},
 
      {
     path: '/posts/:slug', // Le ":slug" est la partie variable

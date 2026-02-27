@@ -1,20 +1,44 @@
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 
 const router = useRouter()
 const isMenuOpen = ref(false)
-const isDropdownOpen = ref(false) // Pour le menu Catégories
+const isDropdownOpen = ref(false)
+// --- LOGIQUE DE THÈME ---
+const currentTheme = ref(localStorage.getItem('theme') || 'default')
+
+const toggleTheme = () => {
+  const themes = ['default', 'dark', 'light']
+  const nextIndex = (themes.indexOf(currentTheme.value) + 1) % themes.length
+  const newTheme = themes[nextIndex]
+
+  currentTheme.value = newTheme
+
+  // Applique au tag <html> pour que tout le site soit au courant
+  document.documentElement.setAttribute('data-theme', newTheme)
+
+  // Sauvegarde pour la prochaine visite
+  localStorage.setItem('theme', newTheme)
+}
+
+onMounted(() => {
+  document.documentElement.setAttribute('data-theme', currentTheme.value)
+})
 
 const navItems = [
   { label: 'Accueil', to: '/' },
-  { label: 'Communiqués', to: '/portfolio' },
 
- // { label: 'À propos', to: '/about' },
+   { label: "Actualités", to: '/portfolio' },
+   { label: "COM-OPS", to: '/Compos' },
+
 ]
 
+
+const contactItem=  { label: 'Contact', to: '/contact' };
+const aboutItem = { label: 'À propos', to: '/about' }
 const categories = [
    { label: "Armée de Terre", to: '/EtatmajorAT' },
      { label: "Armée de l'Air", to: '/EtatmajorAA' },
@@ -26,12 +50,12 @@ const categories = [
       { label: "Gendarmerie Nationale", to: '/Gendarmerie' },
       {label:"Police Nationale",to:'/police'},
 ]
-const contactItem=  { label: 'Contact', to: '/contact' };
-const aboutItem = { label: 'À propos', to: '/about' }
+
 </script>
 
 <template>
   <nav class="navbar-tactical">
+
     <div class="mali-stripe">
       <div class="s-green"></div><div class="s-yellow"></div><div class="s-red"></div>
     </div>
@@ -48,9 +72,10 @@ const aboutItem = { label: 'À propos', to: '/about' }
             <router-link :to="item.to">{{ item.label }}</router-link>
           </li>
 
+
           <li class="dropdown-pc" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
             <a href="#" class="dropdown-trigger">
-              ÉTAT-MAJOR <i class="pi pi-chevron-down"></i>
+              A propos <i class="pi pi-chevron-down"></i>
             </a>
             <transition name="fade-slide">
               <ul v-if="isDropdownOpen" class="dropdown-menu">
@@ -60,10 +85,14 @@ const aboutItem = { label: 'À propos', to: '/about' }
               </ul>
             </transition>
           </li>
-          <li><router-link :to="contactItem.to">{{ contactItem.label}}</router-link></li>
-           <li>
-    <router-link :to="aboutItem.to">{{ aboutItem.label }}</router-link>
+          <li>
+    <router-link :to="contactItem.to">{{ contactItem.label }}</router-link>
   </li>
+  <li>
+            <button @click="toggleTheme" class="theme-btn-toggle">
+              <i :class="currentTheme === 'light' ? 'pi pi-moon' : 'pi pi-sun'"></i>
+            </button>
+          </li>
 
         </ul>
 
@@ -86,7 +115,7 @@ const aboutItem = { label: 'À propos', to: '/about' }
           <div class="mobile-category-section">
 
             <div class="mobile-link" @click="isDropdownOpen = !isDropdownOpen">
-              État-Major
+              A propos
               <i :class="isDropdownOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
             </div>
             <div v-if="isDropdownOpen" class="mobile-sub-menu">
@@ -124,7 +153,31 @@ const aboutItem = { label: 'À propos', to: '/about' }
 
 <style scoped>
 /* --- Styles de base PC --- */
-.navbar-tactical { width: 100%; position: sticky; top: 0; z-index: 1000; background: #1a241b; border-bottom: 1px solid rgba(255, 215, 0, 0.2); }
+.navbar-tactical {
+     width: 100%; position: sticky;
+      top: 40px;; z-index: 1000;
+      background: var(--bg-nav, #1a241b);
+      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+      transition: background 0.3s ease;
+    }
+    /* --- BOUTON THEME PC --- */
+.theme-btn-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--gold, #FFD700);
+  color: var(--gold, #FFD700);
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+}
+.theme-btn-toggle:hover {
+  background: var(--gold, #FFD700);
+  color: #000;
+}
 .mali-stripe { display: flex; height: 4px; }
 .s-green { background: #14B82C; flex: 1; }
 .s-yellow { background: #FFD700; flex: 1; }
@@ -142,16 +195,17 @@ const aboutItem = { label: 'À propos', to: '/about' }
 /* --- STYLE DROPDOWN PC --- */
 .dropdown-pc { position: relative; cursor: pointer; }
 .dropdown-trigger i { font-size: 0.7rem; margin-left: 5px; transition: 0.3s; }
+
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 0;
+  right: 0; /* Changé de left: 0 à right: 0 */
   background: #243125;
-  min-width: 180px;
+  min-width: 200px; /* Un peu plus large pour les noms longs */
   list-style: none;
   padding: 10px 0;
   border: 1px solid rgba(255, 215, 0, 0.2);
-  box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.5);
 }
 .dropdown-menu li a {
   display: block;
@@ -190,5 +244,14 @@ const aboutItem = { label: 'À propos', to: '/about' }
   display: flex;
   flex-direction: column; /* empile verticalement */
   gap: 6px;               /* espace entre FAMa et le sous-titre */
+}
+.navbar { /* Remplace par ta classe réelle de navigation */
+  position: sticky;
+  top: 40px;        /* 💡 INDISPENSABLE : Hauteur du FlashInfo */
+  z-index: 2000;    /* Juste en dessous du FlashInfo */
+  background: #FFD700; /* ⚠️ INDISPENSABLE : Un fond opaque (noir ou vert FAMa) */
+  height: 70px;     /* Ta hauteur actuelle */
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -41,7 +41,7 @@ const currentBgIndex = ref(0)
 const backgroundImages = [
   heroImg,
   famaImg,
-  maliImg,
+  //maliImg,
 
 ]
 // AJOUTE CETTE LIGNE ICI :
@@ -92,6 +92,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 <template>
   <main class="home-page">
+    <div class="dirpa-bg-watermark"></div>
     <section class="hero-premium">
          <div
     v-for="(img, index) in backgroundImages"
@@ -171,9 +172,32 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
                     <Button label="TOUT VOIR" icon="pi pi-chevron-right" iconPos="right" class="btn-fama-gold p-button-sm" />
                 </div>
             </div>
+
           </template>
+          </div>
+         <div class="media-row">
+          <div class="media-cta-card videotheque-card rectangle" @click="router.push('/videotheque')">
+            <div class="media-cta-content">
+              <div class="media-icon-wrapper"><i class="pi pi-video"></i></div>
+              <div class="media-text">
+                <h3>Vidéothèque</h3>
+                <p>Découvrez nos reportages et vidéos officielles des FAMa.</p>
+                <Button label="TOUT VOIR" icon="pi pi-play" class="btn-media p-button-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="media-cta-card phototheque-card rectangle" @click="router.push('/phototheque')">
+            <div class="media-cta-content">
+              <div class="media-icon-wrapper"><i class="pi pi-images"></i></div>
+              <div class="media-text">
+                <h3>Photothèque</h3>
+                <p>L'engagement de nos unités à travers nos galeries photos.</p>
+<Button label="TOUT VOIR" icon="pi pi-camera" class="btn-media p-button-sm" @click.stop="router.push('/phototheque')" />              </div>
+            </div>
+          </div>
         </div>
-      </div>
+        </div>
     </section>
 
     <footer class="fama-footer">
@@ -218,7 +242,32 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
   </main>
 </template>
 
+<style>
+/* 1. ON FORCE LE FOND SUR TOUTE LA PAGE (BODY ET HTML) */
+/* On ne met pas "scoped" ici pour que ça touche toute la fenêtre du navigateur */
+html, body {
+ background-color: #162417 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 100vh;
+}
+
+/* 2. ON ENLÈVE LES LIMITES DE LARGEUR BLANCHES */
+#app {
+background-color: #162417 !important;
+  width: 100%;
+}
+</style>
+
 <style scoped>
+/* COULEURS NATIONALES */
+:root {
+  --mali-green-dark: #162417; /* Fond principal */
+  --mali-gold: #ffca28;       /* Jaune Or du drapeau (très lisible) */
+  --mali-red: #e53935;        /* Rouge pour les alertes/tags */
+  --mali-white: #ffffff;      /* Pour le texte pur */
+}
 /* --- BLOC HONORABLE DU SOLDAT --- */
 .soldier-honor-card {
   position: relative;
@@ -300,8 +349,11 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 15px rgba(212, 175, 55, 0.1);
 }
 /* BASES & COULEURS */
-.home-page { background: #fdfdfd; }
-.text-gold { color: #FFD700; }
+.home-page {
+background-color: var(--mali-green-dark);
+
+  width: 100%;/* Un peu plus solennel */
+}.text-gold { color: #FFD700; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
 /* HERO */
@@ -343,12 +395,23 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .custom-tag-official { background: #14B82C !important; color: white; font-weight: 800; border-radius: 4px; }
 .btn-fama-gold { background: #FFD700 !important; color: #1a241b !important; border: none !important; font-weight: bold !important; }
 
+
 /* ACTUALITÉS GRID */
-.news-section { padding: 80px 0; background: #f8fafc; }
+.news-section {
+ background-color: #162417 !important;
+  color: #f8fafc;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 80px 0;}
 .section-header-premium { margin-bottom: 50px; }
 .header-line { width: 70px; height: 6px; background: #14B82C; margin-bottom: 15px; }
-.section-header-premium h2 { font-size: 1.8rem; font-weight: 900; color: #1a241b; }
-
+.section-header-premium h2 { font-size: 1.8rem; font-weight: 900; color: #FFD700 !important; /* On force la couleur OR */
+  text-transform: uppercase;}
+.header-line h2{ color: white;}
 .news-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -357,17 +420,37 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 /* CARTE STANDARD */
 .premium-card {
-  background: white;
+  background: #1e2f1f !important;
   border-radius: 4px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
   transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
-  border: 1px solid #f1f5f9;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  color: white;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+/* --- STYLE DES CARTES MÉDIAS (PHOTO/VIDEO) --- */
+/* --- LIGNE MÉDIA RECTANGULAIRE --- */
+.media-row { display: flex; gap: 30px; width: 100%; margin-top: 20px; }
+.rectangle { flex: 1; border-radius: 12px; cursor: pointer; transition: 0.4s; min-height: 200px; display: flex; align-items: center; overflow: hidden; border: none; }
+.rectangle:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+
+.videotheque-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 4px solid #3b82f6; }
+.phototheque-card { background: linear-gradient(135deg, #2d3a2e 0%, #1a241b 100%); border-bottom: 4px solid #14B82C; }
+
+.media-cta-content { display: flex; align-items: center; padding: 30px; gap: 25px; color: white; text-align: left; width: 100%; }
+.media-icon-wrapper { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.2); }
+.media-icon-wrapper i { font-size: 2.5rem; color: #FFD700; }
+.media-text h3 { color: #FFD700; font-size: 1.6rem; margin: 0 0 8px 0; }
+.media-text p { color: #cbd5e1; font-size: 1rem; margin-bottom: 15px; line-height: 1.4; }
+.btn-media { background: rgba(255, 215, 0, 0.1) !important; border: 1px solid #FFD700 !important; color: #FFD700 !important; font-weight: bold !important; }
+
 .premium-card:hover { transform: translateY(-10px); border-color: #FFD700; box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+.premium-card:hover .card-footer-link i {
+  transform: translateX(5px);
+}
 
 .card-media { position: relative; height: 210px; overflow: hidden; }
 .zoom-effect { width: 100%; height: 100%; object-fit: cover; transition: 0.8s; }
@@ -376,10 +459,32 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 .card-content { padding: 25px; flex-grow: 1; }
 .date { font-size: 0.8rem; font-weight: 700; color: #14B82C; }
-.card-content h3 { font-size: 1.2rem; font-weight: 800; color: #1a241b; margin: 12px 0; line-height: 1.4; height: 3.4rem; overflow: hidden; }
-.card-content p { color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; }
-.card-footer-link { font-weight: 800; color: #1a241b; font-size: 0.85rem; display: flex; align-items: center; }
-
+.card-content h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff !important; /* Blanc pour une lisibilité parfaite */
+  margin: 12px 0;
+  line-height: 1.4;
+  height: 3.4rem;
+  overflow: hidden;}
+.card-content p {
+  color: #cbd5e1 !important; /* Gris clair */
+  font-size: 0.9rem;
+}
+.card-footer-link {
+  font-weight: 800;
+  color: #FFD700 !important; /* L'Or pour attirer l'œil sur l'action */
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  text-transform: uppercase; /* Pour un look plus pro/militaire */
+  letter-spacing: 1px;
+}
+.card-footer-link i {
+  color: #FFD700 !important;
+  margin-left: 8px;
+  transition: transform 0.3s ease;
+}
 /* CARTE CTA */
 .cta-card {
   background: #1a241b !important;
@@ -389,6 +494,13 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
   text-align: center;
 }
 .cta-content { padding: 30px; }
+.video { padding: 10px; }
+.video-icon {
+    width: 70px; height: 70px; background: rgba(255, 215, 0, 0.1);
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 20px;
+}
+.video-icon i { font-size: 2.5rem; color: #951818; }
 .cta-icon {
     width: 70px; height: 70px; background: rgba(255, 215, 0, 0.1);
     border-radius: 50%; display: flex; align-items: center;
@@ -402,11 +514,23 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .fama-footer { background: #1a241b; color: white; padding-top: 80px; }
 .footer-grid { display: grid; grid-template-columns: 1fr 400px; gap: 60px; padding-bottom: 60px; }
 .footer-title { color: #FFD700; font-weight: 900; margin-bottom: 25px; }
-.copyright { background: #202d22; text-align: center; padding: 25px; font-size: 0.8rem; color: #64748b; }
-
+.copyright {
+    text-align: center;
+  /* background: #0d160d; */
+  border-top: 3px solid var(--mali-gold); /* Une ligne d'or en bas du site */
+  color: #90a4ae;
+}
 @media (max-width: 992px) {
   .hero-text-box h1 { font-size: 2.8rem; }
   .footer-grid { grid-template-columns: 1fr; }
   .news-grid { grid-template-columns: 1fr; }
 }
+.card-wide {
+        grid-column: span 1; /* Reprend une seule colonne sur petit écran */
+    }
+    .media-cta-content {
+        flex-direction: column; /* Icône au dessus du texte sur mobile */
+        text-align: center !important;
+        padding: 20px;
+    }
 </style>
