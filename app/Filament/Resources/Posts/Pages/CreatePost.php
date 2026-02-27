@@ -5,10 +5,20 @@ namespace App\Filament\Resources\Posts\Pages;
 use App\Filament\Resources\Posts\PostResource;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
+
 
 class CreatePost extends CreateRecord
 {
     protected static string $resource = PostResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+{
+    // On force l'ID de l'utilisateur connecté juste avant l'écriture en base
+    $data['user_id'] = Filament::auth()->id();
+    
+    return $data;
+}
 
     // 1. Redirection vers la liste
     protected function getRedirectUrl(): string
@@ -41,4 +51,5 @@ class CreatePost extends CreateRecord
 {
     return "Rédiger un nouveau communiqué officiel";
 }
+
 }

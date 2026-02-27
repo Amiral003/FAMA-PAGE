@@ -27,7 +27,6 @@ useHead({
     { property: 'og:description', content: 'Accédez aux derniers communiqués de presse et documents certifiés des FAMa.' },
     { property: 'og:image', content: `${baseUrl}/assets/images/hero.jpg` },
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: 'Avis & Communiqués | FAMa' }
   ],
 })
 
@@ -47,14 +46,19 @@ onMounted(async () => {
   }
 })
 
-// --- LOGIQUE DATE RELATIVE ---
+// --- NETTOYAGE DU HTML POUR L'EXTRAIT ---
+// Cette fonction enlève les balises HTML pour ne garder que le texte pur dans la liste
+const stripHtml = (html) => {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || "";
+}
+
 const getRelativeDate = (date) => {
   if (!date) return ''
   try {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
-  } catch (e) {
-    return "Date inconnue"
-  }
+  } catch (e) { return "Date inconnue" }
 }
 
 const getPostImage = (post) => {
@@ -65,17 +69,11 @@ const getPostImage = (post) => {
 
 const downloadPDF = (path) => {
   if (!path) return;
-  const link = document.createElement('a');
-  link.href = `/storage/${path}`;
-  link.setAttribute('download', 'communique-fama.pdf');
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  window.open(`/storage/${path}`, '_blank');
 };
 
-// --- LOGIQUE DE PARTAGE FLOTTANT ---
 const getShareLink = (platform, post) => {
-  const shareUrl = encodeURIComponent(`${baseUrl}/posts/${post.slug}`)
+  const shareUrl = encodeURIComponent(`${window.location.origin}/posts/${post.slug}`)
   const shareTitle = encodeURIComponent(`FAMa : ${post.title}`)
   return platform === 'facebook'
     ? `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`
@@ -86,7 +84,7 @@ const filteredPosts = computed(() => {
   const q = search.value.toLowerCase().trim();
   if (!q) return posts.value;
   return posts.value.filter(post =>
-    post.title?.toLowerCase().includes(q) || post.content?.toLowerCase().includes(q)
+    post.title?.toLowerCase().includes(q) || stripHtml(post.content).toLowerCase().includes(q)
   );
 })
 
@@ -100,23 +98,17 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
       <section class="feed-column">
         <header class="header-section">
           <h1 class="page-title">Communiqués & Avis Officiels</h1>
-
           <div class="search-wrapper">
             <i class="pi pi-search"></i>
-            <InputText
-              v-model="search"
-              placeholder="Rechercher un communiqué ou un mot-clé..."
-              class="search-input"
-            />
+            <InputText v-model="search" placeholder="Rechercher un communiqué..." class="search-input" />
           </div>
         </header>
 
         <div v-if="loading" class="loading-grid">
           <div v-for="i in 3" :key="i" class="news-card skeleton">
             <Skeleton width="40%" height="1.2rem" class="mb-4"></Skeleton>
-            <Skeleton width="100%" height="200px" class="mb-4"></Skeleton>
+            <Skeleton width="100%" height="250px" class="mb-4"></Skeleton>
             <Skeleton width="90%" class="mb-2"></Skeleton>
-            <Skeleton width="70%"></Skeleton>
           </div>
         </div>
 
@@ -129,7 +121,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
               @click="router.push(`/posts/${post.slug}`)"
             >
               <div class="card-meta">
-                <Tag :value="post.type ? post.type.toUpperCase() : (post.pdf_path ? 'PDF OFFICIEL' : 'INFO')"
+                <Tag :value="post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ'"
                      :severity="post.pdf_path ? 'danger' : 'success'" />
 
                 <span class="date-text">
@@ -144,32 +136,32 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
                 <img v-if="getPostImage(post)" :src="getPostImage(post)" class="featured-img" loading="lazy" />
                 <div v-else-if="post.pdf_path" class="pdf-strip">
                   <i class="pi pi-file-pdf"></i>
-                  <span>DOCUMENT PDF DISPONIBLE</span>
+                  <span>COMMUNIQUÉ OFFICIEL EN PDF</span>
                 </div>
               </div>
 
-              <p class="card-excerpt">{{ post.content?.substring(0, 180) }}...</p>
+              <p class="card-excerpt">{{ stripHtml(post.content).substring(0, 180) }}...</p>
 
               <div class="card-footer" @click.stop>
                 <div class="action-btns">
-                  <Button label="Consulter" icon="pi pi-chevron-right" iconPos="right" text @click="router.push(`/posts/${post.slug}`)" />
-                  <Button v-if="post.pdf_path" icon="pi pi-download" severity="secondary" outlined size="small" @click="downloadPDF(post.pdf_path)" />
+                  <Button label="Lire la suite" icon="pi pi-arrow-right" iconPos="right" text @click="router.push(`/posts/${post.slug}`)" class="read-more-btn" />
+                  <Button v-if="post.pdf_path" icon="pi pi-download" severity="danger" text @click="downloadPDF(post.pdf_path)" label="PDF" />
                 </div>
 
                 <div class="share-wrapper">
-                  <Button icon="pi pi-share-alt" class="share-trigger-btn" rounded severity="secondary" size="small" />
                   <div class="share-floating-menu">
                     <a :href="getShareLink('facebook', post)" target="_blank" class="s-btn fb"><i class="pi pi-facebook"></i></a>
                     <a :href="getShareLink('whatsapp', post)" target="_blank" class="s-btn wa"><i class="pi pi-whatsapp"></i></a>
                   </div>
+                  <Button icon="pi pi-share-alt" rounded severity="secondary" size="small" class="share-trigger-btn" />
                 </div>
               </div>
             </article>
           </TransitionGroup>
 
           <div v-else class="empty-state">
-            <i class="pi pi-search-minus"></i>
-            <p>Aucun communiqué trouvé pour "{{ search }}".</p>
+            <i class="pi pi-info-circle"></i>
+            <p>Aucun résultat pour cette recherche.</p>
           </div>
         </div>
       </section>
@@ -183,93 +175,59 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </template>
 
 <style scoped>
-/* --- STYLE DU PARTAGE FLOTTANT --- */
-.share-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
+.portfolio-container { background: #f0f2f5; min-height: 100vh; padding: 40px 0; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 15px; }
+.main-layout { display: grid; grid-template-columns: 1fr 320px; gap: 30px; }
 
-.share-floating-menu {
-  position: absolute;
-  top: 50%;
-  right: 45px; /* Apparaît à gauche du bouton Share */
-  transform: translateY(-50%) translateX(10px);
-  display: flex;
-  gap: 8px;
-  opacity: 0;
-  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
+.page-title { font-size: 1.8rem; font-weight: 800; color: #1c1e21; margin-bottom: 20px; }
 
-.share-wrapper:hover .share-floating-menu {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-  pointer-events: auto;
-}
+.search-wrapper { margin-bottom: 30px; position: relative; }
+.search-input { width: 100%; border-radius: 25px !important; padding-left: 45px !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
+.search-wrapper i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); z-index: 2; color: #65676b; }
 
-.s-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: 0.2s;
-}
-
-.fb { background: #1877f2; }
-.wa { background: #22c55e; }
-.s-btn:hover { transform: scale(1.15); filter: brightness(1.1); }
-
-/* --- RESTE DU STYLE --- */
-.portfolio-container { background: #f8fafc; min-height: 100vh; padding: 40px 0; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-.main-layout { display: flex; gap: 40px; align-items: flex-start; }
-
-.feed-column { flex: 1; min-width: 0; }
-.sidebar-column { width: 320px; position: sticky; top: 100px; }
-
-.header-section { margin-bottom: 40px; }
-.page-title { font-size: 2.2rem; font-weight: 900; color: #1e293b; margin-bottom: 25px; }
-
-.search-wrapper { position: relative; max-width: 600px; }
-.search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; z-index: 1; }
-.search-input {
-  width: 100%;
-  padding: 12px 12px 12px 45px !important;
-  border-radius: 12px !important;
-  border: 1px solid #e2e8f0 !important;
-}
-
+/* News Card Style Instagram/Facebook */
 .news-card {
-  background: white; border-radius: 16px; padding: 25px; margin-bottom: 30px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s ease; border: 1px solid #f1f5f9;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid #dddfe2;
+  transition: background 0.2s;
   cursor: pointer;
 }
-.news-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); border-color: #14b82c; }
+.news-card:hover { background: #fcfcfc; }
 
-.card-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.85rem; }
-.date-text { color: #64748b; font-weight: 600; }
+.card-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.date-text { font-size: 0.85rem; color: #65676b; }
 
-.card-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-bottom: 15px; line-height: 1.3; }
+.card-title { font-size: 1.35rem; font-weight: 700; color: #050505; line-height: 1.4; margin-bottom: 12px; }
 
-.card-media { border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid #f1f5f9; }
-.featured-img { width: 100%; height: 350px; object-fit: cover; }
+.card-media { margin: 0 -20px 15px -20px; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
+.featured-img { width: 100%; height: auto; max-height: 450px; object-fit: cover; }
 
-.pdf-strip { padding: 40px; background: #fef2f2; color: #991b1b; text-align: center; display: flex; flex-direction: column; gap: 10px; font-weight: 700; }
-.pdf-strip i { font-size: 2rem; }
+.pdf-strip { padding: 50px; background: #fff1f2; color: #be123c; display: flex; flex-direction: column; align-items: center; gap: 10px; font-weight: 700; }
+.pdf-strip i { font-size: 2.5rem; }
 
-.card-excerpt { color: #475569; line-height: 1.7; margin-bottom: 25px; }
+.card-excerpt { color: #1c1e21; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
 
-.card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid #f1f5f9; }
-.action-btns { display: flex; gap: 10px; }
+.card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
 
-@media (max-width: 992px) {
-  .main-layout { flex-direction: column; }
+/* Share logic */
+.share-wrapper { position: relative; display: flex; align-items: center; }
+.share-floating-menu {
+  display: flex; gap: 8px; margin-right: 10px;
+  opacity: 0; transform: translateX(10px);
+  transition: 0.3s ease; pointer-events: none;
+}
+.share-wrapper:hover .share-floating-menu { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.s-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+.fb { background: #1877f2; } .wa { background: #22c55e; }
+
+.read-more-btn { font-weight: 700 !important; color: #14b82c !important; }
+
+@media (max-width: 850px) {
+  .main-layout { grid-template-columns: 1fr; }
   .sidebar-column { display: none; }
 }
 </style>

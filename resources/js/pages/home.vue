@@ -88,6 +88,12 @@ const getPostImage = (post) => {
 }
 
 const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3))
+// Fonction pour enlever les balises HTML avant de couper le texte (pour l'aperçu seulement)
+const stripHtml = (html) => {
+  if (!html) return '';
+  // Supprime les balises HTML
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || "";}
 </script>
 
 <template>
@@ -154,7 +160,9 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
               <div class="card-content">
                 <span class="date"><i class="pi pi-calendar"></i> {{ new Date(post.created_at).toLocaleDateString() }}</span>
                 <h3>{{ post.title }}</h3>
-                <p>{{ post.content?.substring(0, 85) }}...</p>
+                
+                <p>{{ stripHtml(post.content).substring(0, 85) }}...</p>
+                
                 <div class="card-footer-link">
                   Consulter <i class="pi pi-arrow-right ml-2"></i>
                 </div>

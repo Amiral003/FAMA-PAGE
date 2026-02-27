@@ -10,6 +10,9 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
+use App\Notifications\PostRejectedNotification;
 
 class ListPosts extends ListRecords
 {
@@ -61,29 +64,60 @@ class ListPosts extends ListRecords
     ->iconButton()
     ->color('danger')
     ->visible(fn (Post $record) => Auth::user()->can('reject', $record))
-    // 1. On définit le formulaire qui s'ouvre dans la fenêtre surgissante (Modal)
+
     ->form([
-        Textarea::make('rejection_notes') // Le nom ici doit correspondre à la clé dans $data
+        Textarea::make('rejection_notes')
             ->label('Motif du rejet')
             ->placeholder("Précisez les corrections à apporter...")
             ->required(),
     ])
-    // 2. L'argument $data contient les valeurs saisies dans le formulaire ci-dessus
+
     ->action(function (Post $record, array $data) {
+
         $record->update([
             'status' => 'revision',
-            'rejection_notes' => $data['rejection_notes'], 
+            'rejection_notes' => $data['rejection_notes'],
             'validator_id' => Auth::id(),
         ]);
 
-        //  notification de succès
+        // ✅ NOUVEAU : notification envoyée au rédacteur
+        if ($record->user) {
+            $record->user->notify(
+                new PostRejectedNotification(
+                    $record,
+                    $data['rejection_notes']
+                )
+            );
+        }
+
+        // 🔊 déclenche le son + toast Filament
+        $this->dispatchBrowserEvent('notification-received');
+
+        // notification de succès (inchangée)
         \Filament\Notifications\Notification::make()
             ->title('Post renvoyé pour correction')
             ->danger()
             ->send();
     })
+
     ->modalHeading('Renvoyer pour correction')
     ->modalSubmitActionLabel('Envoyer en révision'),
+    
         ];
     }
+
+protected function getTableQuery(): Builder
+{
+    $query = parent::getTableQuery();
+
+    $filter = request()->get('status_filter');
+
+    return match ($filter) {
+        'a_valider' => $query->whereIn('status', ['brouillon', 'revision']),
+        'publies'   => $query->where('status', 'publie'),
+        default     => $query,
+    };
+}
+
+    
 }

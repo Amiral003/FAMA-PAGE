@@ -104,10 +104,15 @@ return $this->hasMany(\App\Models\PostMedia::class)->orderBy('order');    }
     ]);
 }
 
+public function validator()
+{
+    return $this->belongsTo(User::class, 'validated_by');
+}
 
-
-
-    // Dans app/Models/Post.php
+public function author()
+{
+    return $this->belongsTo(User::class, 'user_id');
+}
 
 public function reject($userId)
 {

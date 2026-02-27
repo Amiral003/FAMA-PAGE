@@ -72,7 +72,22 @@ const getShareLink = (platform) => {
 
 const openPdf = (path) => {
   window.open(`/storage/${path}`, '_blank')
+
+
 }
+
+const responsiveOptions = ref([
+    {
+        breakpoint: '1024px',
+        numVisible: 1,
+        numScroll: 1
+    },
+    {
+        breakpoint: '768px',
+        numVisible: 1,
+        numScroll: 1
+    }
+]);
 </script>
 
 <template>
@@ -107,9 +122,7 @@ const openPdf = (path) => {
         </div> -->
 
         <section class="post-body">
-          <div class="text-content">
-            {{ post.content }}
-          </div>
+          <div class="text-content rich-text" v-html="post.content"></div>
 
           <!-- <div v-if="post.media?.length" class="post-gallery">
             <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
@@ -310,6 +323,7 @@ const openPdf = (path) => {
 .signature-line { width: 60px; height: 4px; background: #14B82C; margin-left: auto; margin-bottom: 15px; }
 .author-name-bottom { font-size: 1.3rem; font-weight: 900; color: #1e293b; text-transform: uppercase; margin: 0; }
 
+s
 /* STYLE PDF MINIMALISTE */
 .pdf-download-wrapper {
   margin-top: 40px;
@@ -362,5 +376,48 @@ const openPdf = (path) => {
   :deep(.p-carousel-prev), :deep(.p-carousel-next) {
     display: none;
   }
+}
+/* AJOUTE CECI DANS TON <style scoped> */
+
+.rich-text :deep(b), .rich-text :deep(strong) {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.rich-text :deep(ul) {
+  list-style-type: disc !important;
+  margin-left: 1.5rem !important;
+  margin-bottom: 1.5rem;
+}
+
+.rich-text :deep(ol) {
+  list-style-type: decimal !important;
+  margin-left: 1.5rem !important;
+  margin-bottom: 1.5rem;
+}
+
+.rich-text :deep(li) {
+  margin-bottom: 0.5rem;
+}
+
+.rich-text :deep(h2), .rich-text :deep(h3) {
+  font-weight: 800;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #1a241b;
+}
+
+.rich-text :deep(a) {
+  color: #14B82C;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.rich-text :deep(blockquote) {
+  border-left: 4px solid #14B82C;
+  padding-left: 1.5rem;
+  font-style: italic;
+  color: #475569;
+  margin: 1.5rem 0;
 }
 </style>

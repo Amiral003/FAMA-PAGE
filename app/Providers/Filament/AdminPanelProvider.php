@@ -31,6 +31,8 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(asset('favicon.png'))
             ->brandLogo(asset('images/logo-fama.png'))
             ->brandLogoHeight('5rem')
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('10s')
             ->renderHook(
             'panels::footer.before',
             fn () => null)
@@ -40,7 +42,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Green,
             ])
           
-     
+            // ->viteTheme('resources/js/filament-sound.js')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

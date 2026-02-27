@@ -9,4 +9,14 @@
 <body>
     <div id="app"></div>
 </body>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Sélectionne tous les liens à l'intérieur du contenu du post
+        const links = document.querySelectorAll('.text-content a');
+        links.forEach(link => {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer'); // Sécurité critique
+        });
+    });
+</script>
 </html>

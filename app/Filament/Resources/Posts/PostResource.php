@@ -13,6 +13,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\RichEditor;
+use App\Notifications\PostRejectedNotification;
 
 // --- IMPORTATIONS CORRIGÉES ---
 use Filament\Forms\Components\FileUpload;
@@ -95,11 +98,32 @@ class PostResource extends Resource
                 ->required(fn ($get) => $get('type') === 'pdf'),
 
             // 4. Contenu
-            Textarea::make('content')
-                ->label('Corps du communiqué / Description')
-                ->rows(8)
-                ->required()
-                ->columnSpanFull(),
+            
+
+            RichEditor::make('content')
+    ->label('Corps du communiqué / Description')
+    ->placeholder('Rédigez ici le contenu détaillé...')
+    ->required()
+    ->columnSpanFull()
+    ->toolbarButtons([
+        'attachFiles',
+        'blockquote',
+        'bold',
+        'bulletList',
+        'codeBlock',
+        'h2',
+        'h3',
+        'italic',
+        'link',
+        'orderedList',
+        'redo',
+        'strike',
+        'underline',
+        'undo',
+    ])
+    ->fileAttachmentsDisk('public')
+    ->fileAttachmentsDirectory('posts/content-attachments')
+    ->fileAttachmentsVisibility('public'),
 
             // 5. Fichier PDF
             FileUpload::make('pdf_path')
@@ -107,6 +131,7 @@ class PostResource extends Resource
                 ->disk('public')
                 ->directory('documents')
                 ->acceptedFileTypes(['application/pdf'])
+                ->maxSize(20480) // Limite à 20 Mo (en Ko)
                 ->visible(fn ($get) => $get('type') === 'pdf')
                 ->required(fn ($get) => $get('type') === 'pdf')
                 ->columnSpanFull(),
@@ -118,7 +143,8 @@ class PostResource extends Resource
                 ->schema([
                     FileUpload::make('file_path')
                         ->label('Fichier')
-                        ->acceptedFileTypes(['image/*', 'video/*']) 
+                        ->acceptedFileTypes(['image/*', 'video/*'])
+                        ->maxSize(51200) 
                         ->disk('public')
                         ->directory('posts')
                         ->required(),
@@ -135,9 +161,16 @@ class PostResource extends Resource
         ]);
     }
 
+    public static function getEloquentQuery(): Builder
+{
+    return parent::getEloquentQuery()
+        ->with(['validator', 'user']);
+}
+
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'media']))
             ->columns([
                 TextColumn::make('title')
                     ->label('Titre')
@@ -187,11 +220,13 @@ class PostResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->label('Filtrer par statut')
+                    ->multiple()
                     ->options([
                         'brouillon' => 'Brouillon',
                         'revision' => 'En révision',
                         'publie' => 'Publié',
                     ]),
+                    
             ])
             ->defaultSort('created_at', 'desc');
     }
