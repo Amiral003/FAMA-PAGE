@@ -9,56 +9,247 @@ use Illuminate\Http\Request;
 class PostController extends Controller
 {
     /**
-     * 9 derniers posts (HOME)
+     * ✅ 9 derniers posts publics (HOME)
+     * Optionnel: supporte ?type=flash etc.
      */
-    public function latest()
+    public function latest(Request $request)
     {
+        $type = trim((string) $request->query('type', ''));
+
+        $query = Post::query()
+            ->published()
+            ->with(['media', 'author'])
+            ->publicOrder();
+
+        // ✅ Filtre par type (optionnel)
+        if ($type !== '') {
+            $allowed = [
+                Post::TYPE_FLASH,
+                Post::TYPE_ARTICLE,
+                Post::TYPE_RECRUTEMENT,
+                Post::TYPE_PDF,
+                Post::TYPE_VIDEO, // ✅ ajout
+            ];
+
+            if (in_array($type, $allowed, true)) {
+                $query->where('type', $type);
+            }
+        }
+
+        return $query->limit(9)->get([
+            'id',
+            'title',
+            'slug',
+            'content',
+            'status',
+            'type',
+            'thumbnail',
+            'pdf_path',
+
+            // ✅ champs vidéo
+            'video_url',
+            'video_platform',
+            'video_thumbnail_url',
+
+            'published_at',
+            'validated_at',
+            'validated_by',
+            'user_id',
+            'created_at',
+        ]);
+    }
+
+    /**
+     * ✅ Fil d’actualité paginé
+     * Supporte:
+     * - ?page=1
+     * - ?per_page=9
+     * - ?q=mot (recherche)
+     * - ?type=flash (filtre type)
+     */
+    public function index(Request $request)
+    {
+        $perPage = (int) $request->query('per_page', 9);
+        $perPage = max(5, min($perPage, 30));
+
+        $q = trim((string) $request->query('q', ''));
+        $type = trim((string) $request->query('type', ''));
+
+        $query = Post::query()
+            ->published()
+            ->with(['media', 'author'])
+            ->publicOrder();
+
+        // ✅ Filtre par type (si fourni)
+        if ($type !== '') {
+            $allowed = [
+                Post::TYPE_FLASH,
+                Post::TYPE_ARTICLE,
+                Post::TYPE_RECRUTEMENT,
+                Post::TYPE_PDF,
+                Post::TYPE_VIDEO, // ✅ ajout
+            ];
+
+            if (in_array($type, $allowed, true)) {
+                $query->where('type', $type);
+            }
+        }
+
+        // ✅ Recherche (optionnelle)
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('title', 'ilike', "%{$q}%")
+                    ->orWhere('content', 'ilike', "%{$q}%");
+            });
+        }
+
+        // ✅ IMPORTANT: on limite les colonnes renvoyées (plus propre + évite fuite)
+        // Laravel paginate() ne supporte pas directement ->get([...])
+        // Donc on fait un select() avant paginate.
+        $query->select([
+            'id',
+            'title',
+            'slug',
+            'content',
+            'status',
+            'type',
+            'thumbnail',
+            'pdf_path',
+
+            // ✅ champs vidéo
+            'video_url',
+            'video_platform',
+            'video_thumbnail_url',
+
+            'published_at',
+            'validated_at',
+            'validated_by',
+            'user_id',
+            'created_at',
+        ]);
+
+        return response()->json($query->paginate($perPage));
+    }
+
+    /**
+     * ✅ Flashs du bandeau (strict: publiés + moins de 24h)
+     * URL: /api/posts/flashes
+     */
+    public function flashes(Request $request)
+    {
+        $limit = (int) $request->query('limit', 20);
+        $limit = max(5, min($limit, 50));
+
         return Post::query()
-            ->where('status', 'publie')
-            ->orderByDesc('validated_at')
-            ->limit(9)
+            ->published()
+            ->where('type', Post::TYPE_FLASH)
+            ->whereNotNull('published_at')
+            ->where('published_at', '>=', now()->subDay())
+            ->orderByDesc('published_at')
+            ->limit($limit)
             ->get([
                 'id',
                 'title',
-                'description',
-                'file_path',
-                'validated_at',
+                'slug',
+                'type',
+                'status',
+                'published_at',
+                'created_at',
             ]);
     }
 
     /**
-     * Liste paginée (PORTFOLIO)
+     * ✅ Vidéothèque (uniquement type=video)
+     * URL: /api/posts/videos
+     * Supporte:
+     * - ?page=1
+     * - ?per_page=12
+     * - ?q=mot (recherche)
      */
-    // public function index()
-    // {
-    //     return Post::query()
-    //         ->where('status', 'publie')
-    //         ->orderByDesc('validated_at')
-    //         ->paginate(12);
-    // }
+    public function videos(Request $request)
+    {
+        $perPage = (int) $request->query('per_page', 12);
+        $perPage = max(6, min($perPage, 36));
 
-    public function index()
-{
-    $posts = Post::where('status', Post::STATUS_PUBLIE)
-        ->with('media') // CRUCIAL : Charge la relation avec les images
-        ->latest('published_at')
-        ->paginate(9);
+        $q = trim((string) $request->query('q', ''));
 
-    return response()->json($posts);
-}
+        $query = Post::query()
+            ->published()
+            ->where('type', Post::TYPE_VIDEO)
+            ->publicOrder()
+            ->select([
+                'id',
+                'title',
+                'slug',
+                'type',
+                'status',
 
-public function show($slug)
-{
-    $post = Post::where('slug', $slug)
-        ->where('status', Post::STATUS_PUBLIE)
-        ->with(['media', 'user']) // On charge les images ET l'auteur
-        ->firstOrFail();
+                // ✅ champs vidéo
+                'video_url',
+                'video_platform',
+                'video_thumbnail_url',
 
-    return response()->json($post);
-}
+                // optionnel: description (si tu veux un extrait)
+                'content',
+
+                'published_at',
+                'created_at',
+            ]);
+
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('title', 'ilike', "%{$q}%")
+                    ->orWhere('content', 'ilike', "%{$q}%");
+            });
+        }
+
+        return response()->json($query->paginate($perPage));
+    }
 
     /**
-     * Détail d’un post
+     * ✅ Détail d’un post public par slug
      */
-   
+    public function show(string $slug)
+    {
+        $post = Post::query()
+            ->published()
+            ->where('slug', $slug)
+            ->with(['media', 'author', 'validator'])
+            ->firstOrFail();
+
+        return response()->json($post);
+    }
+
+   public function photos(Request $request)
+{
+    $perPage = (int) $request->query('per_page', 12);
+    $perPage = max(6, min($perPage, 36));
+
+    $q = trim((string) $request->query('q', ''));
+
+    $query = Post::query()
+        ->published()
+        ->where('type', Post::TYPE_ARTICLE) // ✅ UNIQUEMENT actualités
+        ->with(['media' => function ($m) {
+            $m->orderBy('order');
+        }])
+        ->publicOrder()
+        ->select([
+            'id',
+            'title',
+            'slug',
+            'type',
+            'published_at',
+            'created_at',
+        ]);
+
+    if ($q !== '') {
+        $query->where(function ($sub) use ($q) {
+            $sub->where('title', 'ilike', "%{$q}%")
+                ->orWhere('content', 'ilike', "%{$q}%");
+        });
+    }
+
+    return response()->json($query->paginate($perPage));
+}
 }

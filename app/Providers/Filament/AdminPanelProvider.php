@@ -31,8 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(asset('favicon.png'))
             ->brandLogo(asset('images/logo-fama.png'))
             ->brandLogoHeight('5rem')
-            ->databaseNotifications()
-            ->databaseNotificationsPolling('10s')
+            
             ->renderHook(
             'panels::footer.before',
             fn () => null)

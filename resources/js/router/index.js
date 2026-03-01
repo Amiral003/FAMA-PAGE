@@ -1,10 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+// -------------------- PAGES / COMPONENTS --------------------
 import Home from '../pages/home.vue'
 import About from '../pages/About.vue'
 import Contact from '../pages/Contact.vue'
 import Portfolio from '../pages/portfolio.vue'
+
 import SinglePost from '../components/SinglePost.vue' // ou le chemin vers ton composant
 import EtatMajor from '../pages/etatmajor.vue'
+
 import EtatmajorAT from '../components/EtatmajorAT.vue'
 import EtatmajorAA from '../components/EtatmajorAA.vue'
 import Dttia from '../components/Dttia.vue'
@@ -14,49 +18,83 @@ import EtatmajorGarde from '../components/EtatmajorGarde.vue'
 import Police from '../components/police.vue'
 import Dmhta from '../components/Dmhta.vue'
 import Dcssa from '../components/Dcssa.vue'
+import ComOps from '../pages/ComOps.vue'
 
-
-
+// -------------------- ROUTES --------------------
 const routes = [
-    { path: '/', component: Home,meta: { title: 'Accueil' },},
-    { path: '/about', component: About },
-    { path: '/contact', component: Contact },
-    {path:'/etatmajor', component: EtatMajor},
-    {path:'/EtatmajorAT', component: EtatmajorAT},
-    {path:'/EtatmajorAA', component: EtatmajorAA},
-    {path:'/Dttia', component: Dttia},
-    {path:'/Dmhta', component: Dmhta},
-     {path:'/Dcssa',component: Dcssa},
-    {path:'/Gendarmerie', component:Gendarmerie},
-    {path:'/Dgm',component:Dgm},
-    {path:'/EtatmajorGarde',component:EtatmajorGarde},
-     {path:'/police',component:Police},
-    { path: '/portfolio', component: Portfolio,
-   // meta: { title: 'Avis & Communiqués' },
-   },
+  // ✅ Je garde ta route + meta.title déjà présent
+  { path: '/', component: Home, meta: { title: 'Accueil' } },
 
-     {
-    path: '/posts/:slug', // Le ":slug" est la partie variable
+  // ✅ J'ajoute meta.title (ton beforeEach s'en sert pour document.title)
+  { path: '/about', component: About, meta: { title: 'À propos' } },
+  { path: '/contact', component: Contact, meta: { title: 'Contact' } },
+
+  { path: '/etatmajor', component: EtatMajor, meta: { title: 'État-Major' } },
+
+  // ✅ Tes pages Etat-major (je n'ai PAS changé tes paths, juste ajouté les titles)
+  { path: '/EtatmajorAT', component: EtatmajorAT, meta: { title: "État-Major - Armée de Terre" } },
+  { path: '/EtatmajorAA', component: EtatmajorAA, meta: { title: "État-Major - Armée de l'Air" } },
+  { path: '/Dttia', component: Dttia, meta: { title: 'D.T.T.I.A' } },
+  { path: '/Dmhta', component: Dmhta, meta: { title: 'D.M.H.T.A' } },
+  { path: '/Dcssa', component: Dcssa, meta: { title: 'D.C.S.S.A' } },
+  { path: '/Gendarmerie', component: Gendarmerie, meta: { title: 'Gendarmerie Nationale' } },
+  { path: '/Dgm', component: Dgm, meta: { title: 'Génie Militaire' } },
+  { path: '/EtatmajorGarde', component: EtatmajorGarde, meta: { title: 'État-Major - Garde Nationale' } },
+  { path: '/police', component: Police, meta: { title: 'Police Nationale' } },
+
+  // ✅ Portfolio : tu avais meta en commentaire, je le remets propre sans supprimer ton commentaire
+  {
+    path: '/portfolio',
+    component: Portfolio,
+    meta: { title: 'Avis & Communiqués' },
+    // meta: { title: 'Avis & Communiqués' },
+  },
+  { path: '/com-ops', component: ComOps, meta: { title: 'Com-Ops' } },
+  {
+  path: '/phototheque',
+  name: 'phototheque',
+  component: () => import('@/pages/phototheque.vue'),
+},
+  {
+  path: '/videotheque',
+  name: 'videotheque',
+  component: () => import('@/pages/videotheque.vue'),
+},
+  // ✅ Single post : j'ajoute un title dynamique (si slug existe)
+  {
+    path: '/posts/:slug',
     name: 'post.show',
     component: SinglePost,
-    props: true // Permet de recevoir le slug comme une prop si besoin
+    props: true,
+    meta: { title: 'Communiqué' }, // titre fallback
   },
-
-
-
-
-
 ]
 
+// -------------------- ROUTER --------------------
 const router = createRouter({
   history: createWebHistory(),
   routes,
+
+  // ✅ UX: à chaque navigation on remonte en haut (sauf si back/forward du navigateur)
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { top: 0 }
+  },
 })
+
+// -------------------- TITRE ONGLET --------------------
 // Optionnel : Changer le titre de l'onglet automatiquement
 router.beforeEach((to, from, next) => {
-    document.title = to.meta.title || 'FAMali'
-    next()
+  // ✅ Petite sécurité : si un jour SSR, document peut ne pas exister
+  if (typeof document !== 'undefined') {
+    // ✅ Si tu veux un titre dynamique pour /posts/:slug
+    if (to.name === 'post.show' && to.params?.slug) {
+      document.title = `Communiqué - ${to.params.slug} | FAMali`
+    } else {
+      document.title = (to.meta && to.meta.title ? to.meta.title + ' | FAMali' : 'FAMali')
+    }
+  }
+  next()
 })
 
-
-export default router;
+export default router

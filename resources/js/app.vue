@@ -1,4 +1,5 @@
 <template>
+  <PublicFlashTicker />
   <Navbar />
 
   <main class="container">
@@ -12,6 +13,7 @@
 </template>
 
 <script setup>
+import PublicFlashTicker from './components/PublicFlashTicker.vue'
 import Navbar from './components/Navbar.vue'
 </script>
 

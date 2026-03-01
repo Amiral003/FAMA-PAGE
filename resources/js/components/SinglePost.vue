@@ -17,6 +17,66 @@ import Image from 'primevue/image'
 const route = useRoute()
 const router = useRouter()
 const post = ref(null)
+// -------------------- VIDEO HELPERS --------------------
+const isVideo = computed(() => {
+  return post.value?.type === 'video'
+})
+
+const getYoutubeId = (url) => {
+  if (!url) return null
+
+  try {
+    const u = new URL(url)
+
+    if (u.hostname.includes('youtu.be')) {
+      return u.pathname.replace('/', '') || null
+    }
+
+    if (u.searchParams.get('v')) {
+      return u.searchParams.get('v')
+    }
+
+    if (u.pathname.includes('/embed/')) {
+      return u.pathname.split('/embed/')[1] || null
+    }
+
+    return null
+  } catch (e) {
+    if (url.includes('youtu.be/'))
+      return url.split('youtu.be/')[1]?.split('?')[0] || null
+
+    if (url.includes('watch?v='))
+      return url.split('watch?v=')[1]?.split('&')[0] || null
+
+    return null
+  }
+}
+
+const youtubeEmbedUrl = computed(() => {
+  if (!isVideo.value) return null
+  if (post.value?.video_platform !== 'youtube') return null
+
+  const id = getYoutubeId(post.value?.video_url)
+  return id ? `https://www.youtube.com/embed/${id}` : null
+})
+
+const isMp4Video = computed(() => {
+  if (!isVideo.value) return false
+  if (post.value?.video_platform === 'mp4') return true
+
+  const url = post.value?.video_url || ''
+  return url.toLowerCase().includes('.mp4')
+})
+
+const isFacebookVideo = computed(() => {
+  if (!isVideo.value) return false
+  return post.value?.video_platform === 'facebook'
+})
+
+const openExternalVideo = () => {
+  if (!post.value?.video_url) return
+  window.open(post.value.video_url, '_blank')
+}
 const loading = ref(true)
 const baseUrl = window.location.origin
 const allMedia = computed(() => {
@@ -105,10 +165,10 @@ const responsiveOptions = ref([
         <header class="post-header">
           <div class="post-meta">
             <Tag
-              :value="post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ'"
-              :severity="post.pdf_path ? 'danger' : 'success'"
-              class="fama-tag"
-            />
+  :value="post.type === 'video' ? 'VIDÉO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ')"
+  :severity="post.type === 'video' ? 'info' : (post.pdf_path ? 'danger' : 'success')"
+  class="fama-tag"
+/>
             <span class="date">
               <i class="pi pi-clock mr-2"></i>
               {{ getRelativeDate(post.published_at || post.created_at) }}
@@ -116,6 +176,41 @@ const responsiveOptions = ref([
           </div>
           <h3 class="post-title">{{ post.title }}</h3>
         </header>
+        <!-- ✅ VIDEO PLAYER (type=video) -->
+<section v-if="isVideo" class="video-player-wrapper">
+  <!-- YouTube -->
+  <div v-if="youtubeEmbedUrl" class="video-embed">
+    <iframe
+      :src="youtubeEmbedUrl"
+      title="Vidéo officielle"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+  </div>
+
+  <!-- MP4 direct -->
+  <div v-else-if="isMp4Video" class="video-embed">
+    <video :src="post.video_url" controls playsinline preload="metadata"></video>
+  </div>
+
+  <!-- Facebook / autres -->
+  <div v-else class="video-fallback">
+    <div class="video-fallback-card">
+      <i class="pi pi-video"></i>
+      <div class="video-fallback-text">
+        <h4>Vidéo disponible</h4>
+        <p>Cette vidéo est hébergée sur une plateforme externe. Cliquez sur “Ouvrir la vidéo”.</p>
+      </div>
+      <Button
+        label="Ouvrir la vidéo"
+        icon="pi pi-external-link"
+        class="btn-open-video"
+        @click="openExternalVideo"
+      />
+    </div>
+  </div>
+</section>
 
         <!-- <div class="post-main-image" v-if="post.thumbnail">
           <Image :src="`/storage/${post.thumbnail}`" preview imageClass="main-img-fluid" />
@@ -129,8 +224,7 @@ const responsiveOptions = ref([
               <Image :src="`/storage/${item.file_path}`" preview imageClass="gallery-img" />
             </div>
           </div> -->
-<div class="instagram-carousel-wrapper" v-if="allMedia.length > 0">
-  <Carousel :value="allMedia" :numVisible="1" :numScroll="1" :circular="false" :responsiveOptions="responsiveOptions">
+<div class="instagram-carousel-wrapper" v-if="!isVideo && allMedia.length > 0">  <Carousel :value="allMedia" :numVisible="1" :numScroll="1" :circular="false" :responsiveOptions="responsiveOptions">
     <template #item="slotProps">
       <div class="carousel-image-container">
         <div class="carousel-counter">
@@ -303,6 +397,61 @@ const responsiveOptions = ref([
 }
 /* Media */
 
+/* ---------------- VIDEO PLAYER ---------------- */
+.video-player-wrapper{
+  margin: 25px 0 35px;
+}
+
+.video-embed{
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+  background: #000;
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+
+.video-embed iframe,
+.video-embed video{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video-fallback-card{
+  display:flex;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 16px 18px;
+  border-radius: 14px;
+}
+
+.video-fallback-card i{
+  font-size: 1.8rem;
+  color: #0f172a;
+}
+
+.video-fallback-text h4{
+  margin: 0 0 3px;
+  font-weight: 900;
+  color:#0f172a;
+}
+
+.video-fallback-text p{
+  margin: 0;
+  color:#475569;
+  font-size: 0.95rem;
+}
+
+.btn-open-video{
+  margin-left: auto;
+  font-weight: 800;
+}
 
 :deep(.main-img-fluid) {
     height: auto;
@@ -323,7 +472,7 @@ const responsiveOptions = ref([
 .signature-line { width: 60px; height: 4px; background: #14B82C; margin-left: auto; margin-bottom: 15px; }
 .author-name-bottom { font-size: 1.3rem; font-weight: 900; color: #1e293b; text-transform: uppercase; margin: 0; }
 
-s
+
 /* STYLE PDF MINIMALISTE */
 .pdf-download-wrapper {
   margin-top: 40px;

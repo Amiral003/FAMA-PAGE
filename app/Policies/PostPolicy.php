@@ -8,66 +8,105 @@ use App\Models\User;
 class PostPolicy
 {
     /**
-     * Le Super-Admin outrepasse toutes les vérifications.
+     * ✅ Super-admin passe partout.
      */
-    public function before(User $user)
+    public function before(User $user): bool|null
     {
-        if ($user->hasRole('super-admin')) return true;
+        return $user->hasRole('super-admin') ? true : null;
     }
 
-    public function viewAny(User $user)
+    /**
+     * ✅ Voir la liste (admin)
+     * - Rédacteur et validateur
+     */
+    public function viewAny(User $user): bool
     {
         return $user->hasAnyRole(['redacteur', 'validateur']);
     }
 
-    public function view(User $user, Post $post)
+    /**
+     * ✅ Voir un post (admin)
+     * - Validateur voit tout
+     * - Rédacteur voit ses posts
+     */
+    public function view(User $user, Post $post): bool
     {
-        if ($user->hasRole('validateur')) return true;
-        return $user->id === $post->user_id;
+        if ($user->hasRole('validateur')) {
+            return true;
+        }
+
+        return (int) $post->user_id === (int) $user->id;
     }
 
-    public function create(User $user)
+    /**
+     * ✅ Créer
+     * - Rédacteur uniquement
+     */
+    public function create(User $user): bool
     {
         return $user->hasRole('redacteur');
     }
 
     /**
-     * Autorise la modification.
+     * ✅ Modifier (Edit)
+     * - Rédacteur : uniquement ses posts, seulement si brouillon OU revision
+     * - Validateur : peut modifier (si tu veux), sinon mets false
      */
-    public function update(User $user, Post $post)
-{
-    if ($user->hasRole('redacteur') && $post->user_id === $user->id) {
-        // Autoriser si c'est un brouillon OU si c'est en révision (rejeté)
-        return in_array($post->status, ['brouillon', 'revision']);
-    }
-
-    if ($user->hasRole('validateur')) {
-        return true;
-    }
-
-    return false;
-}
-
-    /**
-     * Approuver : Autorise le validateur quel que soit le statut.
-     */
-    public function approve(User $user, Post $post)
+    public function update(User $user, Post $post): bool
     {
-        return $user->hasRole('validateur');
+        if ($user->hasRole('validateur')) {
+            return true; // si tu veux qu'il puisse corriger lui-même
+        }
+
+        if ($user->hasRole('redacteur')) {
+            return (int) $post->user_id === (int) $user->id
+                && in_array($post->status, [Post::STATUS_BROUILLON, Post::STATUS_REVISION], true);
+        }
+
+        return false;
     }
 
     /**
-     * Rejeter : Autorise le validateur quel que soit le statut.
+     * ✅ Publier (Validateur)
+     * Règle métier : publier UNIQUEMENT un brouillon
      */
-    public function reject(User $user, Post $post)
+    public function approve(User $user, Post $post): bool
     {
-        return $user->hasRole('validateur');
+        return $user->hasRole('validateur')
+            && $post->status === Post::STATUS_BROUILLON;
     }
 
-    public function delete(User $user, Post $post)
+    /**
+     * ✅ Rejeter pour révision (Validateur)
+     * Règle métier : rejeter UNIQUEMENT un brouillon
+     */
+    public function reject(User $user, Post $post): bool
     {
-        return $user->hasRole('redacteur') 
-            && $post->user_id === $user->id 
-            && $post->status === 'brouillon';
+        return $user->hasRole('validateur')
+            && $post->status === Post::STATUS_BROUILLON;
+    }
+
+    /**
+     * ✅ Marquer corrigé (Rédacteur)
+     * Règle métier : revision -> brouillon, uniquement l'auteur
+     */
+    public function markFixed(User $user, Post $post): bool
+    {
+        return $user->hasRole('redacteur')
+            && (int) $post->user_id === (int) $user->id
+            && $post->status === Post::STATUS_REVISION;
+    }
+
+    /**
+     * ✅ Supprimer
+     * - Rédacteur uniquement
+     * - seulement si brouillon
+     * - et seulement ses posts
+     */
+    public function delete(User $user, Post $post): bool
+    {
+        return $user->hasRole('redacteur')
+            && (int) $post->user_id === (int) $user->id
+            && $post->status === Post::STATUS_BROUILLON;
     }
 }

@@ -1,7 +1,29 @@
+/* ✅ Tailwind doit être en premier */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Cache Alpine (si tu utilises x-cloak) */
 [x-cloak] {
-    display: none;
+  display: none;
+}
+
+/* ✅ Thème sombre via classe sur <html> : html.dark */
+html.dark body {
+  background: #0b1220;
+  color: #e2e8f0;
+}
+
+/* Exemples sur tes sections */
+html.dark .news-section {
+  background: #0f172a;
+}
+
+html.has-ticker .navbar-tactical {
+  top: 40px; /* même hauteur que ton bandeau */
+}
+
+html.dark .premium-card {
+  background: #0b1220;
+  border-color: rgba(255,255,255,0.08);
 }
