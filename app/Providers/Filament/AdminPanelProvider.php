@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('FAMA Officiel')
             ->favicon(asset('favicon.png'))
-            ->brandLogo(asset('images/logo-fama.png'))
+            ->brandLogo(asset('images/logo_dirpa.png'))
             ->brandLogoHeight('5rem')
             
             ->renderHook(

@@ -58,8 +58,8 @@ onMounted(async () => {
   }, 5000)
 
   try {
-    const res = await axios.get('/api/posts')
-    posts.value = res.data.data
+    const res = await axios.get('/api/posts/latest')
+posts.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (e) {
     console.error('Erreur chargement posts:', e)
   } finally {

@@ -87,6 +87,16 @@ class PostPolicy
     }
 
     /**
+ * ✅ Renvoyer un post PUBLIÉ en révision (Validateur)
+ * Règle métier : published -> revision
+ */
+public function sendToRevision(User $user, Post $post): bool
+{
+    return $user->hasRole('validateur')
+        && $post->status === Post::STATUS_PUBLIE;
+}
+
+    /**
      * ✅ Marquer corrigé (Rédacteur)
      * Règle métier : revision -> brouillon, uniquement l'auteur
      */

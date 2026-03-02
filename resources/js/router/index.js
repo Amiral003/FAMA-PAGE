@@ -60,6 +60,12 @@ const routes = [
   name: 'videotheque',
   component: () => import('@/pages/videotheque.vue'),
 },
+
+{
+  path: '/etat-major/:slug',
+  name: 'staff-show',
+  component: () => import('@/pages/StaffShow.vue'),
+},
   // ✅ Single post : j'ajoute un title dynamique (si slug existe)
   {
     path: '/posts/:slug',

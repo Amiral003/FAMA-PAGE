@@ -12,31 +12,18 @@ class PostController extends Controller
      * ✅ 9 derniers posts publics (HOME)
      * Optionnel: supporte ?type=flash etc.
      */
-    public function latest(Request $request)
-    {
-        $type = trim((string) $request->query('type', ''));
-
-        $query = Post::query()
-            ->published()
-            ->with(['media', 'author'])
-            ->publicOrder();
-
-        // ✅ Filtre par type (optionnel)
-        if ($type !== '') {
-            $allowed = [
-                Post::TYPE_FLASH,
-                Post::TYPE_ARTICLE,
-                Post::TYPE_RECRUTEMENT,
-                Post::TYPE_PDF,
-                Post::TYPE_VIDEO, // ✅ ajout
-            ];
-
-            if (in_array($type, $allowed, true)) {
-                $query->where('type', $type);
-            }
-        }
-
-        return $query->limit(9)->get([
+   public function latest(Request $request)
+{
+    return Post::query()
+        ->published()
+        ->with(['media', 'author'])
+        ->publicOrder()
+        ->whereIn('type', [
+            Post::TYPE_ARTICLE, // actualité
+            Post::TYPE_VIDEO,   // video
+        ])
+        ->limit(5) // ✅ tu avais 9, mais tu veux 5 sur accueil
+        ->get([
             'id',
             'title',
             'slug',
@@ -45,19 +32,17 @@ class PostController extends Controller
             'type',
             'thumbnail',
             'pdf_path',
-
-            // ✅ champs vidéo
             'video_url',
             'video_platform',
             'video_thumbnail_url',
-
             'published_at',
             'validated_at',
             'validated_by',
             'user_id',
             'created_at',
         ]);
-    }
+}
+
 
     /**
      * ✅ Fil d’actualité paginé

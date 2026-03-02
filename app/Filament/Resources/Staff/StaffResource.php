@@ -102,6 +102,41 @@ class StaffResource extends Resource
                         ->label('Missions et attributions')
                         ->rows(5),
                 ]),
+
+                Section::make('Contact')
+    ->schema([
+        Grid::make(2)->schema([
+            TextInput::make('contact_email')
+                ->label('Email de contact')
+                ->email(),
+
+            TextInput::make('contact_phone')
+                ->label('Téléphone'),
+        ]),
+
+        Grid::make(2)->schema([
+            TextInput::make('contact_hotline')
+                ->label('Numéro vert (optionnel)'),
+
+            TextInput::make('contact_hours')
+                ->label('Heures d’ouverture (optionnel)'),
+        ]),
+
+        TextInput::make('contact_address')
+            ->label('Adresse')
+            ->columnSpanFull(),
+
+        TextInput::make('contact_map_url')
+            ->label('Lien carte (Google Maps / OSM)')
+            ->url()
+            ->columnSpanFull(),
+
+        Textarea::make('contact_socials')
+            ->label('Réseaux sociaux (JSON)')
+            ->helperText('Ex: {"facebook":"https://...","x":"https://...","youtube":"https://..."}')
+            ->rows(3)
+            ->columnSpanFull(),
+    ]),
         ]);
     }
 
