@@ -53,6 +53,28 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
+
+    protected static function makeUniqueSlug(string $title): string
+{
+    $base = Str::slug($title);
+
+    // fallback si titre vide ou caractères bizarres
+    if ($base === '') {
+        $base = 'post';
+    }
+
+    $slug = $base;
+    $i = 2;
+
+    // ✅ Postgres + index unique => on évite les collisions
+    while (static::where('slug', $slug)->exists()) {
+        $slug = $base . '-' . $i;
+        $i++;
+    }
+
+    return $slug;
+}
+
     // -------------------------------------------------
     // ✅ BOOTED : slug + statut par défaut (compatible avec ta contrainte CHECK)
     // -------------------------------------------------
@@ -60,9 +82,9 @@ class Post extends Model
     {
         static::creating(function (Post $post) {
             // 1) Slug auto
+            
             if (empty($post->slug) && !empty($post->title)) {
-                $post->slug = Str::slug($post->title);
-            }
+                 $post->slug = static::makeUniqueSlug($post->title);}
 
             // 2) Statut par défaut : brouillon
             // IMPORTANT: ta DB avait un DEFAULT "Brouillion" (ancien) -> ça casse le CHECK.

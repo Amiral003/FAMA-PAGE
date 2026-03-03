@@ -42,6 +42,11 @@ const app = createApp(App)
 // ✅ vueuse/head
 const head = createHead()
 
+
+import safeLinks from './directives/safeLinks'
+
+app.directive('safe-links', safeLinks)
+
 // ------------------------------------------------------
 // Init AOS (si tu veux seulement côté client)
 // ------------------------------------------------------
@@ -65,7 +70,7 @@ app.use(PrimeVue, {
       // - si tu veux contrôler via html.dark, tu peux mettre 'class'
       // MAIS: ton toggle thème dans la navbar fonctionne via html.dark + ton CSS,
       // donc tu peux laisser system ici si tu veux juste PrimeVue auto.
-      darkModeSelector: 'system',
+      darkModeSelector: '.dark',
       cssLayer: false,
     },
   },

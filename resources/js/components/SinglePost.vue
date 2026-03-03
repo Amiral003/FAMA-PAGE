@@ -217,7 +217,7 @@ const responsiveOptions = ref([
         </div> -->
 
         <section class="post-body">
-          <div class="text-content rich-text" v-html="post.content"></div>
+          <div class="text-content rich-text" v-safe-links v-html="post.content"></div>
 
           <!-- <div v-if="post.media?.length" class="post-gallery">
             <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
