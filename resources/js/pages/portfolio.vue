@@ -322,8 +322,13 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </template>
 
 <style scoped>
-.sidebar-column { position: sticky; top: 100px; height: fit-content; }
-
+.sidebar-column {
+  position: -webkit-sticky; /* Pour la compatibilité Safari */
+  position: sticky;
+  top: 20px; /* Distance par rapport au haut du navigateur */
+  height: fit-content; /* Important : le bloc ne doit pas faire toute la hauteur */
+  align-self: start; /* Empêche le sidebar de s'étirer verticalement */
+}
 .sentinel {
   height: 1px;
   width: 100%;
