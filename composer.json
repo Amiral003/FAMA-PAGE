@@ -12,7 +12,9 @@
         "laravel/jetstream": "^5.4",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "league/flysystem-sftp-v3": "^3.31",
         "livewire/livewire": "^3.6.4",
+        "spatie/laravel-backup": "^10.0",
         "spatie/laravel-permission": "^6.24"
     },
     "require-dev": {

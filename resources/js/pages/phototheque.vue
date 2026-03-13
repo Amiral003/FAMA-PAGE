@@ -9,6 +9,7 @@ import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 import Image from 'primevue/image'
+import Card from 'primevue/card'
 
 const router = useRouter()
 const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -25,7 +26,6 @@ useHead({
   ],
 })
 
-// -------------------- STATE --------------------
 const posts = ref([])
 const search = ref('')
 
@@ -38,31 +38,39 @@ const hasMore = ref(true)
 const sentinel = ref(null)
 let observer = null
 
-// -------------------- TRANSFORM POSTS -> PHOTOS --------------------
-const photos = computed(() => {
-  const out = []
+const albums = computed(() => {
+  return posts.value
+    .map((p, index) => {
+      const media = Array.isArray(p.media) ? p.media : []
 
-  for (const p of posts.value) {
-    // ✅ uniquement les images de la galerie media
-    if (Array.isArray(p.media)) {
-      for (const m of p.media) {
-        if (!m?.file_path) continue
-        out.push({
+      const photos = media
+        .filter((m) => m?.file_path)
+        .map((m, idx) => ({
+          id: `${p.id || p.slug || p.title}-${idx}`,
           src: `/storage/${m.file_path}`,
+          alt: p.title,
           postSlug: p.slug,
           postTitle: p.title,
-        })
-      }
-    }
-  }
+        }))
 
-  return out
+      return {
+        id: p.id || p.slug || p.title,
+        title: p.title,
+        slug: p.slug,
+        count: photos.length,
+        photos,
+        order: index + 1,
+      }
+    })
+    .filter((album) => album.photos.length > 0)
 })
 
-// -------------------- API --------------------
+const totalPhotos = computed(() =>
+  albums.value.reduce((sum, album) => sum + album.count, 0)
+)
+
 const fetchPage = async () => {
-  if (!hasMore.value) return
-  if (loadingMore.value) return
+  if (!hasMore.value || loadingMore.value) return
 
   loadingMore.value = true
 
@@ -79,12 +87,10 @@ const fetchPage = async () => {
     const items = payload?.data ?? payload ?? []
 
     if (Array.isArray(payload?.data)) {
-      if (page.value === 1) posts.value = items
-      else posts.value = [...posts.value, ...items]
+      posts.value = page.value === 1 ? items : [...posts.value, ...items]
       hasMore.value = !!payload.next_page_url
     } else {
-      if (page.value === 1) posts.value = items
-      else posts.value = [...posts.value, ...items]
+      posts.value = page.value === 1 ? items : [...posts.value, ...items]
       hasMore.value = false
     }
 
@@ -105,7 +111,6 @@ const resetAndReload = async () => {
   await fetchPage()
 }
 
-// -------------------- INFINITE SCROLL --------------------
 const setupObserver = () => {
   if (!sentinel.value) return
 
@@ -130,7 +135,6 @@ onBeforeUnmount(() => {
   observer = null
 })
 
-// -------------------- SEARCH debounce --------------------
 let tmr = null
 watch(search, () => {
   clearTimeout(tmr)
@@ -145,62 +149,145 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
 <template>
   <div class="photo-page">
     <div class="container">
-      <header class="header">
-        <div class="title-wrap">
+      <header class="hero-banner">
+        <div class="hero-content">
+          <div class="hero-pill">
+            <i class="pi pi-images"></i>
+            <span>Galerie officielle FAMa</span>
+          </div>
+
           <h1 class="page-title">Photothèque Officielle</h1>
           <p class="page-subtitle">
-            Cérémonies, opérations, formations, actions civilo-militaires.
+            Une présentation plus fluide et moderne des publications visuelles :
+            cérémonies, opérations, formations et actions civilo-militaires.
           </p>
+
+          <div class="stats-row">
+            <div class="stat-box">
+              <strong>{{ albums.length }}</strong>
+              <span>Albums</span>
+            </div>
+            <div class="stat-box">
+              <strong>{{ totalPhotos }}</strong>
+              <span>Photos</span>
+            </div>
+          </div>
         </div>
 
-        <div class="search-wrapper">
-          <i class="pi pi-search"></i>
-          <InputText v-model="search" placeholder="Rechercher..." class="search-input" />
+        <div class="hero-tools">
+          <div class="search-wrapper">
+            <i class="pi pi-search"></i>
+            <InputText
+              v-model="search"
+              placeholder="Rechercher une publication..."
+              class="search-input"
+            />
+          </div>
         </div>
       </header>
 
-      <div v-if="loading" class="loading-grid">
-        <div v-for="i in 12" :key="i" class="photo-card skeleton">
-          <Skeleton width="100%" height="190px"></Skeleton>
-        </div>
+      <!-- Loading -->
+      <div v-if="loading" class="album-grid loading-grid">
+        <Card v-for="i in 6" :key="i" class="album-card skeleton-card">
+          <template #content>
+            <div class="skeleton-top">
+              <div class="skeleton-meta">
+                <Skeleton width="70%" height="18px" class="mb-2" />
+                <Skeleton width="110px" height="14px" />
+              </div>
+              <Skeleton width="90px" height="34px" />
+            </div>
+
+            <div class="masonry-skeleton">
+              <Skeleton v-for="j in 6" :key="j" width="100%" height="180px" class="skeleton-tile" />
+            </div>
+          </template>
+        </Card>
       </div>
 
+      <!-- Content -->
       <div v-else>
-        <div v-if="photos.length > 0" class="grid">
-          <article v-for="(ph, idx) in photos" :key="ph.src + idx" class="photo-card">
-            <div class="badge">
-              <Tag :value="ph.badge" severity="success" />
-            </div>
+        <transition-group name="album-fade" tag="div" class="album-grid">
+          <Card
+            v-for="album in albums"
+            :key="album.id"
+            class="album-card"
+            :style="{ animationDelay: `${album.order * 40}ms` }"
+          >
+            <template #content>
+              <div class="album-head">
+                <div class="album-head-left" @click="goToPost(album.slug)">
+                  <h2 class="album-title">{{ album.title }}</h2>
+                  <div class="album-meta">
+                    <Tag
+                      :value="`${album.count} photo${album.count > 1 ? 's' : ''}`"
+                      severity="success"
+                      rounded
+                    />
+                  </div>
+                </div>
 
-            <Image
-              :src="ph.src"
-              preview
-              imageClass="photo-img"
-              :pt="{ image: { loading: 'lazy' } }"
-            />
+                <Button
+                  icon="pi pi-arrow-right"
+                  label="Voir"
+                  rounded
+                  outlined
+                  class="album-btn"
+                  @click="goToPost(album.slug)"
+                />
+              </div>
 
-            <div class="footer" @click="goToPost(ph.postSlug)">
-              <span class="post-title">{{ ph.postTitle }}</span>
-              <Button label="Voir le post" icon="pi pi-arrow-right" text class="btn-link" />
-            </div>
-          </article>
+              <!-- TRUE MASONRY -->
+              <div class="album-masonry">
+                <div
+                  v-for="photo in album.photos"
+                  :key="photo.id"
+                  class="masonry-item"
+                >
+                  <div class="image-shell">
+                    <Image
+                      :src="photo.src"
+                      :alt="photo.alt"
+                      preview
+                      imageClass="masonry-img"
+                      :pt="{ image: { loading: 'lazy' } }"
+                    />
+                  </div>
+                </div>
+              </div>
+            </template>
+          </Card>
+        </transition-group>
 
-          <div v-if="loadingMore" class="loading-more">
-            <div class="photo-card skeleton">
-              <Skeleton width="100%" height="190px"></Skeleton>
-            </div>
-          </div>
+        <div v-if="loadingMore" class="loading-more">
+          <Card class="album-card skeleton-card">
+            <template #content>
+              <div class="skeleton-top">
+                <div class="skeleton-meta">
+                  <Skeleton width="70%" height="18px" class="mb-2" />
+                  <Skeleton width="110px" height="14px" />
+                </div>
+                <Skeleton width="90px" height="34px" />
+              </div>
 
-          <div ref="sentinel" class="sentinel"></div>
-
-          <div v-if="!loading && !loadingMore && !hasMore" class="end-feed">
-            <p>Vous avez tout vu ✅</p>
-          </div>
+              <div class="masonry-skeleton">
+                <Skeleton v-for="j in 6" :key="j" width="100%" height="180px" class="skeleton-tile" />
+              </div>
+            </template>
+          </Card>
         </div>
 
-        <div v-else class="empty">
-          <i class="pi pi-info-circle"></i>
-          <p>Aucune photo trouvée.</p>
+        <div ref="sentinel" class="sentinel"></div>
+
+        <div v-if="!loading && !loadingMore && !albums.length" class="empty-state">
+          <i class="pi pi-images"></i>
+          <h3>Aucune photo trouvée</h3>
+          <p>Essayez une autre recherche.</p>
+        </div>
+
+        <div v-if="!loading && !loadingMore && hasMore === false && albums.length" class="end-feed">
+          <i class="pi pi-check-circle"></i>
+          <span>Vous avez tout vu</span>
         </div>
       </div>
     </div>
@@ -208,76 +295,348 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
 </template>
 
 <style scoped>
-.photo-page { background: #f0f2f5; min-height: 100vh; padding: 40px 0; }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 15px; }
-
-.header { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: end; margin-bottom: 30px; }
-.page-title { font-size: 1.8rem; font-weight: 900; color: #1c1e21; margin-bottom: 6px; }
-.page-subtitle { color: #65676b; margin: 0; }
-
-.search-wrapper { position: relative; }
-.search-input { width: 100%; border-radius: 25px !important; padding-left: 45px !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
-.search-wrapper i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); z-index: 2; color: #65676b; }
-
-.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-
-.photo-card{
-  position: relative;
-  background: white;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid #dddfe2;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+.photo-page {
+  min-height: 100vh;
+  padding: 32px 0 60px;
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 44, 0.08), transparent 18%),
+    radial-gradient(circle at top right, rgba(15, 23, 42, 0.05), transparent 20%),
+    linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
 }
 
-.badge{
-  position:absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 3;
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
-:deep(.photo-img){
-  width: 100%;
-  height: 190px;
-  object-fit: cover;
+.hero-banner {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 28px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(20, 184, 44, 0.10);
+  color: #15803d;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.page-title {
+  margin: 0 0 10px;
+  font-size: 2.15rem;
+  line-height: 1.1;
+  color: #0f172a;
+  font-weight: 950;
+}
+
+.page-subtitle {
+  margin: 0;
+  max-width: 760px;
+  color: #475569;
+  line-height: 1.65;
+}
+
+.stats-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.stat-box {
+  min-width: 110px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid #e2e8f0;
+}
+
+.stat-box strong {
   display: block;
+  color: #0f172a;
+  font-size: 1.2rem;
+  font-weight: 900;
 }
 
-.footer{
-  display:flex;
-  align-items:center;
+.stat-box span {
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.hero-tools {
+  display: flex;
+  align-items: end;
+}
+
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-wrapper i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  height: 48px;
+  padding-left: 42px !important;
+  border-radius: 999px !important;
+  border: 1px solid #dbe4ee !important;
+  box-shadow: none !important;
+  background: #fff !important;
+}
+
+.album-grid,
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.album-card {
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(18px);
+  animation: albumAppear 0.55s ease forwards;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.album-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+:deep(.album-card .p-card-body) {
+  padding: 1rem;
+}
+
+.album-head,
+.skeleton-top {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-top: 1px solid #f1f5f9;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.album-head-left {
+  min-width: 0;
   cursor: pointer;
 }
-.post-title{
-  font-size: 0.88rem;
-  font-weight: 800;
-  color:#0f172a;
+
+.album-title {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.btn-link{ font-weight: 800; color:#14B82C !important; }
 
-.loading-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.loading-more { margin-top: 10px; grid-column: 1 / -1; }
-.sentinel { height: 1px; width: 100%; grid-column: 1 / -1; }
-.end-feed { grid-column: 1 / -1; text-align: center; color: #65676b; padding: 25px 0; font-weight: 800; }
-
-.empty { background: white; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 30px; text-align: center; color: #334155; }
-.empty i { font-size: 2rem; margin-bottom: 10px; color: #64748b; }
-
-@media (max-width: 980px) {
-  .header { grid-template-columns: 1fr; }
-  .grid { grid-template-columns: repeat(3, 1fr); }
-  .loading-grid { grid-template-columns: repeat(3, 1fr); }
+.album-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-@media (max-width: 680px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
-  .loading-grid { grid-template-columns: repeat(2, 1fr); }
+
+.album-btn {
+  flex-shrink: 0;
+  font-weight: 800;
+}
+
+/* VRAIE MASONRY CONTINUE */
+.album-masonry,
+.masonry-skeleton {
+  column-count: 3;
+  column-gap: 10px;
+}
+
+.masonry-item,
+.skeleton-tile {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 10px;
+}
+
+.image-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid #edf2f7;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.image-shell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.08);
+}
+
+:deep(.masonry-img) {
+  width: 100%;
+  height: auto !important;
+  display: block;
+  object-fit: contain;
+  background: #fff;
+}
+
+/* animation globale */
+@keyframes albumAppear {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.album-fade-enter-active,
+.album-fade-leave-active {
+  transition: all 0.35s ease;
+}
+
+.album-fade-enter-from,
+.album-fade-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.loading-more,
+.sentinel,
+.end-feed,
+.empty-state {
+  margin-top: 18px;
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.end-feed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 0;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  border-radius: 24px;
+  border: 1px dashed #cbd5e1;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.empty-state i {
+  font-size: 2.4rem;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #64748b;
+}
+
+@media (max-width: 1100px) {
+  .hero-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .album-grid,
+  .loading-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-title {
+    font-size: 1.7rem;
+  }
+
+  .album-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .album-btn {
+    width: 100%;
+  }
+
+  .album-masonry,
+  .masonry-skeleton {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .hero-banner {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .page-title {
+    font-size: 1.45rem;
+  }
+
+  .album-masonry,
+  .masonry-skeleton {
+    column-count: 2;
+    column-gap: 8px;
+  }
+
+  .masonry-item,
+  .skeleton-tile {
+    margin-bottom: 8px;
+  }
+
+  :deep(.album-card .p-card-body) {
+    padding: 0.85rem;
+  }
 }
 </style>

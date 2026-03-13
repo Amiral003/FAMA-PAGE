@@ -6,7 +6,7 @@ useHead({
   title: 'Contact | FAMa',
   meta: [{ name: 'description', content: 'Contactez les services officiels des FAMa.' }]
 })
-
+const website = ref('') // honeypot
 const form = ref({
   name: '',
   email: '',
@@ -112,7 +112,7 @@ const handleSubmit = async () => {
             <span class="icon">📧</span>
             <div>
               <h3>Email</h3>
-              <p>contact@fama.ml</p>
+              <p>dirpa.fama@gmail.com</p>
             </div>
           </div>
 
@@ -135,7 +135,8 @@ const handleSubmit = async () => {
               <label>Email</label>
               <input v-model="form.email" type="email" placeholder="didi@gmail.com" required />
             </div>
-
+            <div> <input type="hidden" name="website"> </div>
+            <input v-model="website" type="text" name="website" class="hp" autocomplete="off" tabindex="-1" />
             <div class="form-group">
               <label>Sujet</label>
               <select v-model="form.subject" required>
@@ -285,6 +286,14 @@ input, select, textarea {
   line-height: 60px;
   border-radius: 50%;
   margin: 0 auto 20px;
+}
+
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 @media (max-width: 768px) {

@@ -42,8 +42,10 @@ class Post extends Model
         'published_at',
         'rejection_notes',
         'video_url',
-    'video_platform',
-    'video_thumbnail_url',
+        'video_platform',
+        'video_thumbnail_url',
+        'total_views',
+        'unique_views',
     ];
 
 
@@ -83,8 +85,24 @@ class Post extends Model
         static::creating(function (Post $post) {
             // 1) Slug auto
             
-            if (empty($post->slug) && !empty($post->title)) {
-                 $post->slug = static::makeUniqueSlug($post->title);}
+            // 1) Slug auto / slug manuel sécurisé
+if (!empty($post->slug)) {
+    // si Filament envoie un slug manuel : on le normalise + on garantit l'unicité
+    $post->slug = Str::slug($post->slug);
+
+    $base = $post->slug !== '' ? $post->slug : 'post';
+    $slug = $base;
+    $i = 2;
+
+    while (static::where('slug', $slug)->exists()) {
+        $slug = $base . '-' . $i;
+        $i++;
+    }
+
+    $post->slug = $slug;
+} elseif (!empty($post->title)) {
+    $post->slug = static::makeUniqueSlug($post->title);
+}
 
             // 2) Statut par défaut : brouillon
             // IMPORTANT: ta DB avait un DEFAULT "Brouillion" (ancien) -> ça casse le CHECK.
@@ -103,10 +121,15 @@ class Post extends Model
             // Si le titre change et que le slug est vide, on le régénère.
             // (On ne touche pas si slug déjà présent pour ne pas casser les URLs publiées)
             if ($post->isDirty('title') && empty($post->slug) && !empty($post->title)) {
-                $post->slug = Str::slug($post->title);
+                $post->slug = static::makeUniqueSlug($post->title);
             }
         });
     }
+
+    public function dailyViews(): \Illuminate\Database\Eloquent\Relations\HasMany
+{
+    return $this->hasMany(\App\Models\PostViewDaily::class);
+}
 
     public function isVideo(): bool
 {
@@ -188,18 +211,28 @@ class Post extends Model
      * Résultat: status = revision + notes (visible en admin) + audit validator.
      */
     public function rejectForRevision(int $validatorId, string $notes): void
-    {
-        if ($this->status !== self::STATUS_BROUILLON) {
-            throw new LogicException('Seuls les brouillons peuvent être rejetés pour révision.');
-        }
-
-        $this->update([
-            'status'          => self::STATUS_REVISION,
-            'validated_by'    => $validatorId,
-            'validated_at'    => now(),
-            'rejection_notes' => $notes,
-        ]);
+{
+    // ✅ Autoriser brouillon ET publie
+    if (! in_array($this->status, [
+        self::STATUS_BROUILLON,
+        self::STATUS_PUBLIE,
+    ], true)) {
+        throw new LogicException(
+            'Seuls les brouillons ou les posts publiés peuvent être rejetés pour révision.'
+        );
     }
+
+    $this->update([
+        'status'          => self::STATUS_REVISION,
+        'validated_by'    => $validatorId,
+        'validated_at'    => now(),
+        'rejection_notes' => $notes,
+
+        // 🔴 IMPORTANT si le post était publié :
+        // il ne doit plus apparaître sur le site public
+        'published_at'    => null,
+    ]);
+}
 
     /**
      * Marquer corrigé (Rédacteur)

@@ -217,14 +217,8 @@ const responsiveOptions = ref([
         </div> -->
 
         <section class="post-body">
-          <div class="text-content rich-text" v-safe-links v-html="post.content"></div>
 
-          <!-- <div v-if="post.media?.length" class="post-gallery">
-            <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
-              <Image :src="`/storage/${item.file_path}`" preview imageClass="gallery-img" />
-            </div>
-          </div> -->
-<div class="instagram-carousel-wrapper" v-if="!isVideo && allMedia.length > 0">  <Carousel :value="allMedia" :numVisible="1" :numScroll="1" :circular="false" :responsiveOptions="responsiveOptions">
+          <div class="instagram-carousel-wrapper" v-if="!isVideo && allMedia.length > 0">  <Carousel :value="allMedia" :numVisible="1" :numScroll="1" :circular="false" :responsiveOptions="responsiveOptions">
     <template #item="slotProps">
       <div class="carousel-image-container">
         <div class="carousel-counter">
@@ -240,6 +234,14 @@ const responsiveOptions = ref([
     </template>
   </Carousel>
 </div>
+          <div class="text-content rich-text" v-safe-links v-html="post.content"></div>
+
+          <!-- <div v-if="post.media?.length" class="post-gallery">
+            <div v-for="(item, index) in post.media" :key="index" class="gallery-item">
+              <Image :src="`/storage/${item.file_path}`" preview imageClass="gallery-img" />
+            </div>
+          </div> -->
+
           <div class="post-signature-minimal" v-if="post.user">
             <div class="signature-line"></div>
             <p class="author-name-bottom">{{ post.user.name }}</p>
@@ -277,7 +279,7 @@ const responsiveOptions = ref([
         </section>
       </div>
 
-      <aside class="sidebar-column">
+       <aside class="sidebar-column">
         <SidebarOfficial />
       </aside>
     </main>

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use App\Models\PostViewDaily;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class PostController extends Controller
 {
@@ -43,6 +46,58 @@ class PostController extends Controller
         ]);
 }
 
+private function trackPostView(Post $post): void
+{
+    // 1) On incrémente toujours le total
+    $post->increment('total_views');
+
+    $ipHash = $this->makeIpHash(request()->ip());
+    $viewDate = now()->toDateString();
+    $country = $this->resolveCountry(request()->ip());
+
+    DB::transaction(function () use ($post, $ipHash, $viewDate, $country) {
+        $daily = PostViewDaily::query()
+            ->where('post_id', $post->id)
+            ->where('ip_hash', $ipHash)
+            ->where('view_date', $viewDate)
+            ->first();
+
+        if ($daily) {
+            $daily->increment('hits');
+            return;
+        }
+
+        PostViewDaily::create([
+            'post_id' => $post->id,
+            'ip_hash' => $ipHash,
+            'country' => $country,
+            'view_date' => $viewDate,
+            'hits' => 1,
+        ]);
+
+        $post->increment('unique_views');
+    });
+}
+
+private function makeIpHash(?string $ip): string
+{
+    return hash('sha256', ($ip ?? 'unknown') . '|' . config('app.key'));
+}
+
+private function resolveCountry(?string $ip): ?string
+{
+    // V1 : fallback propre si aucun service geoip n'est installé
+    try {
+        if (function_exists('geoip')) {
+            $result = geoip($ip);
+            return $result?->country ?? null;
+        }
+    } catch (\Throwable $e) {
+        // on ne casse jamais l'ouverture du post à cause du geoip
+    }
+
+    return null;
+}
 
     /**
      * ✅ Fil d’actualité paginé
@@ -194,16 +249,19 @@ class PostController extends Controller
     /**
      * ✅ Détail d’un post public par slug
      */
-    public function show(string $slug)
-    {
-        $post = Post::query()
-            ->published()
-            ->where('slug', $slug)
-            ->with(['media', 'author', 'validator'])
-            ->firstOrFail();
 
-        return response()->json($post);
-    }
+    public function show(string $slug)
+{
+    $post = Post::query()
+        ->published()
+        ->where('slug', $slug)
+        ->with(['media', 'author', 'validator'])
+        ->firstOrFail();
+
+    $this->trackPostView($post);
+
+    return response()->json($post->fresh(['media', 'author', 'validator']));
+}
 
    public function photos(Request $request)
 {

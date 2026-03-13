@@ -17,6 +17,7 @@ class PublicContactController extends Controller
             'email'      => ['required','email','max:255'],
             'subject'    => ['required','string','max:255'],
             'message'    => ['required','string','min:10','max:5000'],
+            'website' => ['nullable', 'size:0'],
             // honeypot optionnel : 'website' => ['nullable','size:0']
         ]);
 

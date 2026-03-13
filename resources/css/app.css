@@ -1,29 +1,176 @@
-/* ✅ Tailwind doit être en premier */
+/* ✅ Tailwind Core */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Cache Alpine (si tu utilises x-cloak) */
-[x-cloak] {
-  display: none;
+/* -------------------- BASE & SYSTEM -------------------- */
+[x-cloak] { display: none; }
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+body {
+    background: #f8fafc;
+    transition: background-color 0.25s ease;
 }
 
-/* ✅ Thème sombre via classe sur <html> : html.dark */
 html.dark body {
-  background: #0b1220;
-  color: #e2e8f0;
+    background: #243125 !important;
+    color: #ebede9 !important;
 }
 
-/* Exemples sur tes sections */
-html.dark .news-section {
-  background: #0f172a;
+/* -------------------- NAVBAR -------------------- */
+html.dark .navbar-tactical {
+    background: rgba(26, 36, 27, 0.95) !important;
+    border-color: rgba(255, 215, 0, 0.2) !important;
 }
 
-html.has-ticker .navbar-tactical {
-  top: 40px; /* même hauteur que ton bandeau */
+/* -------------------- SECTIONS / PAGES (FOND GÉNÉRAL) -------------------- */
+html.dark .news-section,
+html.dark .photo-page,
+html.dark .portfolio-container,
+html.dark .comops-page,
+html.dark .single-post-page,
+html.dark .post-wrapper,
+html.dark .article-container,
+html.dark .contact-page,
+html.dark .contact-container,
+html.dark .about-page,
+html.dark .about-container,
+html.dark main {
+    background: #243125 !important;
 }
 
-html.dark .premium-card {
-  background: #0b1220;
-  border-color: rgba(255,255,255,0.08);
+/* -------------------- FIX IMAGES (PROTECTION) -------------------- */
+/* On s'assure que le fond sombre ne recouvre jamais les images ou sliders */
+html.dark img,
+html.dark .p-carousel,
+html.dark .p-carousel *,
+html.dark .swiper-slide,
+html.dark [style*="background-image"] {
+    background-color: transparent !important;
 }
+
+/* -------------------- CARTES ET CADRES (À PROPOS, MISSIONS, ETC.) -------------------- */
+/* On cible ici tous les rectangles qui devraient être "Vert Treillis" sombre */
+html.dark .premium-card,
+html.dark .news-card,
+html.dark .flash-card,
+html.dark .album-card,
+html.dark .photo-card,
+html.dark .sidebar,
+html.dark .p-card,
+html.dark .surface-card,
+html.dark .bg-white,
+html.dark .bg-slate-50,
+html.dark .bg-gray-50,
+html.dark .about-content-card,
+html.dark .article-body-container,
+html.dark div[class*="form-container"],
+html.dark .about-page section div,  /* <-- Cible les blocs internes de À Propos */
+html.dark .about-page .rounded-xl,
+html.dark .about-page .rounded-2xl {
+    background-color: #1f261b !important;
+    background: #1f261b !important;
+    color: #ebede9 !important;
+    border: 1px solid rgba(255, 202, 40, 0.15) !important;
+}
+
+/* -------------------- TITRES ET TEXTES -------------------- */
+html.dark h1, html.dark h2, html.dark h3,
+html.dark .page-title, html.dark .card-title,
+html.dark [class*="text-yellow"], html.dark [class*="text-amber"] {
+    color: #ffca28 !important;
+}
+
+html.dark p, html.dark span:not(.p-button-label),
+html.dark li,
+html.dark .text-slate-600, html.dark .text-gray-600 {
+    color: #a1a89c !important;
+}
+
+/* -------------------- FORMULAIRES (CONTACT & INPUTS) -------------------- */
+html.dark label { color: #ffca28 !important; }
+
+html.dark input,
+html.dark textarea,
+html.dark .p-inputtext,
+html.dark .p-dropdown,
+html.dark select {
+    background: #1a241b !important;
+    color: #ebede9 !important;
+    border: 1px solid #3d4a35 !important;
+}
+
+/* Fix spécifique pour l'autofill et le focus */
+html.dark input:-webkit-autofill {
+    -webkit-text-fill-color: #ebede9 !important;
+    -webkit-box-shadow: 0 0 0px 1000px #1a241b inset !important;
+}
+
+html.dark input:focus, html.dark .p-inputtext:focus {
+    border-color: #ffca28 !important;
+    outline: none;
+}
+
+/* -------------------- ICÔNES & DÉTAILS -------------------- */
+html.dark .icon-wrapper,
+html.dark .info-icon-bg,
+html.dark .badge,
+html.dark .tag-item {
+    background: #3d4a35 !important;
+    color: #ffca28 !important;
+}
+
+html.dark hr {
+    border-color: rgba(255, 202, 40, 0.1) !important;
+}
+
+/* -------------------- SÉCURITÉ STYLE INLINE -------------------- */
+html.dark div[style*="background-color: white"],
+html.dark div[style*="background: white"] {
+    background-color: #1f261b !important;
+}
+/* -------------------- COMPOSANT ÉTAT-MAJOR & FICHES -------------------- */
+
+/* -------------------- COMPOSANT ÉTAT-MAJOR & FICHES -------------------- */
+
+@layer components {
+    .staff-page-container {
+        /* Correction : min-h-[100vh] au lieu de min-height[...] */
+        @apply min-h-[100vh] py-10 transition-colors duration-300;
+    }
+
+    /* Carte principale qui devient sombre automatiquement */
+    html.dark .staff-main-card {
+        background-color: #1f261b !important;
+        border: 1px solid rgba(255, 202, 40, 0.15) !important;
+        color: #ebede9 !important;
+    }
+
+    /* Blocs internes (Présentation, Missions, Contact) */
+    html.dark .staff-info-block {
+        background-color: #1a241b !important;
+        border: 1px solid #3d4a35 !important;
+        color: #ebede9 !important;
+    }
+
+    /* Titres jaunes en mode sombre */
+    html.dark .staff-accent-title {
+        color: #ffca28 !important;
+        border-color: rgba(255, 202, 40, 0.2) !important;
+    }
+
+    /* Inputs du formulaire */
+    html.dark .staff-input {
+        background: #1a241b !important;
+        color: #ebede9 !important;
+        border: 1px solid #3d4a35 !important;
+    }
+
+    /* Correction pour forcer le texte des paragraphes dans les blocs sombres */
+    html.dark .staff-info-block p,
+    html.dark .staff-info-block span {
+        color: #a1a89c !important;
+    }
+}
+

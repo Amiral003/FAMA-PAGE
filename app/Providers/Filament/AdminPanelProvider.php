@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -49,6 +50,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
+                \App\Filament\Widgets\PostsAudienceOverview::class,
+    \App\Filament\Widgets\TopViewedPosts::class,
+    \App\Filament\Widgets\AudienceByCountry::class,
                 //  AccountWidget::class,
                 // FilamentInfoWidget::class,
             ])
@@ -57,6 +61,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                ThrottleRequests::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,

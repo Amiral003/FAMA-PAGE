@@ -22,33 +22,24 @@ use App\Http\Controllers\Api\PublicContactController;
 |   GET /api/posts/latest
 |   GET /api/posts/mon-slug
 */
+Route::middleware('throttle:api-public')->group(function () {
+    Route::prefix('posts')->group(function () {
+        Route::get('/', [PostController::class, 'index']);
+        Route::get('/flashes', [PostController::class, 'flashes']);
+        Route::get('/latest', [PostController::class, 'latest']);
+        Route::get('/photos', [PostController::class, 'photos']);
+        Route::get('/videos', [PostController::class, 'videos']);
+        Route::get('/{slug}', [PostController::class, 'show'])->where('slug', '[A-Za-z0-9\-]+');
+    });
 
-Route::prefix('posts')->group(function () {
-    // ✅ Fil d’actualité paginé + recherche
-    Route::get('/', [PostController::class, 'index']);
-
-      // ✅ Flashs (bandeau)
-    Route::get('/flashes', [PostController::class, 'flashes']);
-
-    // ✅ 9 derniers posts publics (Home)
-    Route::get('/latest', [PostController::class, 'latest']);
-
-    // Route::get('/posts/videos', [\App\Http\Controllers\Api\PostController::class, 'videos']);
-
-    Route::get('/photos', [PostController::class, 'photos']);
-    Route::get('/videos', [PostController::class, 'videos']);
-    // ✅ Détail d’un post public par slug (SPA)
-    Route::get('/{slug}', [PostController::class, 'show'])
-        // slug: lettres/chiffres/tirets, évite de matcher n’importe quoi
-        ->where('slug', '[A-Za-z0-9\-]+');
+    Route::get('/public/staffs', [PublicStaffController::class, 'index']);
+    Route::get('/public/staffs/{slug}', [PublicStaffController::class, 'show']);
 });
 
+// Auth séparé
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
-
-Route::get('/public/staffs', [PublicStaffController::class, 'index']);
-Route::get('/public/staffs/{slug}', [PublicStaffController::class, 'show']);
+})->middleware(['auth:sanctum', 'throttle:60,1']);
 
 Route::post('/public/contact', PublicContactController::class)
-    ->middleware('throttle:10,1'); // anti-spam simple
+    ->middleware('throttle:contact');

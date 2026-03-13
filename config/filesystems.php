@@ -30,6 +30,18 @@ return [
 
     'disks' => [
 
+
+        'sftp' => [
+    'driver' => 'sftp',
+    'host' => env('BACKUP_SFTP_HOST'),
+    'username' => env('BACKUP_SFTP_USERNAME'),
+    'password' => env('BACKUP_SFTP_PASSWORD'),
+    // ou mieux: 'privateKey' => env('BACKUP_SFTP_PRIVATE_KEY'),
+    'port' => env('BACKUP_SFTP_PORT', 22),
+    'root' => env('BACKUP_SFTP_ROOT', '/backups/fama-page'),
+    'timeout' => 30,
+],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app'),

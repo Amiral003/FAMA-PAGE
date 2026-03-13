@@ -322,28 +322,52 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 </template>
 
 <style scoped>
+.sidebar-column { position: sticky; top: 100px; height: fit-content; }
+
 .sentinel {
   height: 1px;
   width: 100%;
 }
-.card-media { position: relative; }
 
-.video-overlay{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background: rgba(0,0,0,0.25);
+.card-media {
+  position: relative;
+  margin: 0 -20px 15px -20px;
+  border-top: 1px solid #f0f2f5;
+  border-bottom: 1px solid #f0f2f5;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.video-overlay i{
+.featured-img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 480px;
+  margin: 0 auto;
+}
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.18);
+  pointer-events: none;
+}
+
+.video-overlay i {
   font-size: 3rem;
   color: white;
   background: rgba(0,0,0,0.45);
   border-radius: 999px;
   padding: 14px 18px;
 }
+
 .loading-more { margin-top: 15px; }
 .end-feed { text-align: center; color: #65676b; padding: 25px 0; font-weight: 700; }
 .portfolio-container { background: #f0f2f5; min-height: 100vh; padding: 40px 0; }
@@ -356,7 +380,6 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 .search-input { width: 100%; border-radius: 25px !important; padding-left: 45px !important; border: none !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
 .search-wrapper i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); z-index: 2; color: #65676b; }
 
-/* News Card Style Instagram/Facebook */
 .news-card {
   background: white;
   border-radius: 12px;
@@ -367,6 +390,7 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
   transition: background 0.2s;
   cursor: pointer;
 }
+
 .news-card:hover { background: #fcfcfc; }
 
 .card-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -374,26 +398,52 @@ const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3
 
 .card-title { font-size: 1.35rem; font-weight: 700; color: #050505; line-height: 1.4; margin-bottom: 12px; }
 
-.card-media { margin: 0 -20px 15px -20px; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
-.featured-img { width: 100%; height: auto; max-height: 450px; object-fit: cover; }
+.pdf-strip {
+  padding: 50px;
+  background: #fff1f2;
+  color: #be123c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
 
-.pdf-strip { padding: 50px; background: #fff1f2; color: #be123c; display: flex; flex-direction: column; align-items: center; gap: 10px; font-weight: 700; }
 .pdf-strip i { font-size: 2.5rem; }
 
 .card-excerpt { color: #1c1e21; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
 
 .card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
 
-/* Share logic */
 .share-wrapper { position: relative; display: flex; align-items: center; }
 .share-floating-menu {
-  display: flex; gap: 8px; margin-right: 10px;
-  opacity: 0; transform: translateX(10px);
-  transition: 0.3s ease; pointer-events: none;
+  display: flex;
+  gap: 8px;
+  margin-right: 10px;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: 0.3s ease;
+  pointer-events: none;
 }
-.share-wrapper:hover .share-floating-menu { opacity: 1; transform: translateX(0); pointer-events: auto; }
-.s-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
-.fb { background: #1877f2; } .wa { background: #22c55e; }
+
+.share-wrapper:hover .share-floating-menu {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.s-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.fb { background: #1877f2; }
+.wa { background: #22c55e; }
 
 .read-more-btn { font-weight: 700 !important; color: #14b82c !important; }
 

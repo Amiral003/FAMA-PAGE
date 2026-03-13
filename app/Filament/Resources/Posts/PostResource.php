@@ -225,7 +225,7 @@ class PostResource extends Resource
              * PDF => caché
              */
             Repeater::make('media')
-                ->label('Médias additionnels (Images ou Vidéos)')
+                ->label('Médias additionnels (Images)')
                 ->relationship('media')
                 ->schema([
                     FileUpload::make('file_path')

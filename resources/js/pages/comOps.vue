@@ -5,7 +5,7 @@
 
 import { useHead } from '@vueuse/head'
 import { useRouter } from 'vue-router'
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import axios from 'axios'
 
 // Date relative
@@ -62,9 +62,6 @@ const getRelativeDate = (date) => {
   }
 }
 
-// ✅ Pour Com-Ops: on veut afficher une image "format communiqué"
-// On prend en priorité thumbnail (si tu l’utilises),
-// sinon premier media si dispo.
 const getPostImage = (post) => {
   if (post.thumbnail) return `/storage/${post.thumbnail}`
   if (post.media?.length > 0) return `/storage/${post.media[0].file_path}`
@@ -73,8 +70,7 @@ const getPostImage = (post) => {
 
 // -------------------- API : charger une page (type=flash) --------------------
 const fetchPage = async () => {
-  if (!hasMore.value) return
-  if (loadingMore.value) return
+  if (!hasMore.value || loadingMore.value) return
 
   loadingMore.value = true
 
@@ -83,7 +79,7 @@ const fetchPage = async () => {
       params: {
         page: page.value,
         per_page: perPage.value,
-        type: 'flash',                // ✅ IMPORTANT : filtre serveur
+        type: 'flash',
         q: search.value.trim() || undefined,
       },
     })
@@ -91,7 +87,6 @@ const fetchPage = async () => {
     const payload = res.data
     const items = payload?.data ?? []
 
-    // pagination Laravel
     if (page.value === 1) flashes.value = items
     else flashes.value = [...flashes.value, ...items]
 
@@ -130,6 +125,7 @@ const setupObserver = () => {
 
 onMounted(async () => {
   await fetchPage()
+  await nextTick()
   setupObserver()
 })
 
@@ -152,39 +148,49 @@ const items = computed(() => flashes.value)
 <template>
   <div class="comops-page">
     <div class="container">
-      <header class="header">
+      <header class="hero-header">
         <div class="title-wrap">
-          <h1 class="title">Com-Ops</h1>
-          <p class="subtitle">Flash infos & communications opérationnelles</p>
+          <div class="hero-pill">
+            <i class="pi pi-bolt"></i>
+            <span>Com-Ops</span>
+          </div>
+
+          <h1 class="title">Communications opérationnelles</h1>
+          <p class="subtitle">Flash infos & communications officielles publiées en temps réel</p>
         </div>
 
         <div class="search-wrapper">
           <i class="pi pi-search"></i>
-          <InputText v-model="search" placeholder="Rechercher un flash..." class="search-input" />
+          <InputText
+            v-model="search"
+            placeholder="Rechercher un flash..."
+            class="search-input"
+          />
         </div>
       </header>
 
       <!-- Loading initial -->
       <div v-if="loading" class="loading-grid">
-        <div v-for="i in 3" :key="i" class="flash-card skeleton">
-          <Skeleton width="40%" height="1.2rem" class="mb-3"></Skeleton>
-          <Skeleton width="100%" height="280px" class="mb-3"></Skeleton>
+        <div v-for="i in 4" :key="i" class="flash-card skeleton">
+          <Skeleton width="38%" height="1.1rem" class="mb-3"></Skeleton>
+          <Skeleton width="100%" height="240px" class="mb-3"></Skeleton>
           <Skeleton width="90%" class="mb-2"></Skeleton>
         </div>
       </div>
 
       <div v-else>
-        <div v-if="items.length > 0" class="grid">
+        <TransitionGroup v-if="items.length > 0" name="flash-list" tag="div" class="grid">
           <article
-            v-for="post in items"
+            v-for="(post, index) in items"
             :key="post.id"
             class="flash-card"
+            :style="{ animationDelay: `${index * 40}ms` }"
             @click="router.push(`/posts/${post.slug}`)"
           >
             <div class="badge">FLASH</div>
 
             <div class="media" v-if="getPostImage(post)">
-              <img :src="getPostImage(post)" alt="" loading="lazy" />
+              <img :src="getPostImage(post)" alt="" loading="lazy" class="flash-img" />
             </div>
 
             <div class="body">
@@ -195,7 +201,6 @@ const items = computed(() => flashes.value)
 
               <h2 class="card-title">{{ post.title }}</h2>
 
-              <!-- Petit extrait si tu veux (mais tes flash sont souvent juste titre + image) -->
               <p v-if="post.content" class="excerpt">
                 {{ stripHtml(post.content).substring(0, 120) }}...
               </p>
@@ -212,27 +217,27 @@ const items = computed(() => flashes.value)
               </div>
             </div>
           </article>
-
-          <!-- ✅ Sentinel en bas de page -->
-          <div ref="sentinel" style="height: 1px;"></div>
-
-          <!-- Loader pages suivantes -->
-          <div v-if="loadingMore" class="loading-more">
-            <div class="flash-card skeleton">
-              <Skeleton width="40%" height="1.2rem" class="mb-3"></Skeleton>
-              <Skeleton width="100%" height="280px" class="mb-3"></Skeleton>
-              <Skeleton width="90%" class="mb-2"></Skeleton>
-            </div>
-          </div>
-
-          <div v-if="!loadingMore && !hasMore" class="end">
-            Vous avez tout vu ✅
-          </div>
-        </div>
+        </TransitionGroup>
 
         <div v-else class="empty">
           <i class="pi pi-info-circle"></i>
           <p>Aucun flash trouvé.</p>
+        </div>
+
+        <!-- Sentinel -->
+        <div ref="sentinel" class="sentinel"></div>
+
+        <!-- Loader pages suivantes -->
+        <div v-if="loadingMore" class="loading-more">
+          <div class="flash-card skeleton">
+            <Skeleton width="38%" height="1.1rem" class="mb-3"></Skeleton>
+            <Skeleton width="100%" height="240px" class="mb-3"></Skeleton>
+            <Skeleton width="90%" class="mb-2"></Skeleton>
+          </div>
+        </div>
+
+        <div v-if="!loadingMore && !hasMore && items.length" class="end">
+          Vous avez tout vu ✅
         </div>
       </div>
     </div>
@@ -240,31 +245,113 @@ const items = computed(() => flashes.value)
 </template>
 
 <style scoped>
-.comops-page { background: #f4f6f8; min-height: 100vh; padding: 30px 0; }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 15px; }
+.comops-page {
+  background:
+    radial-gradient(circle at top left, rgba(153, 27, 27, 0.05), transparent 18%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  min-height: 100vh;
+  padding: 30px 0 50px;
+}
 
-.header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-end; margin-bottom: 18px; }
-.title { font-size: 1.9rem; font-weight: 900; color: #0f172a; margin: 0; }
-.subtitle { margin: 6px 0 0; color: #64748b; font-weight: 700; }
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
 
-.search-wrapper { position: relative; width: 420px; max-width: 100%; }
-.search-input { width: 100%; border-radius: 999px !important; padding-left: 45px !important; border: none !important; box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important; }
-.search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; }
+.hero-header {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 22px;
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
 
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
-@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .header { flex-direction: column; align-items: stretch; } }
+.title-wrap {
+  min-width: 0;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(153, 27, 27, 0.08);
+  color: #991b1b;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.title {
+  font-size: 1.95rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  height: 46px;
+  border-radius: 999px !important;
+  padding-left: 45px !important;
+  border: 1px solid #dbe4ee !important;
+  box-shadow: none !important;
+  background: #fff !important;
+}
+
+.search-wrapper i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
 
 .flash-card {
   background: white;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   position: relative;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  opacity: 0;
+  transform: translateY(18px);
+  animation: fadeCardUp 0.5s ease forwards;
 }
-.flash-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+
+.flash-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.09);
+}
 
 .badge {
   position: absolute;
@@ -278,20 +365,144 @@ const items = computed(() => flashes.value)
   letter-spacing: 1px;
   font-size: 0.75rem;
   z-index: 2;
+  box-shadow: 0 4px 10px rgba(153, 27, 27, 0.25);
 }
 
-.media { background: #0b1220; }
-.media img { width: 100%; height: auto; display: block; }
+.media {
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid #eef2f7;
+}
 
-.body { padding: 16px; }
-.meta { display: inline-flex; gap: 8px; align-items: center; color: #64748b; font-weight: 800; font-size: 0.85rem; }
-.card-title { margin: 10px 0 8px; font-weight: 900; color: #0f172a; line-height: 1.25; font-size: 1.1rem; }
-.excerpt { margin: 0 0 8px; color: #334155; line-height: 1.5; }
-.cta { display: flex; justify-content: flex-end; }
-.open-btn { font-weight: 900 !important; color: #14b82c !important; }
+.flash-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+}
 
-.loading-more { margin-top: 10px; }
-.end { text-align: center; color: #64748b; padding: 18px 0; font-weight: 900; }
-.empty { text-align: center; padding: 40px 0; color: #64748b; font-weight: 800; }
-.empty i { font-size: 1.6rem; margin-bottom: 10px; display: inline-block; }
+.body {
+  padding: 16px;
+}
+
+.meta {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.card-title {
+  margin: 10px 0 8px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.28;
+  font-size: 1.1rem;
+}
+
+.excerpt {
+  margin: 0 0 8px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.cta {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.open-btn {
+  font-weight: 900 !important;
+  color: #14b82c !important;
+}
+
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.sentinel {
+  height: 1px;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+
+.loading-more {
+  margin-top: 10px;
+}
+
+.end {
+  text-align: center;
+  color: #64748b;
+  padding: 18px 0;
+  font-weight: 900;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.empty i {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+@keyframes fadeCardUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.flash-list-enter-active,
+.flash-list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.flash-list-enter-from,
+.flash-list-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+@media (max-width: 900px) {
+  .grid,
+  .loading-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.55rem;
+  }
+
+  .hero-header {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .body {
+    padding: 14px;
+  }
+}
 </style>

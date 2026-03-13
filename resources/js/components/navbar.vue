@@ -122,7 +122,7 @@ onMounted(() => {
           </li>
 
           <!-- Dropdown PC Etat-Major -->
-          <li class="dropdown-pc" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
+          <!-- <li class="dropdown-pc" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
             <a href="#" class="dropdown-trigger" @click.prevent>
               {{ t('nav.staff') }} <i class="pi pi-chevron-down"></i>
             </a>
@@ -134,7 +134,7 @@ onMounted(() => {
                 </li>
               </ul>
             </transition>
-          </li>
+          </li> -->
 
           <li><router-link :to="contactItem.to">{{ t(contactItem.key) }}</router-link></li>
           <li><router-link :to="aboutItem.to">{{ t(aboutItem.key) }}</router-link></li>
@@ -325,7 +325,7 @@ onMounted(() => {
   position: absolute;
   top: 100%;
   left: 0;
-  background: #243125;
+  background: #223523;
   min-width: 180px;
   list-style: none;
   padding: 10px 0;
@@ -406,7 +406,7 @@ onMounted(() => {
 
   .mobile-wrapper { display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 2000; visibility: hidden; opacity: 0; transition: 0.4s; background: rgba(0, 0, 0, 0.8); }
   .mobile-wrapper.is-active { visibility: visible; opacity: 1; }
-  .side-menu { position: absolute; right: -300px; top: 0; width: 280px; height: 100%; background: #1a241b; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+  .side-menu { position: absolute; right: -300px; top: 0; width: 280px; height: 100%; background: #1e2a1f; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
   .mobile-wrapper.is-active .side-menu { right: 0; }
 
   .menu-header { padding: 2rem; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 215, 0, 0.1); }

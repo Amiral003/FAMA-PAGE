@@ -78,23 +78,15 @@ class PostPolicy
 
     /**
      * ✅ Rejeter pour révision (Validateur)
-     * Règle métier : rejeter UNIQUEMENT un brouillon
+     * Règle métier : rejeter UNIQUEMENT un brouillon et publie
      */
     public function reject(User $user, Post $post): bool
-    {
-        return $user->hasRole('validateur')
-            && $post->status === Post::STATUS_BROUILLON;
-    }
-
-    /**
- * ✅ Renvoyer un post PUBLIÉ en révision (Validateur)
- * Règle métier : published -> revision
- */
-public function sendToRevision(User $user, Post $post): bool
 {
     return $user->hasRole('validateur')
-        && $post->status === Post::STATUS_PUBLIE;
+        && in_array($post->status, [Post::STATUS_BROUILLON, Post::STATUS_PUBLIE], true);
 }
+
+
 
     /**
      * ✅ Marquer corrigé (Rédacteur)

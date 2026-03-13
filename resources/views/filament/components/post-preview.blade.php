@@ -130,5 +130,27 @@
                 </div>
             @endif
         </div>
+
+        {{-- nombre de vue  --}}
+
+        <div class="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+    <h3 class="text-sm font-semibold text-gray-700">Audience</h3>
+
+    <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-md bg-gray-50 p-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Vues totales</p>
+            <p class="text-lg font-bold text-gray-900">
+                {{ number_format($post->total_views ?? 0, 0, ',', ' ') }}
+            </p>
+        </div>
+
+        <div class="rounded-md bg-gray-50 p-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Vues uniques</p>
+            <p class="text-lg font-bold text-gray-900">
+                {{ number_format($post->unique_views ?? 0, 0, ',', ' ') }}
+            </p>
+        </div>
+    </div>
+</div>
     </div>
 </div>
