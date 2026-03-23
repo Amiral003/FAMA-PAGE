@@ -13,10 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Filament\Forms;
-use Spatie\Permission\Models\Role;
-
-
 
 class UserResource extends Resource
 {
@@ -26,11 +22,10 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-   
     public static function form(Schema $schema): Schema
-{
-    return UserForm::schema($schema);
-}
+    {
+        return UserForm::schema($schema);
+    }
 
     public static function table(Table $table): Table
     {
@@ -39,9 +34,7 @@ class UserResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -54,13 +47,7 @@ class UserResource extends Resource
     }
 
     public static function canViewAny(): bool
-{
-    return auth()->user()?->hasRole('super-admin');
-}
-
-
-    
-
-
-
+    {
+        return auth()->check() && auth()->user()->hasRole('super-admin');
+    }
 }

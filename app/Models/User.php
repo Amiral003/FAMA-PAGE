@@ -33,10 +33,15 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    'name',
+    'email',
+    'password',
+    'status',
+    'must_change_password',
+    'last_login_at',
+    'last_login_ip',
+    'password_changed_at',
+];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -73,12 +78,24 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+   protected function casts(): array
+{
+    return [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'password_changed_at' => 'datetime',
+        'must_change_password' => 'boolean',
+        'password' => 'hashed',
+    ];
+}
 
+public function isActive(): bool
+{
+    return $this->status === 'active';
+}
+
+public function isInactive(): bool
+{
+    return $this->status === 'inactive';
+}
 }

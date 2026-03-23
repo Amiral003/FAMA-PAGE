@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
+use App\Listeners\UpdateLastLoginData;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -18,7 +21,11 @@ class AppServiceProvider extends ServiceProvider
     }
 
     public function boot(): void
+    
     {
+         {
+        Event::listen(Login::class, UpdateLastLoginData::class);
+    }
          // test temporaire
         if (app()->environment('local')) {
     \Illuminate\Database\Eloquent\Model::preventLazyLoading();
@@ -53,4 +60,6 @@ class AppServiceProvider extends ServiceProvider
     return Limit::perMinute(30)->by($request->ip());
 });
     }
+
+    
 }
