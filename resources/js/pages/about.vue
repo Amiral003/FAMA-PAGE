@@ -57,10 +57,8 @@ onMounted(fetchStaffs)
   <div class="about-page">
     <div class="main-layout container">
 
-      <!-- CONTENU -->
       <section class="content-column">
 
-        <!-- HERO PREMIUM -->
         <section class="hero-premium">
           <div class="hero-overlay"></div>
 
@@ -86,7 +84,6 @@ onMounted(fetchStaffs)
           </div>
         </section>
 
-        <!-- INTRO -->
         <section class="section-box intro-box">
           <div class="section-head">
             <h2>Présentation générale</h2>
@@ -109,7 +106,6 @@ onMounted(fetchStaffs)
           </div>
         </section>
 
-        <!-- MISSIONS -->
         <section class="section-box missions-box">
           <div class="section-head">
             <h2>Missions essentielles</h2>
@@ -143,7 +139,6 @@ onMounted(fetchStaffs)
           </div>
         </section>
 
-        <!-- ORGANISATION -->
         <section class="section-box org-box">
           <div class="section-head">
             <h2>Organisation institutionnelle</h2>
@@ -164,7 +159,6 @@ onMounted(fetchStaffs)
           </div>
         </section>
 
-        <!-- STAFFS -->
         <section class="section-box staffs-box">
           <div class="section-head">
             <h2>États-majors, directions et services</h2>
@@ -246,7 +240,6 @@ onMounted(fetchStaffs)
 
       </section>
 
-      <!-- SIDEBAR -->
       <aside class="sidebar-column">
         <SidebarOfficial />
       </aside>
@@ -256,12 +249,14 @@ onMounted(fetchStaffs)
 </template>
 
 <style scoped>
+/* ==========================================
+   1. STYLES DE BASE (MODE CLAIR)
+   ========================================== */
 .about-page {
   min-height: 100vh;
   padding: 36px 0 50px;
-  background:
-    radial-gradient(circle at top right, rgba(20,184,44,0.06), transparent 20%),
-    linear-gradient(to bottom, #f8fafc 0%, #eef2f7 100%);
+  background: linear-gradient(to bottom, #f8fafc 0%, #eef2f7 100%);
+  transition: all 0.3s ease;
 }
 
 .container {
@@ -284,23 +279,20 @@ onMounted(fetchStaffs)
   box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
 }
 
-/* HERO PREMIUM */
 .hero-premium {
   position: relative;
   border-radius: 20px;
   overflow: hidden;
   margin-bottom: 26px;
-  background:
-    linear-gradient(120deg, rgba(7,14,23,0.95), rgba(15,23,42,0.92)),
-    linear-gradient(90deg, #14B82C 0%, #FFD700 50%, #CE1126 100%);
+  background: linear-gradient(120deg, rgba(7,14,23,0.95), rgba(15,23,42,0.92)),
+              linear-gradient(90deg, #14B82C 0%, #FFD700 50%, #CE1126 100%);
 }
 
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 30%),
-    linear-gradient(to right, rgba(20,184,44,0.08), rgba(255,215,0,0.05), rgba(206,17,38,0.08));
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 30%),
+              linear-gradient(to right, rgba(20,184,44,0.08), rgba(255,215,0,0.05), rgba(206,17,38,0.08));
 }
 
 .hero-content {
@@ -324,7 +316,6 @@ onMounted(fetchStaffs)
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.08;
   font-weight: 900;
-  max-width: 900px;
 }
 
 .hero-text {
@@ -352,17 +343,12 @@ onMounted(fetchStaffs)
   font-weight: 700;
 }
 
-/* BLOCS */
 .section-box {
   margin-top: 24px;
   padding: 22px 22px 20px;
   border-radius: 18px;
   border: 1px solid rgba(15,23,42,0.06);
   background: linear-gradient(to bottom right, #ffffff, #f8fafc);
-}
-
-.section-head {
-  margin-bottom: 16px;
 }
 
 .section-head h2 {
@@ -380,22 +366,14 @@ onMounted(fetchStaffs)
   background: linear-gradient(90deg, #14B82C, #FFD700, #CE1126);
 }
 
-.intro-content p,
-.org-text,
-.staff-intro {
+.intro-content p, .org-text, .staff-intro {
   color: #334155;
   line-height: 1.85;
   margin: 0 0 14px;
 }
 
-.intro-content p:last-child {
-  margin-bottom: 0;
-}
-
-/* MISSIONS */
 .mission-grid {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 14px;
 }
 
@@ -403,7 +381,6 @@ onMounted(fetchStaffs)
   display: grid;
   grid-template-columns: 56px 1fr;
   gap: 14px;
-  align-items: start;
   padding: 14px;
   border-radius: 14px;
   background: #fff;
@@ -411,194 +388,170 @@ onMounted(fetchStaffs)
 }
 
 .mission-number {
-  width: 56px;
-  height: 56px;
+  width: 56px; height: 56px;
   border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  font-size: 0.95rem;
+  display: grid; place-items: center;
+  font-weight: 900; color: #14B82C;
   background: rgba(20,184,44,0.08);
-  color: #14B82C;
 }
 
-.mission-body h3 {
-  margin: 0 0 6px;
-  font-size: 1rem;
-  font-weight: 900;
-  color: #0f172a;
-}
+.mission-body h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 900; color: #0f172a; }
+.mission-body p { margin: 0; color: #475569; font-size: 0.94rem; }
 
-.mission-body p {
-  margin: 0;
-  color: #475569;
-  line-height: 1.7;
-  font-size: 0.94rem;
-}
+.org-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 
-/* ORG */
-.org-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-/* STAFFS COMPACTS */
-.compact-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.staff-link {
-    display: block;
-  text-decoration: none;
-  width: 100%;
-}
-
-.compact-card {
-  border-radius: 16px;
-}
+.compact-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.staff-link { display: block; text-decoration: none; width: 100%; }
 
 .premium-card {
-    width: 100%;
   border: 1px solid rgba(15,23,42,0.08);
   background: linear-gradient(to bottom right, #ffffff, #f8fafc);
   transition: all 0.22s ease;
-    padding: 12px 20px;
+  padding: 12px 20px;
+  border-radius: 16px;
 }
 
 .premium-card:hover {
   transform: translateY(-3px);
   border-color: rgba(20,184,44,0.22);
-  box-shadow: 0 14px 24px rgba(15,23,42,0.07);
 }
 
-.staff-row {
-  display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-
+.staff-row { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; }
 .staff-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: #f1f5f9;
-  border: 1px solid rgba(20,184,44,0.18);
-  flex-shrink: 0;
+  width: 52px; height: 52px; border-radius: 14px; overflow: hidden;
+  background: #f1f5f9; border: 1px solid rgba(20,184,44,0.18);
+}
+.staff-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.staff-thumb.fallback { display: grid; place-items: center; font-size: 0.78rem; font-weight: 900; color: #14B82C; background: #f0fdf4; }
+
+.staff-name { margin: 0 0 8px; font-size: 0.82rem; font-weight: 900; color: #0f172a; text-transform: uppercase; }
+.staff-meta { font-size: 0.76rem; margin-top: 2px; }
+.meta-k { color: #64748b; font-weight: 800; margin-right: 4px; }
+.meta-v { color: #1e293b; font-weight: 700; }
+
+.sidebar-column { position: sticky; top: 20px; align-self: start; }
+
+/* ==========================================
+   3. RESPONSIVE
+   ========================================== */
+@media (max-width: 1200px) { .compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1024px) { .main-layout { grid-template-columns: 1fr; } .sidebar-column { display: none; } }
+@media (max-width: 700px) { .compact-grid { grid-template-columns: 1fr; } .content-column { padding: 18px; } }
+</style>
+
+<style>
+
+/* 1. Fond de page : Vert militaire très profond (au lieu du noir) */
+html.dark, html.dark body {
+  background-color: #334a36 !important; /* Un vert très sombre */
+  color: #334a36!important;
+}
+/* ON FORCE LE LOOK TACTIQUE SUR LES TROIS BLOCS QUE TU AS CITÉS */
+html.dark .intro-box,
+html.dark .missions-box,
+html.dark .org-box,
+html.dark .staffs-box {
+    /* On remplace le blanc par ton vert militaire profond */
+    background: linear-gradient(135deg, #2d392e 0%, #213024 100%) !important;
+
+    /* On ajoute la bordure Or/Vert pour le côté Institutionnel */
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+
+    /* On ajoute l'ombre portée pour décoller le bloc du fond */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+
+    /* On s'assure que le contenu respire */
+    padding: 30px !important;
+    border-radius: 18px !important;
 }
 
-.staff-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* ON CORRIGE LES TITRES À L'INTÉRIEUR DE CES BLOCS */
+html.dark .intro-box h2,
+html.dark .missions-box h2,
+html.dark .org-box h2 {
+    color: #ffd700 !important; /* Or FAMa */
+    text-transform: uppercase;
+    font-weight: 900;
 }
 
-.staff-thumb.fallback {
-  display: grid;
-  place-items: center;
-  font-size: 0.78rem;
-  font-weight: 900;
-  color: #14B82C;
-  background: #f0fdf4;
+/* ON CORRIGE LES TEXTES */
+html.dark .intro-box p,
+html.dark .org-box .org-text,
+html.dark .missions-box .mission-body p {
+    color: #e2e8f0 !important; /* Blanc cassé lisible */
 }
 
-.staff-col {
-  min-width: 0;
+/* LES PETITES LIGNES SOUS LES TITRES */
+html.dark .section-line {
+    background: linear-gradient(90deg, #14B82C, #FFD700) !important;
+    height: 3px !important;
+}
+html.dark .about-page {
+  background: #334a36!important;
+  background-image: radial-gradient(circle at top right, rgba(20,184,44,0.1), transparent 25%),
+                    linear-gradient(to bottom, #334a36 0%, #334a36 d 100%) !important;
 }
 
-.staff-top {
-  margin-bottom: 8px;
+/* 2. Colonne de contenu : Un vert légèrement différent pour contraster */
+html.dark .content-column {
+  background-color: #334a36 !important; /* Un vert encore plus profond */
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
 }
 
-.mini-tag {
-  font-size: 0.68rem;
-  font-weight: 800;
+/* 3. Blocs de section : Vert militaire moyen */
+html.dark .section-box {
+  background: linear-gradient(to bottom right, #2d392e  #213024) !important;
+  border-color: rgba(20, 184, 44, 0.2) !important; /* Bordure verte pour l'effet tactique */
 }
 
-.staff-name {
-  margin: 0 0 8px;
-  font-size: 0.82rem;
-  font-weight: 900;
-  color: #0f172a;
-  text-transform: uppercase;
-  line-height: 1.45;
-  letter-spacing: 0.25px;
-
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* 4. Titres et textes : C'est ici qu'on met ton OR FAMa */
+html.dark .section-head h2,
+html.dark .staff-name,
+html.dark h1,
+html.dark h3 {
+  color: #ffd700 !important; /* Or pur */
 }
 
-.staff-meta {
-  font-size: 0.76rem;
-  line-height: 1.55;
-  margin-top: 2px;
+/* 5. Paragraphes : Blanc cassé pour la lisibilité */
+html.dark .intro-content p,
+html.dark .org-text,
+html.dark .staff-intro,
+html.dark .mission-body p {
+  color: #e2e8f0 !important;
 }
 
-.meta-k {
-  color: #64748b;
-  font-weight: 800;
-  margin-right: 4px;
+/* 6. Cartes & Missions : Fond vert militaire, bordure or pour le lookpremium */
+html.dark .mission-item,
+html.dark .premium-card {
+  background-color: #2d392e !important;
+  border-color: rgba(255, 215, 0, 0.3) !important; /* Bordure or transparente */
 }
 
-.meta-v {
-  color: #1e293b;
-  font-weight: 700;
+/* 7. Métadonnées : Labels gris clair, valeurs en VERT FAMa brillant */
+html.dark .meta-k { color: #a0aec0 !important; }
+html.dark .meta-v { color: #14B82C !important; }
+
+/* 8. Vignettes Staff : Fond vert, bordure verte */
+html.dark .staff-thumb {
+  background-color: #2d392e important;
+  border-color: #14B82C !important;
 }
 
-/* ERROR */
-.error-box {
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(206,17,38,0.08);
-  color: #991b1b;
-  border: 1px solid rgba(206,17,38,0.25);
-  font-weight: 800;
+/* Correction PrimeVue & Skeletons */
+html.dark .p-card {
+  background-color: #2d392e  !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
 }
 
-/* SIDEBAR */
-.sidebar-column {
-  position: sticky;
-  top: 20px;
-  align-self: start;
+html.dark .p-skeleton {
+  background-color: rgba(255, 255, 255, 0.03) !important;
 }
-
-/* RESPONSIVE */
-@media (max-width: 1200px) {
-  .compact-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 1024px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar-column {
-    display: none;
-  }
-}
-
-@media (max-width: 700px) {
-  .compact-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .content-column {
-    padding: 18px;
-  }
-
-  .hero-content {
-    padding: 24px 20px;
-  }
+/* On force le vert militaire profond sur TOUT ce qui essaie d'être noir ou gris très sombre */
+html.dark .bg-black,
+html.dark .bg-gray-950,
+html.dark .p-card,
+html.dark section {
+  background-color: #2d392e  !important; /* Ton vert militaire profond exact */
 }
 </style>
