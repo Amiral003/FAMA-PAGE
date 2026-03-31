@@ -58,7 +58,7 @@ const contactItem = { key: 'nav.contact', to: '/contact' }
 const aboutItem = { key: 'nav.about', to: '/about' }
 
 // -------------------- THEME --------------------
-const theme = ref('dark')
+const theme = ref('light')
 const isDark = computed(() => theme.value === 'dark')
 
 const applyThemeToDom = (value) => {
@@ -82,8 +82,13 @@ watch(theme, (v) => {
 
 onMounted(() => {
   const savedTheme = localStorage.getItem('public-theme')
-  if (savedTheme === 'light' || savedTheme === 'dark') theme.value = savedTheme
-  else theme.value = 'dark'
+
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    theme.value = savedTheme
+  } else {
+    theme.value = 'light'
+  }
+
   applyThemeToDom(theme.value)
 
   const savedLocale = localStorage.getItem('public-locale')
