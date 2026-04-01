@@ -54,12 +54,12 @@ onMounted(fetchStaffs)
 </script>
 
 <template>
-  <div class="about-page">
+
     <div class="main-layout container">
 
       <section class="content-column">
 
-        <section class="hero-premium">
+      <section class="hero-premium">
           <div class="hero-overlay"></div>
 
           <div class="hero-content">
@@ -84,7 +84,7 @@ onMounted(fetchStaffs)
           </div>
         </section>
 
-        <section class="section-box intro-box">
+
           <div class="section-head">
             <h2>Présentation générale</h2>
             <div class="section-line"></div>
@@ -104,14 +104,12 @@ onMounted(fetchStaffs)
               des principes républicains et des intérêts supérieurs de la Nation.
             </p>
           </div>
-        </section>
 
-        <section class="section-box missions-box">
-          <div class="section-head">
+       <div class="section-head">
             <h2>Missions essentielles</h2>
             <div class="section-line"></div>
           </div>
-
+          <br>
           <div class="mission-grid">
             <div class="mission-item">
               <div class="mission-number">01</div>
@@ -137,9 +135,7 @@ onMounted(fetchStaffs)
               </div>
             </div>
           </div>
-        </section>
 
-        <section class="section-box org-box">
           <div class="section-head">
             <h2>Organisation institutionnelle</h2>
             <div class="section-line"></div>
@@ -157,10 +153,7 @@ onMounted(fetchStaffs)
             <Tag value="Services militaires" severity="danger" rounded />
             <Tag value="Structures rattachées" severity="info" rounded />
           </div>
-        </section>
-
-        <section class="section-box staffs-box">
-          <div class="section-head">
+<div class="section-head">
             <h2>États-majors, directions et services</h2>
             <div class="section-line"></div>
           </div>
@@ -236,19 +229,27 @@ onMounted(fetchStaffs)
               </Card>
             </RouterLink>
           </div>
-        </section>
 
       </section>
+
 
       <aside class="sidebar-column">
         <SidebarOfficial />
       </aside>
 
-    </div>
+
   </div>
 </template>
 
 <style scoped>
+.rich-text-content {
+  /* Min: 1rem, Idéal: 2.5vw de la largeur d'écran, Max: 1.2rem */
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.2rem);
+  line-height: 1.8;
+  color: var(--text-muted, #475569);
+  margin-bottom: 50px;
+  word-break: break-word; /* Évite que les longs mots dépassent */
+}
 /* ==========================================
    1. STYLES DE BASE (MODE CLAIR)
    ========================================== */
@@ -434,6 +435,13 @@ onMounted(fetchStaffs)
 /* ==========================================
    3. RESPONSIVE
    ========================================== */
+   /* Dans ta section @media (max-width: 768px) */
+@media (max-width: 768px) {
+  .rich-text-content {
+    font-size: 1.05rem; /* On réduit un peu pour le mobile */
+    line-height: 1.6;    /* On resserre un peu l'interligne */
+  }
+}
 @media (max-width: 1200px) { .compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1024px) { .main-layout { grid-template-columns: 1fr; } .sidebar-column { display: none; } }
 @media (max-width: 700px) { .compact-grid { grid-template-columns: 1fr; } .content-column { padding: 18px; } }

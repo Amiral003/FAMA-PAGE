@@ -119,6 +119,33 @@ onMounted(async () => {
 
 const getRelativeDate = (date) => date ? formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr }) : ''
 const openPdf = (path) => window.open(`/storage/${path}`, '_blank')
+// --- LOGIQUE DE PARTAGE ---
+const share = (platform) => {
+  // 1. On récupère l'URL actuelle
+  const fullUrl = window.location.origin + route.fullPath
+
+  // 2. On prend un titre court (max 60 caractères) pour éviter de casser l'URL
+  // Si le titre est trop long, on met "Communiqué FAMa"
+  const rawTitle = post.value?.title || 'Communiqué'
+  const shortTitle = rawTitle.length > 60 ? rawTitle.substring(0, 60) + '...' : rawTitle
+
+  // 3. Construction du message (Titre + Saut de ligne + URL)
+  const message = `${shortTitle}\n\n${fullUrl}`
+
+  let shareUrl = ''
+
+  if (platform === 'facebook') {
+    // Facebook ignore le texte, il veut JUSTE l'URL
+    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`
+  } else if (platform === 'whatsapp') {
+    // WhatsApp prend le texte complet (Titre court + URL)
+    shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`
+  }
+
+  if (shareUrl) {
+    window.open(shareUrl, '_blank')
+  }
+}
 </script>
 
 <template>
@@ -128,10 +155,24 @@ const openPdf = (path) => window.open(`/storage/${path}`, '_blank')
       <article class="content-card staff-main-card">
         <nav class="top-nav">
           <Button icon="pi pi-arrow-left" label="Retour" link class="back-btn" @click="router.back()" />
-          <div class="share-actions">
-             <Button icon="pi pi-facebook" rounded text severity="secondary" />
-             <Button icon="pi pi-whatsapp" rounded text severity="secondary" />
-          </div>
+        <div class="share-actions">
+  <Button
+    icon="pi pi-facebook"
+    rounded
+    text
+    severity="secondary"
+    @click="share('facebook')"
+    aria-label="Partager sur Facebook"
+  />
+  <Button
+    icon="pi pi-whatsapp"
+    rounded
+    text
+    severity="secondary"
+    @click="share('whatsapp')"
+    aria-label="Partager sur WhatsApp"
+  />
+</div>
         </nav>
 
         <header class="post-header">
