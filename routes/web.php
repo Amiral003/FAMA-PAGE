@@ -22,7 +22,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Force le login vers Filament
-Route::redirect('/login', '/admin/login')->name('login');
+Route::redirect('/login', '/admin/login');
 
 // 3. Route de changement forcé du mot de passe
 Route::middleware('auth')->group(function () {

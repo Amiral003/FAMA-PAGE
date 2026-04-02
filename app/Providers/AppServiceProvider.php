@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
 }
         // 1) Force HTTPS uniquement en production
         if (app()->environment('production')) {
-            URL::forceScheme('https');
+           // URL::forceScheme('https');
         }
 
         // 2) Configuration Filament

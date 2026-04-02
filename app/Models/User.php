@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,42 +13,28 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-
-
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens;
-
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
     use HasRoles;
     use Authorizable;
-    
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'status',
-    'must_change_password',
-    'last_login_at',
-    'last_login_ip',
-    'password_changed_at',
-];
+        'name',
+        'email',
+        'password',
+        'status',
+        'must_change_password',
+        'last_login_at',
+        'last_login_ip',
+        'password_changed_at',
+        'email_verified_at',
+    ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -55,47 +42,39 @@ class User extends Authenticatable
         'two_factor_secret',
     ];
 
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array<int, string>
-     */
     protected $appends = [
         'profile_photo_url',
     ];
 
-    use HasRoles,HasApiTokens; 
-    public function canAccessFilament():bool{
-        return $this->hasAnyRole([
-            'super-admin',
-            'redacteur',
-            'validateur',
-        ]);
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'password_changed_at' => 'datetime',
+            'must_change_password' => 'boolean',
+            'password' => 'hashed',
+        ];
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-   protected function casts(): array
-{
-    return [
-        'email_verified_at' => 'datetime',
-        'last_login_at' => 'datetime',
-        'password_changed_at' => 'datetime',
-        'must_change_password' => 'boolean',
-        'password' => 'hashed',
-    ];
-}
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->status === 'active'
+            && ! $this->must_change_password
+            && $this->hasAnyRole([
+                'super-admin',
+                'redacteur',
+                'validateur',
+            ]);
+    }
 
-public function isActive(): bool
-{
-    return $this->status === 'active';
-}
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
 
-public function isInactive(): bool
-{
-    return $this->status === 'inactive';
-}
+    public function isInactive(): bool
+    {
+        return $this->status === 'inactive';
+    }
 }
