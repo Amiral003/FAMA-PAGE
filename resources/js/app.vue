@@ -15,7 +15,7 @@
 
 <script setup>
 import PublicFlashTicker from './components/PublicFlashTicker.vue'
-import Navbar from './components/Navbar.vue'
+import Navbar from './components/navbar.vue'
 </script>
 
 <style>

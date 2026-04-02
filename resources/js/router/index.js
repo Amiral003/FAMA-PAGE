@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // -------------------- PAGES / COMPONENTS --------------------
 import Home from '../pages/home.vue'
-import About from '../pages/About.vue'
-import Contact from '../pages/Contact.vue'
+import About from '../pages/about.vue'
+import Contact from '../pages/contact.vue'
 import Portfolio from '../pages/portfolio.vue'
 
 import SinglePost from '../components/SinglePost.vue' // ou le chemin vers ton composant
@@ -18,7 +18,7 @@ import EtatmajorGarde from '../components/EtatmajorGarde.vue'
 import Police from '../components/police.vue'
 import Dmhta from '../components/Dmhta.vue'
 import Dcssa from '../components/Dcssa.vue'
-import ComOps from '../pages/ComOps.vue'
+import ComOps from '../pages/comOps.vue'
 
 // -------------------- ROUTES --------------------
 const routes = [
@@ -64,7 +64,7 @@ const routes = [
 {
   path: '/etat-major/:slug',
   name: 'staff-show',
-  component: () => import('@/pages/StaffShow.vue'),
+  component: () => import('@/pages/staffShow.vue'),
 },
   // ✅ Single post : j'ajoute un title dynamique (si slug existe)
   {

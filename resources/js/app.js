@@ -11,7 +11,7 @@ import '../css/app.css'
 
 // ✅ Vue
 import { createApp } from 'vue'
-import App from './App.vue'
+import App from './app.vue'
 
 // ✅ Router
 import router from './router'
