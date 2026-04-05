@@ -49,7 +49,7 @@ class ListPosts extends ListRecords
                 ->modalHeading('Créer un Flash Info (publication immédiate)')
                 ->modalSubmitActionLabel('Publier')
                 ->form([
-                    Textarea::make('title')
+                    Textarea::make('content')
                         ->label('Texte du flash')
                         ->placeholder("Écrivez un flash (taille d’un paragraphe)...")
                         ->rows(4)
@@ -68,25 +68,21 @@ class ListPosts extends ListRecords
                     $userId = Auth::id();
 
                     // ✅ On crée directement le post publié
-                    Post::create([
-                        'title'          => $data['title'],
-                        'slug'           => Str::slug(Str::limit($data['title'], 80, '')),
-                        'type'           => Post::TYPE_FLASH,
-                        'status'         => Post::STATUS_PUBLIE,
+                  $flashText = trim($data['content']);
 
-                        // On met l'image dans thumbnail (comme tes articles/pdf)
-                        'thumbnail'      => $data['thumbnail'],
-
-                        // Optionnel mais pratique côté front: le contenu = texte du flash
-                        'content'        => $data['title'],
-
-                        'user_id'        => $userId,
-                        'validated_by'   => $userId,
-                        'validated_at'   => now(),
-                        'published_at'   => now(),
-
-                        'rejection_notes' => null,
-                    ]);
+Post::create([
+    'title'           => Str::limit($flashText, 120, '...'),
+    'slug'            => Str::slug(Str::limit($flashText, 80, '')),
+    'type'            => Post::TYPE_FLASH,
+    'status'          => Post::STATUS_PUBLIE,
+    'thumbnail'       => $data['thumbnail'],
+    'content'         => $flashText,
+    'user_id'         => $userId,
+    'validated_by'    => $userId,
+    'validated_at'    => now(),
+    'published_at'    => now(),
+    'rejection_notes' => null,
+]);
 
                     \Filament\Notifications\Notification::make()
                         ->title('Flash publié immédiatement ⚡')

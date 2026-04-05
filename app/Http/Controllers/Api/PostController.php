@@ -176,27 +176,33 @@ private function resolveCountry(?string $ip): ?string
      * URL: /api/posts/flashes
      */
     public function flashes(Request $request)
-    {
-        $limit = (int) $request->query('limit', 20);
-        $limit = max(5, min($limit, 50));
+{
+    $limit = (int) $request->query('limit', 20);
+    $limit = max(5, min($limit, 50));
 
-        return Post::query()
-            ->published()
-            ->where('type', Post::TYPE_FLASH)
-            ->whereNotNull('published_at')
-            ->where('published_at', '>=', now()->subDay())
-            ->orderByDesc('published_at')
-            ->limit($limit)
-            ->get([
-                'id',
-                'title',
-                'slug',
-                'type',
-                'status',
-                'published_at',
-                'created_at',
-            ]);
-    }
+    return Post::query()
+        ->published()
+        ->where('type', Post::TYPE_FLASH)
+        ->whereNotNull('published_at')
+        ->where('published_at', '>=', now()->subDay())
+        ->orderByDesc('published_at')
+        ->limit($limit)
+        ->get([
+            'id',
+            'title',
+            'content',
+            'slug',
+            'type',
+            'status',
+            'published_at',
+            'created_at',
+        ])
+        ->map(function ($post) {
+            $post->display_text = str($post->content ?: $post->title)->squish()->toString();
+
+            return $post;
+        });
+}
 
     /**
      * ✅ Vidéothèque (uniquement type=video)

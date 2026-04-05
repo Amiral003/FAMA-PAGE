@@ -9,13 +9,16 @@ const setTickerClass = (enabled) => {
   document.documentElement.classList.toggle('has-ticker', enabled)
 }
 
+const getFlashText = (item) => {
+  return item?.content?.trim() || item?.title?.trim() || ''
+}
+
 onBeforeUnmount(() => setTickerClass(false))
 
 onMounted(async () => {
   try {
-    // ✅ endpoint dédié => pas de pagination qui casse le bandeau
     const res = await axios.get('/api/posts/flashes', {
-      params: { limit: 25 }, // tu peux ajuster
+      params: { limit: 25 },
     })
 
     flashes.value = Array.isArray(res.data) ? res.data : []
@@ -31,24 +34,36 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div v-if="flashes.length > 0" class="ticker-container" :style="{ height: TICKER_HEIGHT + 'px' }">
+  <div
+    v-if="flashes.length > 0"
+    class="ticker-container"
+    :style="{ height: TICKER_HEIGHT + 'px' }"
+  >
     <div class="ticker-label">FLASH INFO</div>
 
     <div class="ticker-content" :style="{ paddingLeft: '140px' }">
       <div class="ticker-track">
         <!-- 1ère boucle -->
-        <span v-for="item in flashes" :key="item.id" class="ticker-item">
+        <span
+          v-for="item in flashes"
+          :key="item.id"
+          class="ticker-item"
+        >
           <router-link :to="`/posts/${item.slug}`" class="flash-link">
             <i class="pi pi-bolt"></i>
-            <strong class="flash-title">{{ item.title }}</strong>
+            <strong class="flash-title">{{ getFlashText(item) }}</strong>
           </router-link>
         </span>
 
-        <!-- duplication (pour boucle infinie fluide) -->
-        <span v-for="item in flashes" :key="'dup-' + item.id" class="ticker-item">
+        <!-- duplication -->
+        <span
+          v-for="item in flashes"
+          :key="'dup-' + item.id"
+          class="ticker-item"
+        >
           <router-link :to="`/posts/${item.slug}`" class="flash-link">
             <i class="pi pi-bolt"></i>
-            <strong class="flash-title">{{ item.title }}</strong>
+            <strong class="flash-title">{{ getFlashText(item) }}</strong>
           </router-link>
         </span>
       </div>
@@ -65,8 +80,6 @@ watchEffect(() => {
   width: 100%;
   align-items: center;
   border-bottom: 2px solid #2c2a28;
-
-  /* ✅ Le bandeau doit rester au-dessus de la navbar */
   position: sticky;
   top: 0;
   z-index: 2001;
@@ -84,7 +97,7 @@ watchEffect(() => {
   position: absolute;
   left: 0;
   z-index: 10;
-  box-shadow: 8px 0 15px rgba(0,0,0,0.45);
+  box-shadow: 8px 0 15px rgba(0, 0, 0, 0.45);
 }
 
 .ticker-content {
