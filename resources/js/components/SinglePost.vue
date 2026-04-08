@@ -184,14 +184,14 @@ const share = (platform) => {
             />
             <span class="publish-date">
               <i class="pi pi-calendar-plus mr-2"></i>
-              {{ getRelativeDate(post.published_at || post.created_at) }}
-            </span>
+              {{ getRelativeDate(post.published_at || post.created_at) }}            </span>
           </div>
           <h1 class="post-title">{{ post.title }}</h1>
         </header>
 
         <section class="media-section">
-          <div v-if="isVideo" class="video-container shadow-2">
+    
+<div v-if="isVideo" class="video-container shadow-2">
   <iframe
     v-if="youtubeEmbedUrl"
     :src="youtubeEmbedUrl"
@@ -206,9 +206,17 @@ const share = (platform) => {
 
   <div v-else class="video-fallback">
     <i class="pi pi-exclamation-triangle"></i>
-    <p>Cette vidéo ne peut pas être affichée pour le moment.</p>
-    <a v-if="post.video_url" :href="post.video_url" target="_blank" rel="noopener">
-      Ouvrir la vidéo
+    <p>Cette vidéo ne peut pas être intégrée ici pour le moment.</p>
+  </div>
+
+  <div v-if="post.video_url" class="video-actions">
+    <a
+      :href="post.video_url"
+      target="_blank"
+      rel="noopener"
+      class="youtube-open-btn"
+    >
+      Voir la vidéo sur YouTube
     </a>
   </div>
 </div>
@@ -698,5 +706,28 @@ const share = (platform) => {
     min-width: 42px;
     min-height: 42px;
   }
+}
+.video-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.youtube-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.2rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  background: #c1121f;
+  color: white;
+  transition: 0.2s ease;
+}
+
+.youtube-open-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
 }
 </style>
