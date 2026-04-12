@@ -1,10 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useHead } from '@vueuse/head'
+import { useHead } from '@unhead/vue'
 import axios from 'axios'
 
-// --- COMPOSANTS & LOGIQUE ---
 import Carousel from 'primevue/carousel'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
@@ -16,8 +15,19 @@ import { fr } from 'date-fns/locale'
 
 const route = useRoute()
 const router = useRouter()
+
 const post = ref(null)
 const loading = ref(true)
+
+const siteUrl = computed(() => {
+  if (typeof window === 'undefined') return ''
+  return window.location.origin
+})
+
+const currentUrl = computed(() => {
+  if (!siteUrl.value) return ''
+  return `${siteUrl.value}${route.fullPath}`
+})
 
 // --- VIDÉO HELPERS ---
 const isVideo = computed(() => post.value?.type === 'video')
@@ -34,28 +44,24 @@ const getYoutubeId = (url) => {
   try {
     const u = new URL(url)
 
-    // youtu.be/xxxx
     if (u.hostname.includes('youtu.be')) {
       return u.pathname.replace('/', '') || null
     }
 
-    // youtube.com/watch?v=xxxx
     if (u.searchParams.get('v')) {
       return u.searchParams.get('v')
     }
 
-    // youtube.com/embed/xxxx
     if (u.pathname.includes('/embed/')) {
       return u.pathname.split('/embed/')[1]?.split('/')[0] || null
     }
 
-    // youtube.com/shorts/xxxx
     if (u.pathname.includes('/shorts/')) {
       return u.pathname.split('/shorts/')[1]?.split('/')[0] || null
     }
 
     return null
-  } catch (e) {
+  } catch {
     if (url.includes('youtu.be/')) {
       return url.split('youtu.be/')[1]?.split('?')[0] || null
     }
@@ -82,12 +88,12 @@ const youtubeEmbedUrl = computed(() => {
   const url = post.value?.video_url || ''
   const platform = post.value?.video_platform || ''
 
-  const isYoutube =
+  const isYoutubeSource =
     platform === 'youtube' ||
     url.includes('youtube.com') ||
     url.includes('youtu.be')
 
-  if (!isYoutube) return null
+  if (!isYoutubeSource) return null
 
   const id = getYoutubeId(url)
   if (!id) return null
@@ -95,14 +101,177 @@ const youtubeEmbedUrl = computed(() => {
   return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`
 })
 
-
-
 // --- MÉDIAS ---
 const allMedia = computed(() => {
   const images = []
   if (post.value?.thumbnail) images.push({ file_path: post.value.thumbnail })
   if (post.value?.media?.length) images.push(...post.value.media)
   return images
+})
+
+const coverImage = computed(() => {
+  const image = post.value?.thumbnail || post.value?.media?.[0]?.file_path || null
+  if (!image || !siteUrl.value) return ''
+  return `${siteUrl.value}/storage/${image}`
+})
+
+const plainTextFromHtml = (html = '') => {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+const seoTitle = computed(() => {
+  const base = post.value?.meta_title || post.value?.title || 'Communiqué officiel'
+  return `${base} | Forces Armées Maliennes`
+})
+
+const seoDescription = computed(() => {
+  const raw =
+    post.value?.meta_description ||
+    post.value?.excerpt ||
+    plainTextFromHtml(post.value?.content || '') ||
+    'Communiqué officiel des Forces Armées Maliennes.'
+
+  return raw.substring(0, 160)
+})
+
+const seoType = computed(() => (isVideo.value ? 'video.other' : 'article'))
+
+const publishedDate = computed(() => post.value?.published_at || post.value?.created_at || null)
+const modifiedDate = computed(() => post.value?.updated_at || publishedDate.value || null)
+const authorName = computed(() => post.value?.user?.name || 'DIRPA')
+
+const newsArticleSchema = computed(() => {
+  if (!post.value || !currentUrl.value) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: post.value.title,
+    description: seoDescription.value,
+    image: coverImage.value ? [coverImage.value] : [],
+    datePublished: publishedDate.value,
+    dateModified: modifiedDate.value,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': currentUrl.value,
+    },
+    author: {
+      '@type': 'Organization',
+      name: authorName.value,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Forces Armées Maliennes',
+      logo: {
+        '@type': 'ImageObject',
+        url: siteUrl.value ? `${siteUrl.value}/images/logo-fama.png` : '',
+      },
+    },
+  }
+})
+
+const videoSchema = computed(() => {
+  if (!post.value || !currentUrl.value || !isVideo.value) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: post.value.title,
+    description: seoDescription.value,
+    thumbnailUrl: coverImage.value ? [coverImage.value] : [],
+    uploadDate: publishedDate.value,
+    embedUrl: youtubeEmbedUrl.value || undefined,
+    contentUrl: post.value.video_url || undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Forces Armées Maliennes',
+      logo: {
+        '@type': 'ImageObject',
+        url: siteUrl.value ? `${siteUrl.value}/images/logo-fama.png` : '',
+      },
+    },
+    mainEntityOfPage: currentUrl.value,
+  }
+})
+
+const breadcrumbSchema = computed(() => {
+  if (!post.value || !currentUrl.value || !siteUrl.value) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Accueil',
+        item: siteUrl.value,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Communiqués',
+        item: `${siteUrl.value}/portfolio`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.value.title,
+        item: currentUrl.value,
+      },
+    ],
+  }
+})
+
+useHead(() => {
+  const scripts = []
+
+  if (isVideo.value && videoSchema.value) {
+    scripts.push({
+      type: 'application/ld+json',
+      children: JSON.stringify(videoSchema.value),
+    })
+  } else if (newsArticleSchema.value) {
+    scripts.push({
+      type: 'application/ld+json',
+      children: JSON.stringify(newsArticleSchema.value),
+    })
+  }
+
+  if (breadcrumbSchema.value) {
+    scripts.push({
+      type: 'application/ld+json',
+      children: JSON.stringify(breadcrumbSchema.value),
+    })
+  }
+
+  return {
+    title: seoTitle.value,
+    meta: [
+      { name: 'description', content: seoDescription.value },
+      { name: 'robots', content: 'index, follow, max-image-preview:large' },
+
+      { property: 'og:title', content: seoTitle.value },
+      { property: 'og:description', content: seoDescription.value },
+      { property: 'og:type', content: seoType.value },
+      { property: 'og:url', content: currentUrl.value },
+      { property: 'og:site_name', content: 'Forces Armées Maliennes' },
+      { property: 'og:locale', content: 'fr_FR' },
+      { property: 'og:image', content: coverImage.value || `${siteUrl.value}/images/og-default.jpg` },
+
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: seoTitle.value },
+      { name: 'twitter:description', content: seoDescription.value },
+      { name: 'twitter:image', content: coverImage.value || `${siteUrl.value}/images/og-default.jpg` },
+    ],
+    link: [
+      { rel: 'canonical', href: currentUrl.value },
+    ],
+    script: scripts,
+  }
 })
 
 // --- DATA FETCHING ---
@@ -117,28 +286,30 @@ onMounted(async () => {
   }
 })
 
-const getRelativeDate = (date) => date ? formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr }) : ''
-const openPdf = (path) => window.open(`/storage/${path}`, '_blank')
-// --- LOGIQUE DE PARTAGE ---
+const getRelativeDate = (date) =>
+  date
+    ? formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
+    : ''
+
+const openPdf = (path) => {
+  window.open(`/storage/${path}`, '_blank')
+}
+
+// --- PARTAGE ---
 const share = (platform) => {
-  // 1. On récupère l'URL actuelle
-  const fullUrl = window.location.origin + route.fullPath
+  const fullUrl = typeof window !== 'undefined'
+    ? window.location.origin + route.fullPath
+    : currentUrl.value
 
-  // 2. On prend un titre court (max 60 caractères) pour éviter de casser l'URL
-  // Si le titre est trop long, on met "Communiqué FAMa"
   const rawTitle = post.value?.title || 'Communiqué'
-  const shortTitle = rawTitle.length > 60 ? rawTitle.substring(0, 60) + '...' : rawTitle
-
-  // 3. Construction du message (Titre + Saut de ligne + URL)
+  const shortTitle = rawTitle.length > 60 ? `${rawTitle.substring(0, 60)}...` : rawTitle
   const message = `${shortTitle}\n\n${fullUrl}`
 
   let shareUrl = ''
 
   if (platform === 'facebook') {
-    // Facebook ignore le texte, il veut JUSTE l'URL
     shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`
   } else if (platform === 'whatsapp') {
-    // WhatsApp prend le texte complet (Titre court + URL)
     shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`
   }
 
@@ -150,29 +321,37 @@ const share = (platform) => {
 
 <template>
   <div class="page-background staff-page-container">
-    <main class="main-layout container" v-if="!loading && post">
+    <a href="#main-content" class="skip-link">Passer au contenu principal</a>
 
-      <article class="content-card staff-main-card">
-        <nav class="top-nav">
-          <Button icon="pi pi-arrow-left" label="Retour" link class="back-btn" @click="router.back()" />
-        <div class="share-actions">
-  <Button
-    icon="pi pi-facebook"
-    rounded
-    text
-    severity="secondary"
-    @click="share('facebook')"
-    aria-label="Partager sur Facebook"
-  />
-  <Button
-    icon="pi pi-whatsapp"
-    rounded
-    text
-    severity="secondary"
-    @click="share('whatsapp')"
-    aria-label="Partager sur WhatsApp"
-  />
-</div>
+    <main id="main-content" class="main-layout container" v-if="!loading && post">
+      <article class="content-card staff-main-card" aria-labelledby="post-title">
+        <nav class="top-nav" aria-label="Navigation de l’article">
+          <Button
+            icon="pi pi-arrow-left"
+            label="Retour"
+            link
+            class="back-btn"
+            @click="router.back()"
+          />
+
+          <div class="share-actions" aria-label="Actions de partage">
+            <Button
+              icon="pi pi-facebook"
+              rounded
+              text
+              severity="secondary"
+              @click="share('facebook')"
+              aria-label="Partager sur Facebook"
+            />
+            <Button
+              icon="pi pi-whatsapp"
+              rounded
+              text
+              severity="secondary"
+              @click="share('whatsapp')"
+              aria-label="Partager sur WhatsApp"
+            />
+          </div>
         </nav>
 
         <header class="post-header">
@@ -182,71 +361,101 @@ const share = (platform) => {
               :severity="post.type === 'video' ? 'info' : (post.pdf_path ? 'danger' : 'success')"
               class="fama-tag"
             />
+
             <span class="publish-date">
-              <i class="pi pi-calendar-plus mr-2"></i>
-              {{ getRelativeDate(post.published_at || post.created_at) }}            </span>
+              <i class="pi pi-calendar-plus mr-2" aria-hidden="true"></i>
+              <time :datetime="post.published_at || post.created_at">
+                {{ getRelativeDate(post.published_at || post.created_at) }}
+              </time>
+            </span>
           </div>
-          <h1 class="post-title">{{ post.title }}</h1>
+
+          <h1 id="post-title" class="post-title">{{ post.title }}</h1>
         </header>
 
-        <section class="media-section">
-    
-<div v-if="isVideo" class="video-container shadow-2">
-  <iframe
-    v-if="youtubeEmbedUrl"
-    :src="youtubeEmbedUrl"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    allowfullscreen
-    referrerpolicy="strict-origin-when-cross-origin"
-    title="Vidéo YouTube"
-  ></iframe>
+        <section class="media-section" aria-label="Média principal de l’article">
+          <div v-if="isVideo" class="video-container shadow-2">
+            <iframe
+              v-if="youtubeEmbedUrl"
+              :src="youtubeEmbedUrl"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              loading="lazy"
+              referrerpolicy="strict-origin-when-cross-origin"
+              :title="`Vidéo YouTube : ${post.title}`"
+            ></iframe>
 
-  <video v-else-if="isMp4Video" :src="post.video_url" controls playsinline></video>
+            <video
+              v-else-if="isMp4Video"
+              :src="post.video_url"
+              controls
+              playsinline
+              preload="metadata"
+              :title="post.title"
+            ></video>
 
-  <div v-else class="video-fallback">
-    <i class="pi pi-exclamation-triangle"></i>
-    <p>Cette vidéo ne peut pas être intégrée ici pour le moment.</p>
-  </div>
-
-  <div v-if="post.video_url" class="video-actions">
-    <a
-      :href="post.video_url"
-      target="_blank"
-      rel="noopener"
-      class="youtube-open-btn"
-    >
-      Voir la vidéo sur YouTube
-    </a>
-  </div>
-</div>
+            <div v-else class="video-fallback">
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+              <p>Cette vidéo ne peut pas être affichée pour le moment.</p>
+              <a
+                v-if="post.video_url"
+                :href="post.video_url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ouvrir la vidéo
+              </a>
+            </div>
+          </div>
 
           <div v-else-if="allMedia.length > 0" class="carousel-wrapper staff-info-block">
-            <Carousel :value="allMedia" :numVisible="1" :numScroll="1" circular :autoplayInterval="5000">
+            <Carousel
+              :value="allMedia"
+              :numVisible="1"
+              :numScroll="1"
+              circular
+              :autoplayInterval="5000"
+            >
               <template #item="slotProps">
-                <div class="image-slide">
-                  <Image :src="`/storage/${slotProps.data.file_path}`" preview imageClass="main-post-img" />
-                </div>
+                <figure class="image-slide">
+                  <Image
+                    :src="`/storage/${slotProps.data.file_path}`"
+                    preview
+                    imageClass="main-post-img"
+                    :alt="slotProps.index === 0
+                      ? `${post.title} - Illustration principale`
+                      : `${post.title} - Image ${slotProps.index + 1}`"
+                    :pt="{
+                      image: {
+                        loading: slotProps.index === 0 ? 'eager' : 'lazy',
+                        decoding: 'async'
+                      }
+                    }"
+                  />
+                </figure>
               </template>
             </Carousel>
           </div>
         </section>
 
-        <section class="post-body">
+        <section class="post-body" aria-label="Contenu de l’article">
           <div class="rich-text-content" v-html="post.content"></div>
 
           <div v-if="post.pdf_path" class="pdf-action-card staff-info-block">
             <div class="pdf-info">
-              <i class="pi pi-file-pdf pdf-icon"></i>
+              <i class="pi pi-file-pdf pdf-icon" aria-hidden="true"></i>
               <div>
                 <span class="pdf-title">Consulter le document officiel</span>
                 <p class="pdf-sub">Format PDF - Certification DIRPA</p>
               </div>
             </div>
+
             <div class="pdf-buttons">
               <Button label="Lire" icon="pi pi-eye" text @click="openPdf(post.pdf_path)" />
               <a :href="`/storage/${post.pdf_path}`" download class="btn-download">
-                <i class="pi pi-download mr-2"></i> Télécharger
+                <i class="pi pi-download mr-2" aria-hidden="true"></i>
+                Télécharger
               </a>
             </div>
           </div>
@@ -256,17 +465,19 @@ const share = (platform) => {
           <div class="signature-box">
             <div class="fama-divider"></div>
             <p class="signature-name">{{ post.user?.name || 'LA RÉDACTION' }}</p>
-            <p class="signature-rank">Direction de l'Information et des Relations Publiques des Armées</p>
+            <p class="signature-rank">
+              Direction de l'Information et des Relations Publiques des Armées
+            </p>
           </div>
         </footer>
       </article>
 
-      <aside class="sidebar-column">
+      <aside class="sidebar-column" aria-label="Informations complémentaires">
         <SidebarOfficial />
       </aside>
     </main>
 
-    <div v-else class="container main-layout py-8">
+    <div v-else class="container main-layout py-8" aria-live="polite" aria-busy="true">
       <div class="content-card staff-main-card">
         <Skeleton width="30%" height="2rem" class="mb-4"></Skeleton>
         <Skeleton width="100%" height="4rem" class="mb-6"></Skeleton>
@@ -277,13 +488,29 @@ const share = (platform) => {
 </template>
 
 <style scoped>
-/* --- MISE EN PAGE GLOBALE --- */
 .page-background {
   min-height: 100vh;
   padding: 40px 0;
 }
 
-/* on neutralise proprement le container global pour CETTE page */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  z-index: 2000;
+  background: #14b82c;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 16px;
+}
+
 .container {
   width: 100%;
   max-width: 1280px;
@@ -306,7 +533,6 @@ const share = (platform) => {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* --- HEADER --- */
 .top-nav {
   display: flex;
   justify-content: space-between;
@@ -341,7 +567,6 @@ const share = (platform) => {
   letter-spacing: -0.02em;
 }
 
-/* --- MÉDIA --- */
 .media-section {
   margin-bottom: 40px;
 }
@@ -371,6 +596,7 @@ const share = (platform) => {
   align-items: center;
   justify-content: center;
   background: #000;
+  margin: 0;
 }
 
 :deep(.main-post-img) {
@@ -379,7 +605,6 @@ const share = (platform) => {
   object-fit: contain;
 }
 
-/* --- CONTENU --- */
 .rich-text-content {
   font-size: 1.2rem;
   line-height: 1.8;
@@ -392,7 +617,6 @@ const share = (platform) => {
   margin-bottom: 1.5rem;
 }
 
-/* --- PDF CARD --- */
 .pdf-action-card {
   display: flex;
   justify-content: space-between;
@@ -448,7 +672,6 @@ const share = (platform) => {
   transform: translateY(-2px);
 }
 
-/* --- FOOTER & SIGNATURE --- */
 .post-footer {
   margin-top: 60px;
   padding-top: 40px;
@@ -486,7 +709,6 @@ const share = (platform) => {
   align-self: start;
 }
 
-/* --- FALLBACK VIDEO --- */
 .video-fallback {
   width: 100%;
   height: 100%;
@@ -518,7 +740,6 @@ const share = (platform) => {
   text-decoration: none;
 }
 
-/* --- TABLET --- */
 @media (max-width: 1150px) {
   .main-layout {
     grid-template-columns: 1fr;
@@ -529,7 +750,6 @@ const share = (platform) => {
   }
 }
 
-/* --- MOBILE --- */
 @media (max-width: 768px) {
   .page-background {
     padding: 0;
@@ -676,7 +896,6 @@ const share = (platform) => {
   }
 }
 
-/* --- PETITS TÉLÉPHONES --- */
 @media (max-width: 480px) {
   .content-card {
     padding: 16px 14px 22px;
@@ -706,28 +925,5 @@ const share = (platform) => {
     min-width: 42px;
     min-height: 42px;
   }
-}
-.video-actions {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-}
-
-.youtube-open-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.85rem 1.2rem;
-  border-radius: 999px;
-  text-decoration: none;
-  font-weight: 700;
-  background: #c1121f;
-  color: white;
-  transition: 0.2s ease;
-}
-
-.youtube-open-btn:hover {
-  transform: translateY(-1px);
-  opacity: 0.92;
 }
 </style>

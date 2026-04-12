@@ -2,81 +2,74 @@
 // resources/js/app.js
 // ------------------------------------------------------
 
-import { i18n } from './i18n'
-// ✅ Laravel bootstrap (axios/csrf etc.)
 import './bootstrap'
-
-// ✅ CSS global (tailwind + tes styles)
 import '../css/app.css'
 
-// ✅ Vue
 import { createApp } from 'vue'
-import App from './app.vue'
-
-// ✅ Router
+import App from './App.vue'
 import router from './router'
+import { i18n } from './i18n'
 
 // ✅ Head manager (SEO)
-import { createHead } from '@vueuse/head'
 
-// ✅ AOS (Animations au scroll)
+import { createHead } from '@unhead/vue/client'
+
+// ✅ AOS
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 
-// ✅ PrimeVue v4
+// ✅ PrimeVue
 import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 
-// ✅ PrimeIcons (pour pi pi-moon / pi pi-sun / pi pi-bars etc.)
+// ✅ PrimeIcons
 import 'primeicons/primeicons.css'
 
-// ✅ Composants PrimeVue utilisés (tu peux en ajouter d'autres ici)
+// ✅ Directives perso
+import safeLinks from './directives/safeLinks'
+
+// ✅ Composants PrimeVue
+// Tu peux garder ça pour l’instant.
+// Plus tard, si l’auto-import marche bien partout, on pourra enlever les imports manuels.
 import Button from 'primevue/button'
-import Select from 'primevue/select' // (remplace Dropdown déprécié)
+import Select from 'primevue/select'
 
 // ------------------------------------------------------
 // Create app
 // ------------------------------------------------------
 const app = createApp(App)
-
-// ✅ vueuse/head
 const head = createHead()
 
-
-import safeLinks from './directives/safeLinks'
-
+// ------------------------------------------------------
+// Directives
+// ------------------------------------------------------
 app.directive('safe-links', safeLinks)
 
 // ------------------------------------------------------
-// Init AOS (si tu veux seulement côté client)
+// Init AOS
 // ------------------------------------------------------
 AOS.init({
-  duration: 900,
-  easing: 'ease-out-cubic',
-  once: true,
+    duration: 900,
+    easing: 'ease-out-cubic',
+    once: true,
 })
 
 // ------------------------------------------------------
-// PrimeVue config (UNE SEULE FOIS)
+// PrimeVue config
 // ------------------------------------------------------
 app.use(PrimeVue, {
-  ripple: true,
-  theme: {
-    preset: Aura,
-    options: {
-      prefix: 'p',
-      // IMPORTANT:
-      // - 'system' = se base sur le thème OS
-      // - si tu veux contrôler via html.dark, tu peux mettre 'class'
-      // MAIS: ton toggle thème dans la navbar fonctionne via html.dark + ton CSS,
-      // donc tu peux laisser system ici si tu veux juste PrimeVue auto.
-      darkModeSelector: '.dark',
-      cssLayer: false,
+    ripple: true,
+    theme: {
+        preset: Aura,
+        options: {
+            prefix: 'p',
+            darkModeSelector: '.dark',
+            cssLayer: false,
+        },
     },
-  },
 })
 
-// ✅ Enregistrement global des composants PrimeVue (facultatif mais pratique)
+// ✅ Enregistrement manuel conservé pour ne rien casser
 app.component('Button', Button)
 app.component('Select', Select)
 

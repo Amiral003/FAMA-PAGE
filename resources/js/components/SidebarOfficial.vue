@@ -2,7 +2,13 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
-import Divider from 'primevue/divider'
+
+defineProps({
+  sticky: {
+    type: Boolean,
+    default: true,
+  },
+})
 
 const router = useRouter()
 
@@ -17,9 +23,6 @@ const today = computed(() => {
   return txt.charAt(0).toUpperCase() + txt.slice(1)
 })
 
-const HOTLINE_1 = '80 00 11 11'
-const HOTLINE_2 = '80 00 22 22'
-
 const goSignalement = () => {
   router.push({ path: '/contact', query: { type: 'signalement', subject: 'information' } })
 }
@@ -31,53 +34,25 @@ const goDirpa = () => {
 const goContact = () => {
   router.push('/contact')
 }
-
-const copyHotline = async () => {
-  try {
-    await navigator.clipboard.writeText(`${HOTLINE_1} / ${HOTLINE_2}`)
-  } catch (e) {
-    // clipboard bloqué : on ignore silencieusement
-  }
-}
 </script>
 
 <template>
-  <aside class="official-sidebar">
-    <!-- Carte action principale -->
+  <aside :class="['official-sidebar', { 'is-sticky': sticky }]">
     <div class="sidebar-card alert-card">
       <div class="card-header">
-        <span class="status-badge" title="Service opérationnel">
+        <span class="status-badge" title="Service disponible">
           <span class="status-dot pulse"></span>
-          SYSTÈME ACTIF
+          SERVICE DISPONIBLE
         </span>
-
-        <!--
-        <Button
-          icon="pi pi-copy"
-          text
-          rounded
-          class="copy-btn"
-          aria-label="Copier les numéros verts"
-          title="Copier les numéros verts"
-          @click="copyHotline"
-        />
-        -->
       </div>
 
       <div class="info-content">
         <p class="date-text">{{ today }}</p>
-        <h3 class="title-gold">Signalement citoyen</h3>
+        <h3 class="title-gold">Nous contacter</h3>
 
         <p class="description">
-          Transmettez toute information utile de manière responsable. En cas d’urgence immédiate, privilégiez l’appel.
+          Adressez un signalement, une demande d’information ou un message destiné au service presse.
         </p>
-
-        <!--
-        <div class="hotline">
-          <span class="hotline-label">Numéros verts :</span>
-          <span class="hotline-value">{{ HOTLINE_1 }} / {{ HOTLINE_2 }}</span>
-        </div>
-        -->
 
         <div class="action-stack">
           <Button
@@ -96,8 +71,8 @@ const copyHotline = async () => {
           />
 
           <Button
-            label="Contacter la DIRPA (Presse)"
-            icon="pi pi-info-circle"
+            label="DIRPA / Presse"
+            icon="pi pi-megaphone"
             link
             class="w-full contact-link"
             @click="goDirpa"
@@ -105,29 +80,16 @@ const copyHotline = async () => {
         </div>
 
         <p class="fine-print">
-          ⚠️ Ne transmettez pas de mots de passe, données bancaires, ou informations personnelles sensibles.
+          Ne partagez pas d’informations sensibles, de mots de passe ou de données bancaires.
         </p>
       </div>
     </div>
 
-    <!-- Devise -->
-    <div class="sidebar-card values-card">
-      <div class="motto-container">
-        <p class="motto-label">République du Mali</p>
-        <p class="motto-main">Un Peuple • Un But • Une Foi</p>
-        <Divider class="gold-divider" />
-
-        <div class="values-row">
-          <div class="value-item">HONNEUR</div>
-          <div class="value-item">PATRIE</div>
-          <div class="value-item">FIDÉLITÉ</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Réseaux -->
     <div class="sidebar-card social-card">
-      <h3 class="title-small">Canaux officiels</h3>
+      <div class="social-header">
+        <h3 class="title-small">Canaux officiels</h3>
+        <p class="social-text">Suivez les publications officielles des FAMa.</p>
+      </div>
 
       <div class="social-flex">
         <a
@@ -136,6 +98,7 @@ const copyHotline = async () => {
           target="_blank"
           rel="noopener"
           aria-label="Facebook officiel"
+          title="Facebook"
         >
           <i class="pi pi-facebook"></i>
         </a>
@@ -146,6 +109,7 @@ const copyHotline = async () => {
           target="_blank"
           rel="noopener"
           aria-label="X / Twitter officiel"
+          title="X"
         >
           <i class="pi pi-twitter"></i>
         </a>
@@ -156,6 +120,7 @@ const copyHotline = async () => {
           target="_blank"
           rel="noopener"
           aria-label="YouTube officiel"
+          title="YouTube"
         >
           <i class="pi pi-youtube"></i>
         </a>
@@ -166,6 +131,7 @@ const copyHotline = async () => {
           target="_blank"
           rel="noopener"
           aria-label="Instagram officiel"
+          title="Instagram"
         >
           <i class="pi pi-instagram"></i>
         </a>
@@ -175,32 +141,47 @@ const copyHotline = async () => {
 </template>
 
 <style scoped>
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 .official-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 0.9rem;
   width: 100%;
   min-width: 0;
 }
 
-/* CARTES */
+.is-sticky {
+  position: sticky;
+  top: 120px;
+  align-self: start;
+  will-change: transform;
+}
+
+@media (max-width: 1024px) {
+  .is-sticky {
+    position: static;
+    top: auto;
+  }
+}
+
 .sidebar-card {
   background: #1a2421;
   border: 1px solid #2a3a35;
-  border-radius: 16px;
-  padding: 1.35rem;
+  border-radius: 14px;
+  padding: 1.1rem;
   color: #f1f5f9;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
   overflow: hidden;
 }
 
 .alert-card {
   background:
-    linear-gradient(180deg, rgba(212, 175, 55, 0.04) 0%, rgba(26, 36, 33, 1) 28%),
+    linear-gradient(180deg, rgba(212, 175, 55, 0.04) 0%, rgba(26, 36, 33, 1) 26%),
     #1a2421;
 }
 
@@ -211,20 +192,18 @@ const copyHotline = async () => {
   gap: 10px;
 }
 
-/* BADGE */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   background: rgba(20, 184, 44, 0.1);
-  padding: 7px 12px;
+  padding: 7px 11px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 900;
   color: #14b82c;
   letter-spacing: 0.08em;
   line-height: 1;
-  flex-wrap: nowrap;
 }
 
 .status-dot {
@@ -239,83 +218,53 @@ const copyHotline = async () => {
   animation: pulse-green 2s infinite;
 }
 
-.copy-btn {
-  color: #94a3b8 !important;
-}
-
-.copy-btn:hover {
-  color: #d4af37 !important;
-  background: rgba(212, 175, 55, 0.08) !important;
-}
-
-/* TYPO */
 .info-content {
-  margin-top: 0.8rem;
+  margin-top: 0.75rem;
 }
 
 .date-text {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: #94a3b8;
-  margin: 0 0 0.55rem;
-  line-height: 1.5;
+  margin: 0 0 0.45rem;
+  line-height: 1.4;
 }
 
 .title-gold {
   color: #d4af37;
-  font-size: 1.28rem;
+  font-size: 1.12rem;
   font-weight: 900;
-  margin: 0 0 0.7rem;
+  margin: 0 0 0.6rem;
   line-height: 1.25;
 }
 
 .title-small {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 800;
   color: #94a3b8;
   text-transform: uppercase;
-  margin: 0 0 1rem;
+  margin: 0;
   letter-spacing: 0.08em;
 }
 
 .description {
-  font-size: 0.96rem;
+  font-size: 0.9rem;
   color: #cbd5e1;
-  line-height: 1.7;
-  margin: 0 0 1rem;
+  line-height: 1.65;
+  margin: 0 0 0.95rem;
 }
 
-.hotline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0.25rem 0 1.2rem;
-  font-weight: 800;
-}
-
-.hotline-label {
-  color: #94a3b8;
-  font-size: 0.85rem;
-}
-
-.hotline-value {
-  color: #f1f5f9;
-  letter-spacing: 0.4px;
-  font-size: 0.92rem;
-}
-
-/* BOUTONS */
 .action-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
 .signal-btn {
   background: #14b82c !important;
   border: none !important;
   font-weight: 800 !important;
-  min-height: 48px !important;
-  padding: 0.9rem 1rem !important;
+  min-height: 44px !important;
+  padding: 0.82rem 0.95rem !important;
   border-radius: 12px !important;
 }
 
@@ -323,99 +272,58 @@ const copyHotline = async () => {
   border-color: rgba(212, 175, 55, 0.35) !important;
   color: #f1f5f9 !important;
   font-weight: 800 !important;
-  min-height: 48px !important;
+  min-height: 44px !important;
   border-radius: 12px !important;
 }
 
 .contact-link {
   color: #94a3b8 !important;
-  font-size: 0.88rem !important;
+  font-size: 0.84rem !important;
   text-decoration: none;
   justify-content: flex-start !important;
   padding-left: 0 !important;
 }
 
 .fine-print {
-  margin-top: 14px;
-  font-size: 0.78rem;
+  margin-top: 12px;
+  font-size: 0.74rem;
   color: #94a3b8;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
-/* DEVISE */
-.values-card {
-  background: linear-gradient(145deg, #1a2421, #141c1a);
-  border-left: 4px solid #d4af37;
-}
-
-.motto-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.motto-label {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  font-weight: 800;
-  text-transform: uppercase;
-  margin: 0;
-  letter-spacing: 0.08em;
-}
-
-.motto-main {
-  font-size: 1.02rem;
-  font-weight: 900;
-  color: #f1f5f9;
-  margin: 0.4rem 0 0;
-  line-height: 1.5;
-}
-
-.gold-divider {
-  border-top: 1px solid rgba(212, 175, 55, 0.2) !important;
-  margin: 1rem 0 !important;
-}
-
-.values-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.value-item {
-  font-size: 0.68rem;
-  font-weight: 900;
-  color: #d4af37;
-  letter-spacing: 0.14em;
-  text-align: center;
-  padding: 0.5rem 0.35rem;
-  border: 1px solid rgba(212, 175, 55, 0.12);
-  border-radius: 10px;
-  background: rgba(212, 175, 55, 0.04);
-}
-
-/* SOCIAL */
 .social-card {
-  padding-top: 1.2rem;
-  padding-bottom: 1.2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.social-header {
+  margin-bottom: 0.85rem;
+}
+
+.social-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.86rem;
+  color: #cbd5e1;
+  line-height: 1.55;
 }
 
 .social-flex {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 9px;
 }
 
 .social-link {
   width: 100%;
-  min-height: 48px;
-  border-radius: 14px;
+  min-height: 44px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(148, 163, 184, 0.25);
   color: #94a3b8;
   text-decoration: none;
   transition: 0.2s ease;
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
 
 .social-link:hover {
@@ -424,7 +332,6 @@ const copyHotline = async () => {
   background: rgba(212, 175, 55, 0.08);
 }
 
-/* ANIMATION */
 @keyframes pulse-green {
   0% {
     transform: scale(0.95);
@@ -440,129 +347,107 @@ const copyHotline = async () => {
   }
 }
 
-/* TABLET */
 @media (min-width: 768px) {
   .official-sidebar {
-    gap: 1.35rem;
+    gap: 1rem;
   }
 
   .sidebar-card {
-    padding: 1.5rem;
+    padding: 1.2rem;
   }
 
   .title-gold {
-    font-size: 1.34rem;
+    font-size: 1.18rem;
   }
 
   .description {
-    font-size: 0.98rem;
+    font-size: 0.92rem;
   }
 
   .social-link {
-    min-height: 50px;
-    font-size: 1.05rem;
+    min-height: 46px;
+    font-size: 1rem;
   }
 }
 
-/* MOBILE */
 @media (max-width: 576px) {
   .official-sidebar {
-    gap: 0.95rem;
+    gap: 0.85rem;
   }
 
   .sidebar-card {
-    padding: 1rem;
-    border-radius: 14px;
-  }
-
-  .card-header {
-    align-items: flex-start;
+    padding: 0.95rem;
+    border-radius: 13px;
   }
 
   .status-badge {
-    font-size: 0.66rem;
-    padding: 7px 10px;
+    font-size: 0.63rem;
+    padding: 6px 10px;
     letter-spacing: 0.06em;
   }
 
   .date-text {
-    font-size: 0.82rem;
-  }
-
-  .title-gold {
-    font-size: 1.1rem;
-    margin-bottom: 0.55rem;
-  }
-
-  .description {
-    font-size: 0.9rem;
-    line-height: 1.65;
-  }
-
-  .signal-btn,
-  .secondary-btn {
-    min-height: 46px !important;
-    font-size: 0.94rem !important;
-  }
-
-  .contact-link {
-    font-size: 0.82rem !important;
-    white-space: normal !important;
-    line-height: 1.5 !important;
-  }
-
-  .fine-print {
-    font-size: 0.74rem;
-    margin-top: 12px;
-  }
-
-  .motto-label {
-    font-size: 0.66rem;
-  }
-
-  .motto-main {
-    font-size: 0.95rem;
-  }
-
-  .values-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .value-item {
-    font-size: 0.66rem;
-    padding: 0.55rem 0.4rem;
-  }
-
-  .social-flex {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-
-  .social-link {
-    min-height: 44px;
-    border-radius: 12px;
-    font-size: 0.95rem;
-  }
-}
-
-/* TRÈS PETITS ÉCRANS */
-@media (max-width: 380px) {
-  .sidebar-card {
-    padding: 0.9rem;
+    font-size: 0.78rem;
   }
 
   .title-gold {
     font-size: 1.02rem;
+    margin-bottom: 0.5rem;
   }
 
   .description {
-    font-size: 0.86rem;
+    font-size: 0.87rem;
+    line-height: 1.6;
+  }
+
+  .signal-btn,
+  .secondary-btn {
+    min-height: 42px !important;
+    font-size: 0.92rem !important;
+  }
+
+  .contact-link {
+    font-size: 0.8rem !important;
+    white-space: normal !important;
+    line-height: 1.45 !important;
+  }
+
+  .fine-print {
+    font-size: 0.71rem;
+    margin-top: 10px;
+  }
+
+  .social-text {
+    font-size: 0.82rem;
+  }
+
+  .social-flex {
+    gap: 8px;
+  }
+
+  .social-link {
+    min-height: 42px;
+    border-radius: 11px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .sidebar-card {
+    padding: 0.88rem;
+  }
+
+  .title-gold {
+    font-size: 0.96rem;
+  }
+
+  .description {
+    font-size: 0.84rem;
   }
 
   .status-badge {
-    font-size: 0.62rem;
-    padding: 6px 9px;
+    font-size: 0.6rem;
+    padding: 6px 8px;
   }
 
   .social-flex {
@@ -570,7 +455,7 @@ const copyHotline = async () => {
   }
 
   .social-link {
-    min-height: 46px;
+    min-height: 44px;
   }
 }
 </style>

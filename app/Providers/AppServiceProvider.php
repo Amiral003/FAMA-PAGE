@@ -2,16 +2,19 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Listeners\UpdateLastLoginData;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
-use App\Listeners\UpdateLastLoginData;
-
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Auth\Events\Failed;
+use App\Listeners\LogFailedLogin;
+use Illuminate\Auth\Events\Lockout;
+use App\Listeners\LogLockout;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,45 +24,62 @@ class AppServiceProvider extends ServiceProvider
     }
 
     public function boot(): void
-    
     {
-         {
         Event::listen(Login::class, UpdateLastLoginData::class);
-    }
-         // test temporaire
+        Event::listen(Failed::class, LogFailedLogin::class);
+        Event::listen(Lockout::class, LogLockout::class);
+
         if (app()->environment('local')) {
-    \Illuminate\Database\Eloquent\Model::preventLazyLoading();
-}
-        // 1) Force HTTPS uniquement en production
-        if (app()->environment('production')) {
-           // URL::forceScheme('https');
+            \Illuminate\Database\Eloquent\Model::preventLazyLoading();
         }
 
-        // 2) Configuration Filament
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         FileUpload::configureUsing(function (FileUpload $component) {
-            $component->maxSize(10240); // 10MB
+            $component->maxSize(10240); // 10 MB
         });
 
-        // 3) Rate limiting API publique
-        RateLimiter::for('api-public', function (Request $request) {
-            return Limit::perMinute(120)->by($request->ip());
-        });
-
-        // 4) Rate limiting contact
-        RateLimiter::for('contact', function (Request $request) {
-            $email = strtolower((string) $request->input('email'));
-            $key = $email !== '' ? $email : $request->ip();
+        RateLimiter::for('login', function (Request $request) {
+            $email = (string) $request->input('email');
 
             return [
-                Limit::perMinute(5)->by($request->ip()),
-                Limit::perHour(20)->by($key),
+                Limit::perMinute(5)->by(mb_strtolower($email) . '|' . $request->ip()),
+                Limit::perMinute(20)->by('login-ip|' . $request->ip()),
             ];
         });
-// throttle sur tout le panel admin
+
+        RateLimiter::for('two-factor', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by((string) $request->session()->get('login.id') . '|' . $request->ip()),
+                Limit::perMinute(20)->by('two-factor-ip|' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('api-public', function (Request $request) {
+            return [
+                Limit::perMinute(60)->by('api-public|' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('contact', function (Request $request) {
+            return [
+                Limit::perMinute(3)->by('contact-minute|' . $request->ip()),
+                Limit::perHour(10)->by('contact-hour|' . $request->ip()),
+            ];
+        });
+
         RateLimiter::for('admin', function (Request $request) {
-    return Limit::perMinute(30)->by($request->ip());
+            return [
+                Limit::perMinute(30)->by('admin|' . $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('files', function (Request $request) {
+    return [
+        Limit::perMinute(30)->by('files|' . $request->ip()),
+    ];
 });
     }
-
-    
 }

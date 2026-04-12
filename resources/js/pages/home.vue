@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { useHead } from '@vueuse/head'
+import { useHead } from '@unhead/vue'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
@@ -16,6 +16,8 @@ import maliImg from '@/assets/images/fa.jpg'
 import photoCover from '@/assets/images/hero.jpg'
 import videoCover from '@/assets/images/fam.png'
 
+const router = useRouter()
+
 useHead({
   title: 'Accueil | FAMa - Portail Officiel des Forces Armées Maliennes',
   meta: [
@@ -24,49 +26,140 @@ useHead({
       content:
         "Portail officiel des FAMa. Retrouvez les communiqués de l'État-Major, l'actualité de la défense et les rapports officiels sur la sécurité du Mali.",
     },
-    { name: 'keywords', content: 'FAMa, Armée Malienne, Défense Mali, Sécurité Mali, Communiqués officiels' },
+    {
+      name: 'keywords',
+      content: 'FAMa, Armée Malienne, Défense Mali, Sécurité Mali, Communiqués officiels',
+    },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: 'https://votre-site-fama.ml/' },
     { property: 'og:title', content: 'FAMa - Engagement Sans Faille pour la Patrie' },
-    { property: 'og:description', content: "Information vérifiée de l’État-Major Général des Armées du Mali." },
+    {
+      property: 'og:description',
+      content: "Information vérifiée de l'État-Major Général des Armées du Mali.",
+    },
     { property: 'og:image', content: '/assets/images/hero.jpg' },
+    { property: 'og:image:alt', content: 'Forces Armées Maliennes' },
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: 'FAMa Officiel | Forces Armées Maliennes' },
     { name: 'twitter:image', content: '/assets/images/hero.jpg' },
+    { name: 'twitter:image:alt', content: 'Forces Armées Maliennes' }
   ],
+  link: [
+    { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+    { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }
+  ]
 })
 
 const currentBgIndex = ref(0)
 const backgroundImages = [heroImg, famaImg, maliImg]
 let backgroundInterval = null
+let observer = null
 
 const posts = ref([])
 const loading = ref(true)
-const router = useRouter()
+const error = ref(null)
+const showScrollTop = ref(false)
 
-onMounted(async () => {
+const handleScroll = () => {
+  showScrollTop.value = window.scrollY > 500
+}
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const preloadImages = () => {
   backgroundImages.forEach((src) => {
     const img = new Image()
     img.src = src
+    img.fetchPriority = 'high'
   })
 
-  backgroundInterval = setInterval(() => {
-    currentBgIndex.value = (currentBgIndex.value + 1) % backgroundImages.length
-  }, 5000)
+  ;[photoCover, videoCover].forEach((src) => {
+    const img = new Image()
+    img.src = src
+  })
+}
 
+const setupLazyLoading = () => {
+  const lazyImages = document.querySelectorAll('img[data-src]')
+
+  if (!lazyImages.length) return
+
+  if ('IntersectionObserver' in window) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          const img = entry.target
+          if (img.dataset.src) {
+            img.src = img.dataset.src
+            img.removeAttribute('data-src')
+          }
+          observer.unobserve(img)
+        })
+      },
+      { rootMargin: '100px 0px' }
+    )
+
+    lazyImages.forEach((img) => observer.observe(img))
+  } else {
+    lazyImages.forEach((img) => {
+      if (img.dataset.src) {
+        img.src = img.dataset.src
+        img.removeAttribute('data-src')
+      }
+    })
+  }
+}
+
+const fetchLatestPosts = async () => {
   try {
-    const res = await axios.get('/api/posts/latest')
+    const res = await axios.get('/api/posts/latest', { timeout: 10000 })
     posts.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (e) {
     console.error('Erreur chargement posts:', e)
+    error.value = 'Impossible de charger les dernières publications'
   } finally {
     loading.value = false
+    await nextTick()
+    setupLazyLoading()
   }
+}
+
+onMounted(async () => {
+  preloadImages()
+
+  backgroundInterval = setInterval(() => {
+    currentBgIndex.value = (currentBgIndex.value + 1) % backgroundImages.length
+  }, 5500)
+
+  await fetchLatestPosts()
+
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onUnmounted(() => {
   if (backgroundInterval) clearInterval(backgroundInterval)
+  if (observer) observer.disconnect()
+  window.removeEventListener('scroll', handleScroll)
 })
+
+const getYoutubeId = (url) => {
+  if (!url) return null
+
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes('youtu.be')) return u.pathname.replace('/', '') || null
+    if (u.searchParams.get('v')) return u.searchParams.get('v')
+    if (u.pathname.includes('/embed/')) return u.pathname.split('/embed/')[1] || null
+    return null
+  } catch {
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1]?.split('?')[0] || null
+    if (url.includes('watch?v=')) return url.split('watch?v=')[1]?.split('&')[0] || null
+    return null
+  }
+}
 
 const getPostImage = (post) => {
   if (post?.type === 'video') {
@@ -85,88 +178,103 @@ const getPostImage = (post) => {
     return '/assets/images/fama-placeholder.jpg'
   }
 
-  if (post?.media && post.media.length > 0) return `/storage/${post.media[0].file_path}`
+  if (post?.media && post.media.length > 0) {
+    return `/storage/${post.media[0].file_path}`
+  }
 
   return '/assets/images/fama-placeholder.jpg'
 }
-
-const getYoutubeId = (url) => {
-  if (!url) return null
-
-  try {
-    const u = new URL(url)
-    if (u.hostname.includes('youtu.be')) return u.pathname.replace('/', '') || null
-    if (u.searchParams.get('v')) return u.searchParams.get('v')
-    if (u.pathname.includes('/embed/')) return u.pathname.split('/embed/')[1] || null
-    return null
-  } catch (e) {
-    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1]?.split('?')[0] || null
-    if (url.includes('watch?v=')) return url.split('watch?v=')[1]?.split('&')[0] || null
-    return null
-  }
-}
-
-const recentPdfs = computed(() => posts.value.filter((p) => p.pdf_path).slice(0, 3))
 
 const stripHtml = (html) => {
   if (!html) return ''
   const doc = new DOMParser().parseFromString(html, 'text/html')
   return doc.body.textContent || ''
 }
+
+const recentPdfs = computed(() => posts.value.filter((p) => p.pdf_path).slice(0, 3))
+
+const handleCardKeyPress = (event, post) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    router.push(`/posts/${post.slug}`)
+  }
+}
 </script>
 
 <template>
-  <main class="home-page">
-    <section class="hero-premium">
+  <div class="home-page">
+    <section class="hero-premium" aria-label="Bannière d'accueil">
       <div
         v-for="(img, index) in backgroundImages"
         :key="index"
         class="hero-bg-layer"
         :class="{ active: currentBgIndex === index }"
         :style="{ backgroundImage: `url(${img})` }"
+        aria-hidden="true"
       ></div>
 
-      <div class="hero-overlay"></div>
+      <div class="hero-overlay" aria-hidden="true"></div>
 
       <div class="container hero-content">
-        <div class="hero-text-box" data-aos="fade-up">
-          <Tag value="PORTAIL OFFICIEL" class="custom-tag-official hero-tag" />
+        <div class="hero-text-box">
+          <Tag
+            value="PORTAIL OFFICIEL"
+            class="custom-tag-official hero-tag"
+            severity="success"
+          />
+
+          <p class="hero-kicker">RÉPUBLIQUE DU MALI • FORCES ARMÉES MALIENNES</p>
 
           <h1>
-            Défense de la Patrie <br />
+            Défense de la Patrie
+            <br />
             <span class="text-gold">Engagement Sans Faille</span>
           </h1>
 
           <p class="hero-subtext">
-            Les Forces Armées Maliennes sont l’expression vivante du devoir, du courage et de la fidélité à la Patrie.
-            Servir dans les FAMA, c’est protéger le Mali, défendre son peuple et garantir sa souveraineté.
+            Les Forces Armées Maliennes incarnent le devoir, la discipline et la fidélité à la Nation.
+            Ce portail officiel centralise les informations institutionnelles, les communiqués,
+            les documents validés et les contenus multimédias publiés au nom des FAMa.
           </p>
 
           <div class="hero-btns">
             <Button
-              label="COMMUNIQUÉS"
+              label="COMMUNIQUÉS OFFICIELS"
               icon="pi pi-file"
               class="btn-fama-gold hero-action-btn"
               @click="router.push('/portfolio')"
+              aria-label="Voir les communiqués officiels"
             />
             <Button
-              label="NOTRE HISTOIRE"
+              label="DÉCOUVRIR L'INSTITUTION"
               icon="pi pi-shield"
               variant="text"
               class="hero-action-btn hero-action-outline"
               @click="router.push('/about')"
+              aria-label="Découvrir l'institution"
             />
           </div>
         </div>
       </div>
     </section>
 
-    <section class="news-section">
+    <section class="news-section" aria-label="Dernières publications">
       <div class="container">
         <div class="section-header-premium">
-          <div class="header-line"></div>
+          <div class="header-line" aria-hidden="true"></div>
           <h2>DERNIÈRES PUBLICATIONS</h2>
           <p>Informations vérifiées de l'État-Major Général des Armées</p>
+        </div>
+
+        <div v-if="error" class="error-message" role="alert">
+          <i class="pi pi-exclamation-triangle"></i>
+          <p>{{ error }}</p>
+          <Button
+            label="Réessayer"
+            icon="pi pi-refresh"
+            class="p-button-outlined"
+            @click="fetchLatestPosts"
+          />
         </div>
 
         <div class="news-grid">
@@ -184,38 +292,55 @@ const stripHtml = (html) => {
               :key="post.id"
               class="premium-card"
               @click="router.push(`/posts/${post.slug}`)"
+              @keypress="handleCardKeyPress($event, post)"
+              tabindex="0"
+              role="article"
+              :aria-label="`Article: ${post.title}`"
             >
               <div class="card-media">
-                <img :src="getPostImage(post)" :alt="post.title" class="zoom-effect" />
-                <div v-if="post.type === 'video'" class="video-badge">
-                  <i class="pi pi-play"></i>
+                <img
+                  :data-src="getPostImage(post)"
+                  :alt="post.title"
+                  class="card-image"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div v-if="post.type === 'video'" class="video-badge" aria-label="Contenu vidéo">
+                  <i class="pi pi-play" aria-hidden="true"></i>
                 </div>
               </div>
 
               <div class="card-content">
                 <span class="date">
-                  <i class="pi pi-calendar"></i>
-                  {{ new Date(post.created_at).toLocaleDateString() }}
+                  <i class="pi pi-calendar" aria-hidden="true"></i>
+                  {{ new Date(post.created_at).toLocaleDateString('fr-FR') }}
                 </span>
 
                 <h3>{{ post.title }}</h3>
-                <p>{{ stripHtml(post.content).substring(0, 85) }}...</p>
+                <p>{{ stripHtml(post.content).substring(0, 95) }}...</p>
 
                 <div class="card-footer-link">
-                  Consulter <i class="pi pi-arrow-right ml-2"></i>
+                  Consulter <i class="pi pi-arrow-right ml-2" aria-hidden="true"></i>
                 </div>
               </div>
             </div>
 
-            <div class="premium-card cta-card" @click="router.push('/portfolio')">
+            <div
+              class="premium-card cta-card"
+              @click="router.push('/portfolio')"
+              @keypress="($event) => { if ($event.key === 'Enter' || $event.key === ' ') router.push('/portfolio') }"
+              tabindex="0"
+              role="button"
+              aria-label="Accéder aux archives et communiqués"
+            >
               <div class="cta-content">
-                <div class="cta-icon">
+                <div class="cta-icon" aria-hidden="true">
                   <i class="pi pi-folder-open"></i>
                 </div>
                 <h3>Archives & Communiqués</h3>
-                <p>Accédez à l'intégralité des documents et rapports officiels.</p>
+                <p>Accédez à l'intégralité des documents, rapports et publications officiels.</p>
                 <Button
-                  label="TOUT VOIR"
+                  label="TOUT CONSULTER"
                   icon="pi pi-chevron-right"
                   iconPos="right"
                   class="btn-fama-gold cta-btn"
@@ -227,18 +352,30 @@ const stripHtml = (html) => {
 
         <div class="media-section">
           <div class="section-header-premium media-header">
-            <div class="header-line"></div>
+            <div class="header-line" aria-hidden="true"></div>
             <h2>MÉDIATHÈQUE</h2>
             <p>Photos et vidéos officielles des activités et opérations des FAMa</p>
           </div>
 
           <div class="media-grid">
-            <Card class="media-card" @click="router.push('/phototheque')">
+            <Card
+              class="media-card"
+              @click="router.push('/phototheque')"
+              @keypress="($event) => { if ($event.key === 'Enter' || $event.key === ' ') router.push('/phototheque') }"
+              tabindex="0"
+              role="button"
+              aria-label="Explorer la photothèque"
+            >
               <template #header>
                 <div class="media-cover">
-                  <img :src="photoCover" alt="Photothèque FAMa" />
-                  <div class="media-cover-overlay"></div>
-                  <div class="media-badge">
+                  <img
+                    :data-src="photoCover"
+                    alt="Photothèque FAMa"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div class="media-cover-overlay" aria-hidden="true"></div>
+                  <div class="media-badge" aria-hidden="true">
                     <i class="pi pi-images"></i>
                     <span>PHOTOTHÈQUE</span>
                   </div>
@@ -248,7 +385,7 @@ const stripHtml = (html) => {
               <template #content>
                 <h3 class="media-title">Photothèque Officielle</h3>
                 <p class="media-desc">
-                  Accédez aux images officielles : cérémonies, opérations, formations, actions civilo-militaires.
+                  Cérémonies, activités, formations, opérations et images institutionnelles validées.
                 </p>
                 <div class="media-actions">
                   <Button
@@ -261,12 +398,24 @@ const stripHtml = (html) => {
               </template>
             </Card>
 
-            <Card class="media-card" @click="router.push('/videotheque')">
+            <Card
+              class="media-card"
+              @click="router.push('/videotheque')"
+              @keypress="($event) => { if ($event.key === 'Enter' || $event.key === ' ') router.push('/videotheque') }"
+              tabindex="0"
+              role="button"
+              aria-label="Explorer la vidéothèque"
+            >
               <template #header>
                 <div class="media-cover">
-                  <img :src="videoCover" alt="Vidéothèque FAMa" />
-                  <div class="media-cover-overlay"></div>
-                  <div class="media-badge">
+                  <img
+                    :data-src="videoCover"
+                    alt="Vidéothèque FAMa"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div class="media-cover-overlay" aria-hidden="true"></div>
+                  <div class="media-badge" aria-hidden="true">
                     <i class="pi pi-video"></i>
                     <span>VIDÉOTHÈQUE</span>
                   </div>
@@ -276,7 +425,7 @@ const stripHtml = (html) => {
               <template #content>
                 <h3 class="media-title">Vidéothèque Officielle</h3>
                 <p class="media-desc">
-                  Reportages, communiqués vidéo, interviews, et contenus officiels validés par l'État-Major.
+                  Reportages, déclarations, communiqués vidéo et contenus officiels publiés par les FAMa.
                 </p>
                 <div class="media-actions">
                   <Button
@@ -293,37 +442,35 @@ const stripHtml = (html) => {
       </div>
     </section>
 
-    <footer class="fama-footer">
+    <footer class="fama-footer" aria-label="Pied de page">
       <div class="container footer-grid">
         <div class="footer-brand">
           <h3 class="footer-title">FORCES ARMÉES MALIENNES</h3>
           <p class="footer-intro">
-            La défense de la patrie est un devoir sacré. Restez connectés aux sources officielles pour des informations vérifiées.
+            Portail officiel d'information institutionnelle. Consultez des contenus fiables, vérifiés et publiés
+            au nom des Forces Armées Maliennes.
           </p>
 
           <div class="soldier-honor-card">
-            <div class="card-glow"></div>
-            <i class="pi pi-shield soldier-icon"></i>
+            <i class="pi pi-shield soldier-icon" aria-hidden="true"></i>
 
             <div class="honor-content">
-              <h3>Etre FAMa!!!</h3>
+              <h3>Servir la Patrie</h3>
 
               <p class="honor-text">
-                « C’est répondre à l’appel de la Patrie avec loyauté et sens du devoir. c’est accepter la noble mission de défendre
-                l’intégrité territoriale, la souveraineté nationale et la sécurité des populations, dans le respect des valeurs
-                républicaines et de l’éthique militaire.»
+                Défendre l'intégrité territoriale, protéger les populations et préserver la souveraineté nationale
+                constituent le cœur de la mission des Forces Armées Maliennes.
               </p>
 
               <p class="honor-text">
-                « Etre un pilier de la stabilité nationale. Agir avec discipline, courage et professionnalisme face aux menaces qui
-                pèsent sur la Nation. Chaque mission, qu’elle soit de défense, de sécurisation ou d’assistance aux populations, est
-                accomplie avec détermination et abnégation, au service exclusif du Mali. »
+                Discipline, engagement, sens du devoir et fidélité aux valeurs républicaines fondent l'action
+                quotidienne des FAMa au service exclusif du Mali.
               </p>
 
               <div class="honor-footer">
-                <span class="honor-rank">Valeurs Fondamentales</span>
-                <span class="honor-separator"></span>
-                <span class="honor-motto">Honneur - Patrie</span>
+                <span class="honor-rank">Valeurs</span>
+                <span class="honor-separator" aria-hidden="true"></span>
+                <span class="honor-motto">Honneur • Patrie • Discipline</span>
               </div>
             </div>
           </div>
@@ -338,27 +485,44 @@ const stripHtml = (html) => {
         © 2026 RÉPUBLIQUE DU MALI • UN PEUPLE • UN BUT • UNE FOI
       </div>
     </footer>
-  </main>
+
+    <Transition name="fade">
+      <Button
+        v-if="showScrollTop"
+        @click="scrollToTop"
+        icon="pi pi-arrow-up"
+        class="scroll-top-button"
+        rounded
+        severity="secondary"
+        aria-label="Retour en haut de page"
+      />
+    </Transition>
+  </div>
 </template>
 
 <style scoped>
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+  min-width: 0;
 }
 
 .home-page {
   background: #fdfdfd;
+  width: 100%;
+  overflow-x: clip;
 }
 
 .text-gold {
-  color: #ffd700;
+  color: #d8b24b;
 }
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding-inline: 20px;
+  padding-inline: 22px;
 }
 
 @media (max-width: 576px) {
@@ -372,22 +536,22 @@ const stripHtml = (html) => {
 ========================= */
 .hero-premium {
   position: relative;
-  min-height: clamp(560px, 88vh, 760px);
-  width: 100%;
+  min-height: min(100svh, 860px);
   overflow: hidden;
   background: #1d261e;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .hero-bg-layer {
   position: absolute;
   inset: 0;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   opacity: 0;
-  transition: opacity 1.5s ease-in-out;
+  transition: opacity 0.9s ease-in-out;
   z-index: 0;
 }
 
@@ -401,19 +565,21 @@ const stripHtml = (html) => {
   z-index: 1;
   background:
     linear-gradient(
-      to right,
-      rgba(26, 36, 27, 0.92) 0%,
-      rgba(32, 45, 34, 0.8) 38%,
-      rgba(26, 36, 27, 0.45) 70%,
-      rgba(26, 36, 27, 0.28) 100%
+      90deg,
+      rgba(10, 15, 11, 0.90) 0%,
+      rgba(18, 26, 20, 0.78) 35%,
+      rgba(20, 30, 24, 0.52) 65%,
+      rgba(20, 30, 24, 0.38) 100%
     );
 }
 
 .hero-content {
   position: relative;
-  z-index: 10;
+  z-index: 2;
   width: 100%;
-  padding-block: 80px 50px;
+  padding-block: 96px 72px;
+  display: flex;
+  align-items: center;
 }
 
 .hero-text-box {
@@ -424,33 +590,44 @@ const stripHtml = (html) => {
   margin-bottom: 18px;
 }
 
+.hero-kicker {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.80);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .custom-tag-official {
-  background: #14b82c !important;
-  color: white !important;
+  background: #14532d !important;
+  color: #ffffff !important;
   font-weight: 800 !important;
   border-radius: 999px !important;
   padding: 0.5rem 0.95rem !important;
   font-size: 0.82rem !important;
   letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .hero-text-box h1 {
-  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-size: clamp(2.2rem, 5.8vw, 4.5rem);
   font-weight: 900;
-  line-height: 1.08;
+  line-height: 1.02;
   text-transform: uppercase;
-  color: #e2e8f0;
+  color: #f8fafc;
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  max-width: 900px;
 }
 
 .hero-subtext {
-  max-width: 700px;
-  font-size: clamp(1rem, 2.5vw, 1.18rem);
-  line-height: 1.75;
+  max-width: 760px;
+  font-size: clamp(1rem, 2.2vw, 1.12rem);
+  line-height: 1.8;
   color: #dbe4ee;
-  margin: 22px 0 34px;
-  border-left: 4px solid #ffd700;
+  margin: 24px 0 34px;
+  border-left: 4px solid #d8b24b;
   padding-left: 18px;
 }
 
@@ -461,21 +638,31 @@ const stripHtml = (html) => {
 }
 
 .hero-action-btn {
-  min-height: 50px !important;
+  min-height: 52px !important;
 }
 
 .btn-fama-gold {
-  background: #ffd700 !important;
-  color: #1a241b !important;
-  border: none !important;
+  background: #d8b24b !important;
+  color: #182118 !important;
+  border: 1px solid #d8b24b !important;
   font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+.btn-fama-gold:hover {
+  background: #caa33a !important;
+  border-color: #caa33a !important;
 }
 
 .hero-action-outline {
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
   font-weight: 700 !important;
+}
+
+.hero-action-outline:hover {
+  background: rgba(255, 255, 255, 0.11) !important;
 }
 
 /* =========================
@@ -486,49 +673,50 @@ const stripHtml = (html) => {
 }
 
 .header-line {
-  width: 72px;
-  height: 6px;
+  width: 70px;
+  height: 4px;
   border-radius: 999px;
-  background: #14b82c;
+  background: #14532d;
   margin-bottom: 14px;
 }
 
 .section-header-premium h2 {
-  font-size: clamp(1.45rem, 4vw, 2rem);
+  font-size: clamp(1.55rem, 4vw, 2.15rem);
   font-weight: 900;
-  color: #1a241b;
+  color: #152019;
   margin: 0 0 8px;
-  line-height: 1.2;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
 }
 
 .section-header-premium p {
   color: #64748b;
   font-size: clamp(0.96rem, 2vw, 1.02rem);
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 /* =========================
    NEWS
 ========================= */
 .news-section {
-  padding: 70px 0;
+  padding: 76px 0 72px;
   background: #f8fafc;
 }
 
 .news-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
   gap: 22px;
 }
 
 .premium-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
-  transition: 0.35s ease;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  border: 1px solid #eef2f7;
+  border: 1px solid #e9eef4;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -536,9 +724,9 @@ const stripHtml = (html) => {
 }
 
 .premium-card:hover {
-  transform: translateY(-8px);
-  border-color: #ffd700;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  border-color: rgba(216, 178, 75, 0.75);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.09);
 }
 
 .card-media {
@@ -548,15 +736,11 @@ const stripHtml = (html) => {
   background: #e2e8f0;
 }
 
-.zoom-effect {
+.card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.8s ease;
-}
-
-.premium-card:hover .zoom-effect {
-  transform: scale(1.08);
+  display: block;
 }
 
 .video-badge {
@@ -565,20 +749,20 @@ const stripHtml = (html) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, rgba(0, 0, 0, 0.04) 100%);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0.06) 70%, rgba(0, 0, 0, 0.02) 100%);
 }
 
 .video-badge i {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.92);
-  color: #1a241b;
+  background: rgba(216, 178, 75, 0.95);
+  color: #182118;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.55rem;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+  font-size: 1.45rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
 .card-content {
@@ -594,13 +778,13 @@ const stripHtml = (html) => {
   gap: 7px;
   font-size: 0.83rem;
   font-weight: 700;
-  color: #14b82c;
+  color: #14532d;
 }
 
 .card-content h3 {
-  font-size: 1.12rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  color: #1a241b;
+  color: #152019;
   margin: 12px 0 10px;
   line-height: 1.45;
   min-height: 3.2rem;
@@ -609,14 +793,14 @@ const stripHtml = (html) => {
 .card-content p {
   color: #64748b;
   font-size: 0.95rem;
-  line-height: 1.65;
+  line-height: 1.72;
   margin: 0 0 16px;
   flex-grow: 1;
 }
 
 .card-footer-link {
   font-weight: 800;
-  color: #1a241b;
+  color: #152019;
   font-size: 0.92rem;
   display: flex;
   align-items: center;
@@ -625,36 +809,36 @@ const stripHtml = (html) => {
 
 /* CTA */
 .cta-card {
-  background: #1a241b !important;
-  border: 2px dashed #ffd700 !important;
+  background: #152019 !important;
+  border: 1px solid rgba(216, 178, 75, 0.45) !important;
   justify-content: center;
   align-items: center;
   text-align: center;
 }
 
 .cta-content {
-  padding: 28px 20px;
+  padding: 30px 22px;
   width: 100%;
 }
 
 .cta-content h3 {
-  font-size: 1.3rem;
+  font-size: 1.28rem;
   font-weight: 900;
   color: #ffffff;
   margin: 0 0 10px;
 }
 
 .cta-content p {
-  color: #cbd5e1;
-  line-height: 1.7;
+  color: #d3d9e2;
+  line-height: 1.72;
   margin: 0 0 20px;
 }
 
 .cta-icon {
-  width: 72px;
-  height: 72px;
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  background: rgba(216, 178, 75, 0.10);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -662,8 +846,8 @@ const stripHtml = (html) => {
 }
 
 .cta-icon i {
-  font-size: 2rem;
-  color: #ffd700;
+  font-size: 1.85rem;
+  color: #d8b24b;
 }
 
 .cta-btn {
@@ -674,7 +858,7 @@ const stripHtml = (html) => {
    MEDIA
 ========================= */
 .media-section {
-  margin-top: 60px;
+  margin-top: 68px;
 }
 
 .media-header {
@@ -690,20 +874,21 @@ const stripHtml = (html) => {
 .media-card {
   cursor: pointer;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
-  transition: 0.35s ease;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .media-card:hover {
-  transform: translateY(-8px);
-  border-color: #ffd700;
+  transform: translateY(-4px);
+  border-color: rgba(216, 178, 75, 0.75);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
 }
 
 .media-cover {
   position: relative;
-  height: 210px;
+  height: 220px;
   overflow: hidden;
 }
 
@@ -711,17 +896,13 @@ const stripHtml = (html) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.7s ease;
-}
-
-.media-card:hover .media-cover img {
-  transform: scale(1.06);
+  display: block;
 }
 
 .media-cover-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.08));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.08));
 }
 
 .media-badge {
@@ -731,8 +912,8 @@ const stripHtml = (html) => {
   display: inline-flex;
   gap: 8px;
   align-items: center;
-  background: rgba(255, 215, 0, 0.94);
-  color: #1a241b;
+  background: rgba(216, 178, 75, 0.96);
+  color: #182118;
   padding: 8px 12px;
   border-radius: 999px;
   font-weight: 900;
@@ -741,16 +922,16 @@ const stripHtml = (html) => {
 }
 
 .media-title {
-  font-size: 1.18rem;
+  font-size: 1.16rem;
   font-weight: 900;
-  color: #1a241b;
+  color: #152019;
   margin: 0 0 10px;
 }
 
 .media-desc {
   color: #64748b;
   font-size: 0.96rem;
-  line-height: 1.65;
+  line-height: 1.7;
   margin: 0 0 18px;
 }
 
@@ -766,9 +947,9 @@ const stripHtml = (html) => {
    FOOTER
 ========================= */
 .fama-footer {
-  background: #1a241b;
+  background: #152019;
   color: white;
-  padding-top: 70px;
+  padding-top: 74px;
 }
 
 .footer-grid {
@@ -779,81 +960,60 @@ const stripHtml = (html) => {
 }
 
 .footer-title {
-  color: #ffd700;
+  color: #d8b24b;
   font-weight: 900;
   margin: 0 0 18px;
   font-size: clamp(1.35rem, 3vw, 1.8rem);
 }
 
 .footer-intro {
-  color: #cbd5e1;
-  line-height: 1.75;
+  color: #d3d9e2;
+  line-height: 1.78;
   margin: 0;
   font-size: 1rem;
+  max-width: 760px;
 }
 
 .soldier-honor-card {
-  position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-left: 5px solid #d4af37;
-  padding: 20px;
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
+  border: 1px solid rgba(216, 178, 75, 0.24);
+  border-left: 4px solid #d8b24b;
+  padding: 22px;
+  border-radius: 14px;
   margin-top: 28px;
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  transition: all 0.35s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .soldier-honor-card:hover {
-  border-color: rgba(212, 175, 55, 0.8);
-  transform: translateY(-5px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 15px rgba(212, 175, 55, 0.1);
-}
-
-.card-glow {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
-  pointer-events: none;
+  border-color: rgba(216, 178, 75, 0.52);
+  transform: translateY(-2px);
 }
 
 .soldier-icon {
-  font-size: 2.25rem;
-  color: #d4af37;
-  opacity: 0.9;
-  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+  font-size: 2.15rem;
+  color: #d8b24b;
+  opacity: 0.95;
   flex-shrink: 0;
-}
-
-.honor-content {
-  position: relative;
-  z-index: 2;
 }
 
 .honor-content h3 {
   margin: 0 0 12px;
   color: #ffffff;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 900;
 }
 
 .honor-text {
-  font-size: 1rem;
-  line-height: 1.85;
+  font-size: 0.98rem;
+  line-height: 1.84;
   color: #e2e8f0;
-  font-style: italic;
   font-weight: 400;
-  margin: 0 0 16px;
-  position: relative;
+  margin: 0 0 14px;
 }
 
 .honor-footer {
@@ -865,24 +1025,24 @@ const stripHtml = (html) => {
 }
 
 .honor-rank {
-  color: #d4af37;
+  color: #d8b24b;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-size: 0.78rem;
+  letter-spacing: 1.2px;
+  font-size: 0.76rem;
 }
 
 .honor-separator {
-  width: 36px;
+  width: 32px;
   height: 1px;
-  background: rgba(212, 175, 55, 0.5);
+  background: rgba(216, 178, 75, 0.45);
 }
 
 .honor-motto {
-  color: #94a3b8;
+  color: #aeb8c5;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
 }
 
 .footer-docs {
@@ -890,17 +1050,80 @@ const stripHtml = (html) => {
 }
 
 .copyright {
-  background: #202d22;
+  background: #1b281d;
   text-align: center;
   padding: 18px 14px;
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: #aeb8c5;
   width: 100%;
   line-height: 1.6;
 }
 
+/* Bouton retour haut */
+.scroll-top-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100;
+  opacity: 0.92;
+  transition: all 0.3s ease;
+  background: #d8b24b !important;
+  border: none !important;
+  color: #152019 !important;
+}
+
+.scroll-top-button:hover {
+  opacity: 1;
+  transform: translateY(-4px);
+  background: #caa33a !important;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.error-message {
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.error-message i {
+  color: #ef4444;
+  font-size: 1.25rem;
+}
+
+.error-message p {
+  margin: 0;
+  color: #991b1b;
+  flex: 1;
+}
+
+/* Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg-layer,
+  .premium-card,
+  .media-card,
+  .scroll-top-button {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 /* =========================
-   PC / TABLETTE
+   TABLETTE / DESKTOP
 ========================= */
 @media (min-width: 768px) {
   .media-grid {
@@ -908,9 +1131,9 @@ const stripHtml = (html) => {
   }
 
   .soldier-honor-card {
-    padding: 34px;
+    padding: 30px;
     flex-direction: row;
-    gap: 24px;
+    gap: 22px;
   }
 }
 
@@ -918,19 +1141,27 @@ const stripHtml = (html) => {
   .footer-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 390px;
-    gap: 56px;
+    gap: 54px;
     align-items: start;
   }
 }
 
 @media (max-width: 992px) {
   .news-grid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  }
+
+  .hero-premium {
+    min-height: 720px;
+  }
+
+  .hero-content {
+    padding-block: 84px 64px;
   }
 }
 
 /* =========================
-   MOBILE ZOOM
+   MOBILE
 ========================= */
 @media (max-width: 768px) {
   .container {
@@ -938,23 +1169,23 @@ const stripHtml = (html) => {
   }
 
   .hero-premium {
-    min-height: 720px;
-    align-items: flex-end;
+    min-height: 660px;
+    align-items: center;
   }
 
   .hero-overlay {
     background:
       linear-gradient(
         to right,
-        rgba(26, 36, 27, 0.94) 0%,
-        rgba(26, 36, 27, 0.84) 46%,
-        rgba(26, 36, 27, 0.52) 76%,
-        rgba(26, 36, 27, 0.34) 100%
+        rgba(10, 15, 11, 0.92) 0%,
+        rgba(16, 24, 18, 0.82) 45%,
+        rgba(18, 28, 22, 0.56) 78%,
+        rgba(18, 28, 22, 0.40) 100%
       );
   }
 
   .hero-content {
-    padding-block: 118px 42px;
+    padding-block: 68px 44px;
   }
 
   .hero-text-box {
@@ -963,20 +1194,25 @@ const stripHtml = (html) => {
   }
 
   .custom-tag-official {
-    font-size: 0.92rem !important;
-    padding: 0.6rem 1rem !important;
+    font-size: 0.88rem !important;
+    padding: 0.58rem 0.95rem !important;
+  }
+
+  .hero-kicker {
+    font-size: 0.74rem;
+    margin-bottom: 16px;
   }
 
   .hero-text-box h1 {
-    font-size: 2.7rem;
-    line-height: 1.04;
+    font-size: 2.55rem;
+    line-height: 1.02;
     letter-spacing: -0.03em;
   }
 
   .hero-subtext {
     max-width: 100%;
-    font-size: 1.08rem;
-    line-height: 1.78;
+    font-size: 1rem;
+    line-height: 1.74;
     margin: 22px 0 28px;
     padding-left: 16px;
   }
@@ -990,7 +1226,7 @@ const stripHtml = (html) => {
 
   .hero-action-btn {
     width: 100%;
-    min-height: 58px !important;
+    min-height: 56px !important;
     font-size: 1rem !important;
   }
 
@@ -1003,19 +1239,19 @@ const stripHtml = (html) => {
   }
 
   .header-line {
-    width: 78px;
-    height: 7px;
+    width: 72px;
+    height: 5px;
     margin-bottom: 16px;
   }
 
   .section-header-premium h2 {
-    font-size: 2rem;
+    font-size: 1.95rem;
     line-height: 1.12;
     margin-bottom: 10px;
   }
 
   .section-header-premium p {
-    font-size: 1.02rem;
+    font-size: 1.01rem;
     line-height: 1.7;
   }
 
@@ -1024,8 +1260,9 @@ const stripHtml = (html) => {
     gap: 22px;
   }
 
-  .premium-card {
-    border-radius: 18px;
+  .premium-card,
+  .media-card {
+    border-radius: 16px;
   }
 
   .card-media {
@@ -1037,12 +1274,12 @@ const stripHtml = (html) => {
   }
 
   .date {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     gap: 8px;
   }
 
   .card-content h3 {
-    font-size: 1.28rem;
+    font-size: 1.24rem;
     line-height: 1.45;
     margin: 14px 0 12px;
     min-height: auto;
@@ -1059,17 +1296,17 @@ const stripHtml = (html) => {
   }
 
   .video-badge i {
-    width: 64px;
-    height: 64px;
-    font-size: 1.55rem;
+    width: 62px;
+    height: 62px;
+    font-size: 1.5rem;
   }
 
   .cta-content {
-    padding: 30px 20px;
+    padding: 28px 20px;
   }
 
   .cta-content h3 {
-    font-size: 1.45rem;
+    font-size: 1.38rem;
   }
 
   .cta-content p {
@@ -1083,7 +1320,7 @@ const stripHtml = (html) => {
   }
 
   .media-section {
-    margin-top: 68px;
+    margin-top: 64px;
   }
 
   .media-header {
@@ -1094,22 +1331,18 @@ const stripHtml = (html) => {
     gap: 22px;
   }
 
-  .media-card {
-    border-radius: 18px;
-  }
-
   .media-cover {
     height: 235px;
   }
 
   .media-badge {
-    font-size: 0.86rem;
+    font-size: 0.84rem;
     padding: 9px 14px;
     gap: 9px;
   }
 
   .media-title {
-    font-size: 1.32rem;
+    font-size: 1.28rem;
     margin-bottom: 12px;
   }
 
@@ -1135,7 +1368,7 @@ const stripHtml = (html) => {
   }
 
   .footer-title {
-    font-size: 1.7rem;
+    font-size: 1.68rem;
     margin-bottom: 16px;
   }
 
@@ -1146,32 +1379,36 @@ const stripHtml = (html) => {
 
   .soldier-honor-card {
     padding: 22px 18px;
-    border-left-width: 4px;
     gap: 16px;
   }
 
   .soldier-icon {
-    font-size: 2.2rem;
+    font-size: 2.1rem;
   }
 
   .honor-content h3 {
-    font-size: 1.35rem;
+    font-size: 1.28rem;
     margin-bottom: 14px;
   }
 
   .honor-text {
     font-size: 1rem;
-    line-height: 1.9;
+    line-height: 1.88;
   }
 
   .honor-rank,
   .honor-motto {
-    font-size: 0.84rem;
+    font-size: 0.82rem;
   }
 
   .copyright {
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     padding: 18px 16px;
+  }
+
+  .scroll-top-button {
+    right: 1rem;
+    bottom: 1rem;
   }
 }
 
@@ -1184,36 +1421,41 @@ const stripHtml = (html) => {
   }
 
   .hero-premium {
-    min-height: 675px;
+    min-height: 600px;
   }
 
   .hero-content {
-    padding-block: 104px 34px;
+    padding-block: 58px 34px;
   }
 
   .custom-tag-official {
-    font-size: 0.86rem !important;
-    padding: 0.55rem 0.9rem !important;
+    font-size: 0.82rem !important;
+    padding: 0.52rem 0.88rem !important;
+  }
+
+  .hero-kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
   }
 
   .hero-text-box h1 {
-    font-size: 2.2rem;
+    font-size: 2.05rem;
   }
 
   .hero-subtext {
-    font-size: 1rem;
-    line-height: 1.72;
+    font-size: 0.97rem;
+    line-height: 1.68;
     margin: 18px 0 24px;
     padding-left: 14px;
   }
 
   .hero-action-btn {
-    min-height: 54px !important;
-    font-size: 0.96rem !important;
+    min-height: 52px !important;
+    font-size: 0.95rem !important;
   }
 
   .section-header-premium h2 {
-    font-size: 1.72rem;
+    font-size: 1.68rem;
   }
 
   .section-header-premium p {
@@ -1225,7 +1467,7 @@ const stripHtml = (html) => {
   }
 
   .premium-card {
-    border-radius: 16px;
+    border-radius: 14px;
   }
 
   .card-media {
@@ -1241,7 +1483,7 @@ const stripHtml = (html) => {
   }
 
   .card-content h3 {
-    font-size: 1.14rem;
+    font-size: 1.12rem;
   }
 
   .card-content p {
@@ -1257,7 +1499,7 @@ const stripHtml = (html) => {
   }
 
   .cta-content h3 {
-    font-size: 1.25rem;
+    font-size: 1.22rem;
   }
 
   .cta-content p {
@@ -1274,12 +1516,12 @@ const stripHtml = (html) => {
   }
 
   .media-badge {
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     padding: 8px 12px;
   }
 
   .media-title {
-    font-size: 1.14rem;
+    font-size: 1.12rem;
   }
 
   .media-desc {
@@ -1291,7 +1533,7 @@ const stripHtml = (html) => {
   }
 
   .footer-title {
-    font-size: 1.45rem;
+    font-size: 1.42rem;
   }
 
   .footer-intro {
@@ -1303,11 +1545,11 @@ const stripHtml = (html) => {
   }
 
   .soldier-icon {
-    font-size: 2rem;
+    font-size: 1.95rem;
   }
 
   .honor-content h3 {
-    font-size: 1.18rem;
+    font-size: 1.14rem;
   }
 
   .honor-text {
@@ -1328,33 +1570,30 @@ const stripHtml = (html) => {
   }
 }
 
-/* =========================
-   TRÈS PETITS ÉCRANS
-========================= */
 @media (max-width: 380px) {
   .container {
     padding-inline: 14px;
   }
 
   .hero-premium {
-    min-height: 630px;
+    min-height: 560px;
   }
 
   .hero-text-box h1 {
-    font-size: 1.95rem;
+    font-size: 1.88rem;
   }
 
   .hero-subtext {
-    font-size: 0.94rem;
+    font-size: 0.9rem;
   }
 
   .custom-tag-official {
-    font-size: 0.78rem !important;
-    padding: 0.46rem 0.78rem !important;
+    font-size: 0.76rem !important;
+    padding: 0.44rem 0.74rem !important;
   }
 
   .section-header-premium h2 {
-    font-size: 1.5rem;
+    font-size: 1.46rem;
   }
 
   .card-media {
@@ -1362,7 +1601,7 @@ const stripHtml = (html) => {
   }
 
   .card-content h3 {
-    font-size: 1.06rem;
+    font-size: 1.04rem;
   }
 
   .card-content p {
@@ -1375,11 +1614,11 @@ const stripHtml = (html) => {
 
   .cta-content h3,
   .media-title {
-    font-size: 1.06rem;
+    font-size: 1.04rem;
   }
 
   .footer-title {
-    font-size: 1.28rem;
+    font-size: 1.24rem;
   }
 }
 </style>

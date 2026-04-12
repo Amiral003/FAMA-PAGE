@@ -3,7 +3,7 @@
 // + effet feed infini (IntersectionObserver)
 // + recherche server-side via ?q=... (optionnel)
 
-import { useHead } from '@vueuse/head'
+import { useHead } from '@unhead/vue'
 import { useRouter } from 'vue-router'
 import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import axios from 'axios'

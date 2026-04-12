@@ -115,10 +115,13 @@ class PostResource extends Resource
              */
             FileUpload::make('thumbnail')
                 ->label("Image de couverture du document (Miniature)")
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                 ->image()
                 ->disk('public')
                 ->directory('thumbnails')
                 ->imageEditor()
+                ->maxSize(10240)
+                ->preserveFilenames(false)
                 ->columnSpanFull()
                 ->visible(fn ($get) => $get('type') === Post::TYPE_PDF)
                 ->required(fn ($get) => $get('type') === Post::TYPE_PDF),
@@ -135,7 +138,7 @@ class PostResource extends Resource
                 ->columnSpanFull()
                 ->visible(fn ($get) => $get('type') !== Post::TYPE_VIDEO)
                 ->toolbarButtons([
-                    'attachFiles',
+                    
                     'blockquote',
                     'bold',
                     'bulletList',
@@ -230,8 +233,11 @@ class PostResource extends Resource
                 ->schema([
                     FileUpload::make('file_path')
                         ->label('Fichier')
-                        ->acceptedFileTypes(['image/*'])
-                        ->maxSize(51200)
+->acceptedFileTypes([
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+])                        ->maxSize(30720)
                         ->disk('public')
                         ->directory('posts')
                         ->required(),
@@ -239,6 +245,7 @@ class PostResource extends Resource
                 ->collapsible()
                 ->grid(3)
                 ->columnSpanFull()
+                ->preserveFilenames(false)
                  ->hidden(fn ($get) => in_array($get('type'), [Post::TYPE_PDF, Post::TYPE_VIDEO], true)),
 
             /**
@@ -316,7 +323,7 @@ class PostResource extends Resource
                         Post::STATUS_BROUILLON => 'Brouillon',
                         Post::STATUS_REVISION  => 'En révision',
                         Post::STATUS_PUBLIE    => 'Publié',
-                        Post::TYPE_VIDEO   => 'Vidéo',
+                       
                     ]),
             ])
             ->defaultSort('created_at', 'desc');

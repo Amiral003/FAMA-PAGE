@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useHead } from '@vueuse/head'
+import { useHead } from '@unhead/vue'
 import { RouterLink } from 'vue-router'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 

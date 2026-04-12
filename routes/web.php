@@ -12,8 +12,9 @@ use App\Http\Controllers\Auth\ForcePasswordChangeController;
 */
 
 // 1. Routes de fichiers
-Route::get('/files/{post}', [FileController::class, 'show'])->name('files.show');
-
+Route::get('/files/{post}', [FileController::class, 'show'])
+    ->middleware('throttle:files')
+    ->name('files.show');
 // 2. Gestion du conflit Jetstream / Filament
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
