@@ -121,7 +121,7 @@ class PostResource extends Resource
                 ->directory('thumbnails')
                 ->imageEditor()
                 ->maxSize(10240)
-                ->preserveFilenames(false)
+                
                 ->columnSpanFull()
                 ->visible(fn ($get) => $get('type') === Post::TYPE_PDF)
                 ->required(fn ($get) => $get('type') === Post::TYPE_PDF),
@@ -245,7 +245,7 @@ class PostResource extends Resource
                 ->collapsible()
                 ->grid(3)
                 ->columnSpanFull()
-                ->preserveFilenames(false)
+                
                  ->hidden(fn ($get) => in_array($get('type'), [Post::TYPE_PDF, Post::TYPE_VIDEO], true)),
 
             /**
@@ -261,10 +261,18 @@ class PostResource extends Resource
      * ✅ Eager loading global (admin)
      */
     public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->with(['validator', 'user', 'media']);
+{
+    $query = parent::getEloquentQuery()
+        ->with(['validator', 'user', 'media']);
+
+    $user = Filament::auth()->user();
+
+    if ($user?->hasRole('redacteur')) {
+        $query->where('user_id', $user->id);
     }
+
+    return $query;
+}
 
     public static function table(Table $table): Table
     {

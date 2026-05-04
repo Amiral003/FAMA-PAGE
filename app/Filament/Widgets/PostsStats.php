@@ -4,7 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Post;
 use App\Models\User;
-use App\Filament\Resources\Posts\PostResource; // Import important
+use App\Filament\Resources\Posts\PostResource; 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +23,9 @@ class PostsStats extends BaseWidget
         return [
             // LIEN VERS LES POSTS À VALIDER
             Stat::make('Total à valider', Post::whereIn('status', ['revision', 'brouillon'])->count())
-                ->description('Articles attendant une action')
+                ->description('Brouillons et révisions en attente')
                 ->descriptionIcon('heroicon-m-clock')
-                ->color('danger')
+                ->color('warning')
                 // On utilise l'URL de la ressource avec les filtres de table
 ->url(PostResource::getUrl('index', [
     'status_filter' => 'a_valider'

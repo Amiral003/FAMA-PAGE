@@ -19,7 +19,7 @@ class ContactMessageResource extends Resource
 {
     protected static ?string $model = ContactMessage::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope; // ✅ plus logique
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
     protected static ?string $navigationLabel = 'Messages Contact';
     protected static ?string $modelLabel = 'Message';
@@ -27,16 +27,21 @@ class ContactMessageResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    // ✅ Badge: nombre de nouveaux messages
     public static function getNavigationBadge(): ?string
     {
         $count = static::getModel()::where('status', 'new')->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
         return 'danger';
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
     }
 
     public static function form(Schema $schema): Schema
@@ -58,7 +63,6 @@ class ContactMessageResource extends Resource
     {
         return [
             'index' => ListContactMessages::route('/'),
-            // ❌ pas de create
             'view' => ViewContactMessage::route('/{record}'),
             'edit' => EditContactMessage::route('/{record}/edit'),
         ];

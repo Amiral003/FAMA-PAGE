@@ -10,19 +10,23 @@ class ViewContactMessage extends ViewRecord
 {
     protected static string $resource = ContactMessageResource::class;
 
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+
+        if (($this->record->status ?? null) === 'new') {
+            $this->record->update([
+                'status' => 'in_progress',
+            ]);
+
+            $this->record->refresh();
+        }
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()->label('Modifier le statut'),
         ];
-    }
-
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        if (($this->record->status ?? null) === 'new') {
-            $this->record->update(['status' => 'in_progress']);
-        }
-
-        return $data;
     }
 }

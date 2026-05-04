@@ -410,4 +410,11 @@ textarea {
     padding: 24px;
   }
 }
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2d5a27;
+  box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.12);
+}
 </style>

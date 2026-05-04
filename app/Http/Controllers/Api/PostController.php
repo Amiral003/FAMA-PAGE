@@ -301,4 +301,64 @@ private function resolveCountry(?string $ip): ?string
 
     return response()->json($query->paginate($perPage));
 }
+
+public function recruitment(Request $request)
+{
+    $perPage = (int) $request->query('per_page', 12);
+    $perPage = max(6, min($perPage, 24));
+
+    $q = trim((string) $request->query('q', ''));
+
+    $query = Post::query()
+        ->published()
+        ->where('type', Post::TYPE_PDF)
+        ->whereNotNull('pdf_path')
+        ->publicOrder()
+        ->select([
+            'id',
+            'title',
+            'slug',
+            'content',
+            'status',
+            'type',
+            'thumbnail',
+            'pdf_path',
+            'published_at',
+            'created_at',
+        ]);
+
+    if ($q !== '') {
+        $query->where(function ($sub) use ($q) {
+            $sub->where('title', 'ilike', "%{$q}%")
+                ->orWhere('content', 'ilike', "%{$q}%");
+        });
+    }
+
+    return response()->json($query->paginate($perPage));
+}
+
+public function latestPdfs(Request $request)
+{
+    $limit = (int) $request->query('limit', 3);
+    $limit = max(1, min($limit, 6));
+
+    return response()->json(
+        Post::query()
+            ->published()
+            ->where('type', Post::TYPE_PDF)
+            ->whereNotNull('pdf_path')
+            ->publicOrder()
+            ->limit($limit)
+            ->get([
+                'id',
+                'title',
+                'slug',
+                'type',
+                'thumbnail',
+                'pdf_path',
+                'published_at',
+                'created_at',
+            ])
+    );
+}
 }

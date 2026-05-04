@@ -13,16 +13,19 @@ class EnsurePasswordIsChanged
     {
         $user = Auth::user();
 
-        if (
-            $user &&
-            $user->must_change_password === true &&
-            ! $request->routeIs('password.force.change') &&
-            ! $request->routeIs('password.force.update') &&
-            ! $request->routeIs('logout')
-        ) {
-            return redirect()->route('password.force.change');
+        if (! $user || ! $user->must_change_password) {
+            return $next($request);
         }
 
-        return $next($request);
+        if (
+            $request->routeIs('password.force.change')
+            || $request->routeIs('password.force.update')
+            || $request->routeIs('filament.admin.auth.logout')
+            || $request->is('livewire/*')
+        ) {
+            return $next($request);
+        }
+
+        return redirect()->route('password.force.change');
     }
 }

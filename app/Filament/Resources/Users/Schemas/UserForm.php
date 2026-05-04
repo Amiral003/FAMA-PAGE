@@ -26,9 +26,10 @@ class UserForm
                 ->label('Mot de passe')
                 ->password()
                 ->dehydrated(fn ($state) => filled($state))
-                ->dehydrateStateUsing(fn ($state) => $state)
-                ->required(fn (string $context) => $context === 'create')
+//                ->required(fn (string $context) => $context === 'create')
                 ->visible(fn (string $context) => $context === 'create'),
+            
+            
 
             Forms\Components\Select::make('status')
                 ->label('Statut')

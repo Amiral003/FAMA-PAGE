@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 
-defineProps({
+const props = defineProps({
   sticky: {
     type: Boolean,
     default: true,
@@ -22,6 +22,16 @@ const today = computed(() => {
 
   return txt.charAt(0).toUpperCase() + txt.slice(1)
 })
+
+const emergencyNumbers = [
+  { service: 'Police Nationale', number: '101' },
+  { service: 'Gendarmerie Nationale', number: '111' },
+  { service: 'Protection Civile', number: '122' },
+  { service: 'Lutte contre armes légères', number: '133' },
+  { service: 'Office Central des Stupéfiants', number: '135' },
+  { service: 'CECOGEC', number: '144' },
+  { service: 'Garde Nationale', number: '145' },
+]
 
 const goSignalement = () => {
   router.push({ path: '/contact', query: { type: 'signalement', subject: 'information' } })
@@ -85,6 +95,33 @@ const goContact = () => {
       </div>
     </div>
 
+    <div class="sidebar-card emergency-card">
+      <div class="emergency-header">
+        <div>
+          <h3 class="title-small">Numéros d’urgence</h3>
+          <p class="social-text">Services accessibles gratuitement 24h/24.</p>
+        </div>
+
+        <i class="pi pi-phone emergency-icon"></i>
+      </div>
+
+      <div class="emergency-list">
+        <a
+          v-for="item in emergencyNumbers"
+          :key="item.number"
+          class="emergency-item"
+          :href="`tel:${item.number}`"
+        >
+          <span class="emergency-service">{{ item.service }}</span>
+          <strong class="emergency-number">{{ item.number }}</strong>
+        </a>
+      </div>
+
+      <p class="fine-print emergency-note">
+        Numéros réservés aux situations d’urgence.
+      </p>
+    </div>
+
     <div class="sidebar-card social-card">
       <div class="social-header">
         <h3 class="title-small">Canaux officiels</h3>
@@ -96,7 +133,7 @@ const goContact = () => {
           class="social-link"
           href="https://www.facebook.com/share/18FFdPGpxG/?mibextid=wwXIfr"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           aria-label="Facebook officiel"
           title="Facebook"
         >
@@ -107,7 +144,7 @@ const goContact = () => {
           class="social-link"
           href="https://x.com/dirpafa?s=11"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           aria-label="X / Twitter officiel"
           title="X"
         >
@@ -118,7 +155,7 @@ const goContact = () => {
           class="social-link"
           href="https://youtube.com/@fama-dirpa6233?si=J9QQ3Jpfg3AUZLQx"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           aria-label="YouTube officiel"
           title="YouTube"
         >
@@ -129,7 +166,7 @@ const goContact = () => {
           class="social-link"
           href="https://www.instagram.com/fama.ml?igsh=Y2ttMjVydm1kMmw1"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           aria-label="Instagram officiel"
           title="Instagram"
         >
@@ -289,6 +326,75 @@ const goContact = () => {
   font-size: 0.74rem;
   color: #94a3b8;
   line-height: 1.55;
+}
+
+.emergency-card {
+  background:
+    linear-gradient(180deg, rgba(206, 17, 38, 0.08) 0%, rgba(26, 36, 33, 1) 28%),
+    #1a2421;
+}
+
+.emergency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 0.85rem;
+}
+
+.emergency-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(206, 17, 38, 0.14);
+  color: #f87171;
+  flex-shrink: 0;
+}
+
+.emergency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emergency-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #f1f5f9;
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  transition: 0.2s ease;
+}
+
+.emergency-item:hover {
+  background: rgba(206, 17, 38, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.emergency-service {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.emergency-number {
+  color: #ffd700;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.emergency-note {
+  margin-bottom: 0;
 }
 
 .social-card {

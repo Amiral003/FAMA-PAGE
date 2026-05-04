@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class ContactMessage extends Model
 {
-    // ✅ IMPORTANT: force la bonne table
     protected $table = 'contact_messages';
 
     protected $fillable = [
@@ -19,9 +18,6 @@ class ContactMessage extends Model
         'ip_address',
         'user_agent',
     ];
-
-    // ✅ Evite N+1
-    protected $with = ['staff'];
 
     public function staff()
     {

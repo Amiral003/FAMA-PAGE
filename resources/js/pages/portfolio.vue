@@ -135,6 +135,8 @@ const fetchPage = async () => {
   }
 }
 
+
+
 const resetAndReload = async () => {
   page.value = 1
   hasMore.value = true
@@ -169,11 +171,25 @@ watch(search, () => {
 
 // -------------------- COMPUTED --------------------
 const filteredPosts = computed(() => posts.value)
-const recentPdfs = computed(() => posts.value.filter(p => p.pdf_path).slice(0, 3))
+const recentPdfs = ref([])
+const fetchRecentPdfs = async () => {
+  try {
+    const res = await axios.get('/api/posts/latest-pdfs', {
+      params: { limit: 3 },
+      timeout: 10000,
+    })
 
-// -------------------- LIFE CYCLE --------------------
+    recentPdfs.value = Array.isArray(res.data) ? res.data : []
+  } catch (e) {
+    console.error('Erreur chargement PDF récents:', e)
+    recentPdfs.value = []
+  }
+}// -------------------- LIFE CYCLE --------------------
 onMounted(async () => {
-  await fetchPage()
+   await Promise.all([
+    fetchPage(),
+    fetchRecentPdfs(),
+  ])
   await nextTick()
   setupObserver()
   window.addEventListener('scroll', handleScroll)
@@ -256,31 +272,34 @@ const handleCardKeyPress = (event, post) => {
                 </div>
 
                 <!-- Image pleine largeur sans coupure -->
-                <div class="card-media" v-if="getPostImage(post) || post.pdf_path">
-                  <div class="media-container">
-                    <img
-                      v-if="getPostImage(post)"
-                      :src="getPostImage(post)"
-                      :alt="post.title"
-                      class="featured-img"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <div v-if="post.type === 'video'" class="video-overlay" aria-label="Contenu vidéo">
-                      <i class="pi pi-play" aria-hidden="true"></i>
-                    </div>
-                    <div v-else-if="post.pdf_path" class="pdf-strip" @click.stop>
-                      <i class="pi pi-file-pdf" aria-hidden="true"></i>
-                      <span>DOCUMENT OFFICIEL EN PDF</span>
-                      <Button
-                        icon="pi pi-download"
-                        label="Télécharger"
-                        class="pdf-download-btn"
-                        @click="downloadPDF(post.pdf_path, $event)"
-                      />
-                    </div>
-                  </div>
-                </div>
+                  <div
+  class="card-media"
+  v-if="getPostImage(post) || post.pdf_path"
+>
+  <div
+    class="media-container"
+    :class="{ 'pdf-media-container': post.pdf_path && post.type !== 'video' }"
+  >
+    <img
+      v-if="getPostImage(post)"
+      :src="getPostImage(post)"
+      :alt="post.title"
+      class="featured-img"
+      :class="{ 'pdf-featured-img': post.pdf_path && post.type !== 'video' }"
+      loading="lazy"
+      decoding="async"
+    />
+
+    <div v-if="post.type === 'video'" class="video-overlay" aria-label="Contenu vidéo">
+      <i class="pi pi-play" aria-hidden="true"></i>
+    </div>
+
+    <div v-else-if="post.pdf_path" class="pdf-sticker" @click.stop>
+      <i class="pi pi-file-pdf" aria-hidden="true"></i>
+      <span>DOCUMENT OFFICIEL</span>
+    </div>
+  </div>
+</div>
 
                 <p class="card-excerpt">{{ stripHtml(post.content).substring(0, 180) }}...</p>
 
@@ -380,7 +399,7 @@ const handleCardKeyPress = (event, post) => {
       </section>
 
       <aside class="sidebar-column">
-        <SidebarOfficial :sticky="true"  />
+        <SidebarOfficial :recentDocs="recentPdfs" :sticky="true"  />
       </aside>
     </div>
 
@@ -580,12 +599,57 @@ const handleCardKeyPress = (event, post) => {
   justify-content: center;
 }
 
+/* comportement normal : inchangé pour les autres posts */
 .featured-img {
   display: block;
   width: 100%;
   height: auto;
   object-fit: contain;
   background: #f8fafc;
+}
+
+/* PDF uniquement : bloc fixe */
+.pdf-media-container {
+  height: 320px;
+  padding: 18px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+/* PDF uniquement : image réduite mais visible entièrement */
+.pdf-featured-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* sticker PDF */
+.pdf-sticker {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(190, 18, 60, 0.94);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  line-height: 1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(4px);
+}
+
+.pdf-sticker i {
+  font-size: 0.95rem;
 }
 
 .video-overlay {
@@ -604,32 +668,6 @@ const handleCardKeyPress = (event, post) => {
   background: rgba(0, 0, 0, 0.45);
   border-radius: 50%;
   padding: 14px 18px;
-}
-
-.pdf-strip {
-  padding: 60px 24px;
-  background: #fff1f2;
-  color: #be123c;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  font-weight: 800;
-  width: 100%;
-  text-align: center;
-}
-
-.pdf-strip i {
-  font-size: 2.5rem;
-}
-
-.pdf-download-btn {
-  background: #be123c !important;
-  border: none !important;
-}
-
-.pdf-download-btn:hover {
-  background: #9f1239 !important;
 }
 
 /* CARD EXCERPT */

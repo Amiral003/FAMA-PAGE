@@ -6,7 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -21,6 +21,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 //use Illuminate\Routing\Middleware\ThrottleRequests;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Filament\Pages\Auth\Login;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -39,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
             'panels::footer.before',
             fn () => null)
-            ->login()
+            ->login(Login::class)
             ->authGuard('web')
             ->colors([
                 'primary' => Color::Green,
@@ -52,13 +53,7 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                \App\Filament\Widgets\PostsAudienceOverview::class,
-    \App\Filament\Widgets\TopViewedPosts::class,
-    \App\Filament\Widgets\AudienceByCountry::class,
-                //  AccountWidget::class,
-                // FilamentInfoWidget::class,
-            ])
+   
            
             ->middleware([
                 EncryptCookies::class,

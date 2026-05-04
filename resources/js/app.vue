@@ -22,12 +22,17 @@ import Navbar from './components/navbar.vue'
 
 <style>
 :root {
+  /* navbar seule */
+  --navbar-offset-desktop: 80px;
+  --navbar-offset-tablet: 76px;
+  --navbar-offset-mobile: 72px;
+
+  /* ticker + navbar */
   --header-offset-desktop: 120px;
   --header-offset-tablet: 110px;
   --header-offset-mobile: 100px;
 }
 
-/* Reset global propre */
 *,
 *::before,
 *::after {
@@ -70,7 +75,6 @@ select {
   overflow-x: hidden;
 }
 
-/* Header fixe */
 .header-wrapper {
   position: fixed;
   top: 0;
@@ -80,15 +84,20 @@ select {
   z-index: 1000;
 }
 
-/* Contenu global */
 .site-main {
   width: 100%;
   min-height: 100vh;
-  padding-top: var(--header-offset-desktop);
   overflow-x: hidden;
+
+  /* par défaut : navbar seule */
+  padding-top: var(--navbar-offset-desktop);
 }
 
-/* Animation plus douce et simple */
+/* si le ticker est visible */
+html.has-ticker .site-main {
+  padding-top: var(--header-offset-desktop);
+}
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: opacity 0.25s ease, transform 0.25s ease;
@@ -104,23 +113,32 @@ select {
   transform: translateY(-8px);
 }
 
-/* Tablette */
 @media (max-width: 1024px) {
   .site-main {
+    padding-top: var(--navbar-offset-tablet);
+  }
+
+  html.has-ticker .site-main {
     padding-top: var(--header-offset-tablet);
   }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .site-main {
+    padding-top: var(--navbar-offset-mobile);
+  }
+
+  html.has-ticker .site-main {
     padding-top: var(--header-offset-mobile);
   }
 }
 
-/* Petit mobile */
 @media (max-width: 480px) {
   .site-main {
+    padding-top: 68px;
+  }
+
+  html.has-ticker .site-main {
     padding-top: 92px;
   }
 }

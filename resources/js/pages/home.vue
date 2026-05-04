@@ -316,8 +316,7 @@ const handleCardKeyPress = (event, post) => {
                   {{ new Date(post.created_at).toLocaleDateString('fr-FR') }}
                 </span>
 
-                <h3>{{ post.title }}</h3>
-                <p>{{ stripHtml(post.content).substring(0, 95) }}...</p>
+                <h3>{{ post.title .substring(0, 95)}}</h3>
 
                 <div class="card-footer-link">
                   Consulter <i class="pi pi-arrow-right ml-2" aria-hidden="true"></i>
@@ -706,7 +705,7 @@ const handleCardKeyPress = (event, post) => {
 
 .news-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
 }
 

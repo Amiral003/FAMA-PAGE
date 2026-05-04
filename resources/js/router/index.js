@@ -5,6 +5,7 @@ import Home from '../pages/home.vue'
 import About from '../pages/about.vue'
 import Contact from '../pages/contact.vue'
 import Portfolio from '../pages/portfolio.vue'
+import Recrutement from '../pages/recrutement.vue'
 
 import SinglePost from '../components/SinglePost.vue' // ou le chemin vers ton composant
 import EtatMajor from '../pages/etatmajor.vue'
@@ -42,13 +43,29 @@ const routes = [
   { path: '/EtatmajorGarde', component: EtatmajorGarde, meta: { title: 'État-Major - Garde Nationale' } },
   { path: '/police', component: Police, meta: { title: 'Police Nationale' } },
 
-  // ✅ Portfolio : tu avais meta en commentaire, je le remets propre sans supprimer ton commentaire
-  {
-    path: '/portfolio',
-    component: Portfolio,
-    meta: { title: 'Avis & Communiqués' },
-    // meta: { title: 'Avis & Communiqués' },
-  },
+ {
+  path: '/actualites',
+  name: 'actualites',
+  component: Portfolio,
+  meta: { title: 'Actualités & Communiqués' },
+},
+
+{
+  path: '/communiques',
+  redirect: '/actualites',
+},
+
+{
+  path: '/portfolio',
+  redirect: '/actualites',
+},
+
+{
+  path: '/recrutement',
+  name: 'recrutement',
+  component: Recrutement,
+  meta: { title: 'Recrutement' },
+},
   { path: '/com-ops', component: ComOps, meta: { title: 'Com-Ops' } },
   {
   path: '/phototheque',
@@ -95,9 +112,9 @@ router.beforeEach((to, from, next) => {
   if (typeof document !== 'undefined') {
     // ✅ Si tu veux un titre dynamique pour /posts/:slug
     if (to.name === 'post.show' && to.params?.slug) {
-      document.title = `Communiqué - ${to.params.slug} | FAMali`
+      document.title = `Communiqué - ${to.params.slug} | FAMa`
     } else {
-      document.title = (to.meta && to.meta.title ? to.meta.title + ' | FAMali' : 'FAMali')
+      document.title = (to.meta && to.meta.title ? to.meta.title + ' | FAMa' : 'FAMa')
     }
   }
   next()

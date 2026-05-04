@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\ContactMessages\Tables;
 
-use App\Models\Staff;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,38 +17,6 @@ class ContactMessagesTable
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('created_at')
-                    ->label('Reçu le')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable(),
-
-                TextColumn::make('staff.name')
-                    ->label('État-Major')
-                    ->default('Général')
-                    ->searchable(),
-
-                TextColumn::make('name')
-                    ->label('Expéditeur')
-                    ->searchable()
-                    ->weight('bold'),
-
-                TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable()
-                    ->copyable()
-                    ->copyMessage('Email copié')
-                    ->copyMessageDuration(1500),
-
-                TextColumn::make('subject')
-                    ->label('Sujet')
-                    ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'information' => 'Information',
-                        'recrutement' => 'Recrutement',
-                        'presse' => 'Presse',
-                        default => $state,
-                    }),
-
                 TextColumn::make('status')
                     ->label('Statut')
                     ->badge()
@@ -64,12 +31,44 @@ class ContactMessagesTable
                         'in_progress' => 'En cours',
                         'done' => 'Traité',
                         default => $state,
+                    })
+                    ->sortable(),
+
+                TextColumn::make('name')
+                    ->label('Expéditeur')
+                    ->searchable()
+                    ->weight('bold')
+                    ->sortable(),
+
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable()
+                    ->copyable()
+                    ->copyMessage('Email copié')
+                    ->copyMessageDuration(1500),
+
+                TextColumn::make('subject')
+                    ->label('Sujet')
+                    ->searchable()
+                    ->weight('medium')
+                    ->limit(40)
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'information' => 'Information',
+                        'recrutement' => 'Recrutement',
+                        'presse' => 'Presse',
+                        default => $state,
                     }),
 
                 TextColumn::make('message')
-                    ->label('Message')
-                    ->limit(60)
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Aperçu')
+                    ->limit(80)
+                    ->wrap(),
+
+                TextColumn::make('created_at')
+                    ->label('Reçu le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
 
                 TextColumn::make('ip_address')
                     ->label('IP')
@@ -88,16 +87,10 @@ class ContactMessagesTable
                         'in_progress' => 'En cours',
                         'done' => 'Traité',
                     ]),
-
-                SelectFilter::make('staff_id')
-                    ->label('État-Major')
-                    ->options(fn () => Staff::query()->orderBy('order')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->preload(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()->label('Lire'),
+                EditAction::make()->label('Statut'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

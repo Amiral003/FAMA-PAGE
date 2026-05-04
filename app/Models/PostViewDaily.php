@@ -25,4 +25,13 @@ class PostViewDaily extends Model
     {
         return $this->belongsTo(Post::class);
     }
+
+
+    protected function casts(): array
+{
+    return [
+        'view_date' => 'date',
+        'hits' => 'integer',
+    ];
+}
 }

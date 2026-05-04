@@ -11,7 +11,7 @@ class ContactMessageForm
     {
         return $schema->components([
             Select::make('status')
-                ->label('Statut')
+                ->label('Statut du message')
                 ->options([
                     'new' => 'Nouveau',
                     'in_progress' => 'En cours',
