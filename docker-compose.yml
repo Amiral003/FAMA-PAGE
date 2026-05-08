@@ -1,0 +1,82 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: fama_app
+
+    restart: unless-stopped
+
+    working_dir: /var/www/html
+
+    volumes:
+      - .:/var/www/html
+
+    depends_on:
+      - postgres
+      - redis
+
+    networks:
+      - fama
+
+  nginx:
+    image: nginx:alpine
+
+    container_name: fama_nginx
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:80"
+
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+    depends_on:
+      - app
+
+    networks:
+      - fama
+
+  postgres:
+    image: postgres:16
+
+    container_name: fama_postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: fama_page
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - fama
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: fama_redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    networks:
+      - fama
+
+volumes:
+  postgres_data:
+
+networks:
+  fama:
+    driver: bridge
