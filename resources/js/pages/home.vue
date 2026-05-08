@@ -9,12 +9,22 @@ import Button from 'primevue/button'
 import Card from 'primevue/card'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
-import heroImg from '@/assets/images/hero.jpg'
-import famaImg from '@/assets/images/fam.png'
-import maliImg from '@/assets/images/fa.jpg'
+import heroImg from '@/assets/images/FAMA-IMAGE/37.jpg'
+import famaImg from '@/assets/images/FAMA-IMAGE/23.jpg'
+import maliImg from '@/assets/images/FAMA-IMAGE/33.jpg'
+import heroImg1 from '@/assets/images/FAMA-IMAGE/43.jpg'
+import famaImg1 from '@/assets/images/FAMA-IMAGE/5.jpg'
+import maliImg1 from '@/assets/images/FAMA-IMAGE/6.jpg'
+import heroImg2 from '@/assets/images/FAMA-IMAGE/32.jpg'
+import famaImg2 from '@/assets/images/FAMA-IMAGE/39.jpg'
+import maliImg2 from '@/assets/images/FAMA-IMAGE/9.jpg'
+import heroImg12 from '@/assets/images/FAMA-IMAGE/20.jpg'
+import famaImg12 from '@/assets/images/FAMA-IMAGE/30.jpg'
+import maliImg12 from '@/assets/images/FAMA-IMAGE/44.jpg'
 
-import photoCover from '@/assets/images/hero.jpg'
-import videoCover from '@/assets/images/fam.png'
+
+import photoCover from '@/assets/images/FAMA-IMAGE/39.jpg'
+import videoCover from '@/assets/images/FAMA-IMAGE/7.jpg'
 
 const router = useRouter()
 
@@ -51,7 +61,7 @@ useHead({
 })
 
 const currentBgIndex = ref(0)
-const backgroundImages = [heroImg, famaImg, maliImg]
+const backgroundImages = [heroImg, famaImg, maliImg, heroImg1, famaImg1, maliImg1,heroImg2, famaImg2, maliImg2, heroImg12, famaImg12, maliImg12]
 let backgroundInterval = null
 let observer = null
 
@@ -217,11 +227,7 @@ const handleCardKeyPress = (event, post) => {
 
       <div class="container hero-content">
         <div class="hero-text-box">
-          <Tag
-            value="PORTAIL OFFICIEL"
-            class="custom-tag-official hero-tag"
-            severity="success"
-          />
+          
 
           <p class="hero-kicker">RÉPUBLIQUE DU MALI • FORCES ARMÉES MALIENNES</p>
 

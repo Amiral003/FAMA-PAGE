@@ -4,6 +4,7 @@ import axios from 'axios'
 
 const flashes = ref([])
 const TICKER_HEIGHT = 40
+const animationDuration = ref('45s')
 
 const setTickerClass = (enabled) => {
   document.documentElement.classList.toggle('has-ticker', enabled)
@@ -30,6 +31,14 @@ onMounted(async () => {
 
 watchEffect(() => {
   setTickerClass(flashes.value.length > 0)
+
+  const totalLength = flashes.value.reduce((sum, item) => {
+    return sum + getFlashText(item).length
+  }, 0)
+
+  const duration = Math.max(35, Math.min(totalLength / 6, 120))
+
+  animationDuration.value = `${duration}s`
 })
 </script>
 
@@ -42,7 +51,10 @@ watchEffect(() => {
     <div class="ticker-label">FLASH INFO</div>
 
     <div class="ticker-content" :style="{ paddingLeft: '140px' }">
-      <div class="ticker-track">
+      <div
+        class="ticker-track"
+        :style="{ animationDuration }"
+      >
         <!-- 1ère boucle -->
         <span
           v-for="item in flashes"
@@ -110,7 +122,8 @@ watchEffect(() => {
   display: flex;
   white-space: nowrap;
   width: max-content;
-  animation: scroll-left 28s linear infinite;
+  animation: scroll-left linear infinite;
+  animation-duration: 60s;
 }
 
 .ticker-content:hover .ticker-track {
@@ -145,7 +158,12 @@ watchEffect(() => {
 }
 
 @keyframes scroll-left {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 </style>
