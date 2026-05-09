@@ -754,21 +754,41 @@ const handleCardKeyPress = (event, post) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0.06) 70%, rgba(0, 0, 0, 0.02) 100%);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5, 12, 8, 0.02) 0%,
+      rgba(5, 12, 8, 0.18) 100%
+    );
 }
 
 .video-badge i {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: rgba(216, 178, 75, 0.95);
-  color: #182118;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background: rgba(15, 23, 20, 0.78);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.45rem;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  font-size: 1.35rem;
+  padding-left: 3px;
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 1px rgba(216, 178, 75, 0.22);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
+
+.premium-card:hover .video-badge i {
+  transform: scale(1.08);
+  background: rgba(12, 18, 14, 0.9);
+  border-color: rgba(216, 178, 75, 0.72);
+}
+
+
+
 
 .card-content {
   padding: 18px 18px 20px;
@@ -917,13 +937,18 @@ const handleCardKeyPress = (event, post) => {
   display: inline-flex;
   gap: 8px;
   align-items: center;
-  background: rgba(216, 178, 75, 0.96);
-  color: #182118;
+  background: rgba(12, 18, 14, 0.78);
+  color: #ffffff;
   padding: 8px 12px;
   border-radius: 999px;
-  font-weight: 900;
-  font-size: 0.78rem;
+  font-weight: 800;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   max-width: calc(100% - 28px);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
 }
 
 .media-title {
@@ -1301,10 +1326,10 @@ const handleCardKeyPress = (event, post) => {
   }
 
   .video-badge i {
-    width: 62px;
-    height: 62px;
-    font-size: 1.5rem;
-  }
+  width: 56px;
+  height: 56px;
+  font-size: 1.3rem;
+}
 
   .cta-content {
     padding: 28px 20px;

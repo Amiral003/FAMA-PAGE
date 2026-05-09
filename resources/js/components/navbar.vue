@@ -9,33 +9,20 @@ const isMenuOpen = ref(false)
 const isDropdownOpen = ref(false)
 const isCommuniqueOpen = ref(false)
 
-// 👉 fermeture au clic extérieur (IMPORTANT)
 const handleClickOutside = (e) => {
   if (!e.target.closest('.dropdown')) {
     isCommuniqueOpen.value = false
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
-
-// -------------------- NAV --------------------
 const navItems = [
-  { label: 'Accueil', to: '/' },
   { label: 'Com-Ops', to: '/com-ops' },
   { label: 'FAMa FM', href: 'https://stream.zeno.fm/wb3sj5pqu55tv' },
   { label: 'FAMa TV', href: 'https://www.youtube.com/@DIRPAFAMa' },
+  { label: 'Contact', to: '/contact' },
+  { label: 'À propos', to: '/about' },
 ]
 
-const contactItem = { label: 'Contact', to: '/contact' }
-const aboutItem = { label: 'À propos', to: '/about' }
-
-// -------------------- THEME --------------------
 const theme = ref('light')
 const isDark = computed(() => theme.value === 'dark')
 
@@ -59,9 +46,15 @@ watch(theme, (v) => {
 })
 
 onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+
   const savedTheme = localStorage.getItem('public-theme')
   theme.value = savedTheme === 'dark' ? 'dark' : 'light'
   applyThemeToDom(theme.value)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -80,25 +73,14 @@ onMounted(() => {
           <span class="sub">Forces Armées Maliennes</span>
         </div>
 
-        <!-- PC -->
         <ul class="nav-links">
-          <li v-for="item in navItems" :key="item.to || item.href">
-            <router-link v-if="item.to" :to="item.to">
-              {{ item.label }}
-            </router-link>
-
-            <a v-else :href="item.href" target="_blank" rel="noopener noreferrer">
-              {{ item.label }}
-            </a>
+          <li>
+            <router-link to="/">Accueil</router-link>
           </li>
 
-          <!-- ✅ COMMUNIQUÉS FIX -->
           <li class="dropdown">
-            <button
-              class="dropdown-btn"
-              @click.stop="isCommuniqueOpen = !isCommuniqueOpen"
-            >
-              Communiqués
+            <button class="dropdown-btn" @click.stop="isCommuniqueOpen = !isCommuniqueOpen">
+              <span>Communiqués</span>
               <i :class="isCommuniqueOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
             </button>
 
@@ -115,12 +97,14 @@ onMounted(() => {
             </transition>
           </li>
 
-          <li>
-            <router-link :to="contactItem.to">{{ contactItem.label }}</router-link>
-          </li>
+          <li v-for="item in navItems" :key="item.to || item.href">
+            <router-link v-if="item.to" :to="item.to">
+              {{ item.label }}
+            </router-link>
 
-          <li>
-            <router-link :to="aboutItem.to">{{ aboutItem.label }}</router-link>
+            <a v-else :href="item.href" target="_blank" rel="noopener noreferrer">
+              {{ item.label }}
+            </a>
           </li>
 
           <li class="nav-tools">
@@ -133,7 +117,6 @@ onMounted(() => {
           </li>
         </ul>
 
-        <!-- MOBILE -->
         <div class="right-actions">
           <div class="mini-tools">
             <Button
@@ -149,10 +132,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- MOBILE MENU -->
     <div class="mobile-wrapper" :class="{ 'is-active': isMenuOpen }" @click="isMenuOpen = false">
       <div class="side-menu" @click.stop>
-
         <div class="menu-header">
           <div class="logo-box mobile-logo" @click="router.push('/'); isMenuOpen = false">
             <span class="fama">FAM<span class="gold">a</span></span>
@@ -172,6 +153,26 @@ onMounted(() => {
         </div>
 
         <div class="menu-items">
+          <router-link to="/" class="mobile-link" @click="isMenuOpen = false">
+            Accueil
+          </router-link>
+
+          <div class="mobile-link mobile-dropdown-trigger" @click="isDropdownOpen = !isDropdownOpen">
+            <span>Communiqués</span>
+            <i :class="isDropdownOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+          </div>
+
+          <transition name="fade-slide">
+            <div v-if="isDropdownOpen" class="mobile-sub-menu">
+              <router-link to="/portfolio" class="sub-link" @click="isMenuOpen = false">
+                Actualité
+              </router-link>
+
+              <router-link to="/recrutement" class="sub-link" @click="isMenuOpen = false">
+                Recrutement
+              </router-link>
+            </div>
+          </transition>
 
           <template v-for="item in navItems" :key="item.to || item.href">
             <router-link
@@ -194,49 +195,23 @@ onMounted(() => {
               {{ item.label }}
             </a>
           </template>
-
-          <!-- ✅ MOBILE COMMUNIQUÉS -->
-          <div class="mobile-link mobile-dropdown-trigger" @click="isDropdownOpen = !isDropdownOpen">
-            <span>Communiqués</span>
-            <i :class="isDropdownOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
-          </div>
-
-          <transition name="fade-slide">
-            <div v-if="isDropdownOpen" class="mobile-sub-menu">
-              <router-link to="/portfolio" class="sub-link" @click="isMenuOpen = false">
-                Actualité
-              </router-link>
-
-              <router-link to="/recrutement" class="sub-link" @click="isMenuOpen = false">
-                Recrutement
-              </router-link>
-            </div>
-          </transition>
-
-          <router-link :to="aboutItem.to" class="mobile-link" @click="isMenuOpen = false">
-            {{ aboutItem.label }}
-          </router-link>
-
-          <router-link :to="contactItem.to" class="mobile-link" @click="isMenuOpen = false">
-            {{ contactItem.label }}
-          </router-link>
         </div>
 
         <div class="menu-footer">
           <p>SÉCURITÉ - UNITÉ - SOUVERAINETÉ</p>
         </div>
-
       </div>
     </div>
   </nav>
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap');
+
 * {
   box-sizing: border-box;
 }
 
-/* --- NAVBAR GLOBALE --- */
 .navbar-tactical {
   width: 100%;
   position: sticky;
@@ -244,6 +219,7 @@ onMounted(() => {
   z-index: 1000;
   background: #1a241b;
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 :global(html.has-ticker) .navbar-tactical {
@@ -307,38 +283,99 @@ onMounted(() => {
 
 .sub {
   display: block;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: #cbd5e1;
-  letter-spacing: 2.4px;
+  letter-spacing: 2.1px;
   line-height: 1.2;
+  font-weight: 600;
 }
 
-/* --- NAV PC --- */
 .nav-links {
   display: flex;
-  gap: 28px;
+  gap: 22px;
   list-style: none;
   align-items: center;
   margin: 0;
   padding: 0;
 }
 
-.nav-links a {
+.nav-links li {
+  display: flex;
+  align-items: center;
+}
+
+.nav-links a,
+.dropdown-btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
   color: #cbd5e1;
   text-decoration: none;
-  font-weight: 800;
-  font-size: 0.84rem;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.74rem;
   text-transform: uppercase;
-  transition: 0.25s ease;
-  letter-spacing: 0.04em;
+  transition: color 0.25s ease;
+  letter-spacing: 0.055em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .nav-links a:hover,
-.nav-links a.router-link-exact-active {
+.nav-links a.router-link-exact-active,
+.dropdown-btn:hover {
   color: #ffd700;
 }
 
-/* --- TOOLS --- */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-btn {
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dropdown-btn i {
+  font-size: 0.64rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 0;
+  width: 210px;
+  background: #243125;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  overflow: hidden;
+  z-index: 3000;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.35);
+}
+
+.dropdown-item {
+  display: block;
+  padding: 13px 15px;
+  color: #e2e8f0 !important;
+  text-decoration: none;
+  text-transform: none !important;
+  font-size: 0.9rem !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item.router-link-exact-active {
+  background: rgba(255, 215, 0, 0.09);
+  color: #ffd700 !important;
+}
+
 .nav-tools {
   display: flex;
   align-items: center;
@@ -354,7 +391,6 @@ onMounted(() => {
   border-radius: 999px;
 }
 
-/* --- ACTIONS RIGHT --- */
 .right-actions {
   display: flex;
   gap: 10px;
@@ -365,10 +401,6 @@ onMounted(() => {
   display: none;
   align-items: center;
   gap: 8px;
-}
-
-.top-mobile-btn {
-  margin: 0;
 }
 
 .menu-mobile-btn {
@@ -382,9 +414,20 @@ onMounted(() => {
   border-radius: 12px;
 }
 
-/* --- MOBILE WRAPPER --- */
 .mobile-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  visibility: hidden;
+  opacity: 0;
   display: none;
+  transition: 0.3s ease;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.mobile-wrapper.is-active {
+  visibility: visible;
+  opacity: 1;
 }
 
 .side-menu {
@@ -404,21 +447,6 @@ onMounted(() => {
   right: 0;
 }
 
-.mobile-wrapper {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  visibility: hidden;
-  opacity: 0;
-  transition: 0.3s ease;
-  background: rgba(0, 0, 0, 0.72);
-}
-
-.mobile-wrapper.is-active {
-  visibility: visible;
-  opacity: 1;
-}
-
 .menu-header {
   padding: 20px 18px;
   display: flex;
@@ -433,8 +461,8 @@ onMounted(() => {
 }
 
 .mobile-logo .sub {
-  font-size: 0.58rem;
-  letter-spacing: 1.8px;
+  font-size: 0.56rem;
+  letter-spacing: 1.6px;
 }
 
 .close-btn {
@@ -460,7 +488,7 @@ onMounted(() => {
   background: rgba(255, 215, 0, 0.12) !important;
   border: 1px solid rgba(255, 215, 0, 0.3) !important;
   color: #ffd700 !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   min-height: 46px !important;
   border-radius: 12px !important;
 }
@@ -473,10 +501,12 @@ onMounted(() => {
 
 .mobile-link {
   padding: 16px 18px;
-  color: #fff;
+  color: #ffffff;
   text-decoration: none;
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -493,7 +523,7 @@ onMounted(() => {
 }
 
 .mobile-dropdown-trigger i {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .mobile-sub-menu {
@@ -506,7 +536,7 @@ onMounted(() => {
   padding: 13px 18px 13px 28px;
   color: #cbd5e1;
   text-decoration: none;
-  font-size: 0.94rem;
+  font-size: 0.88rem;
   border-left: 2px solid rgba(255, 215, 0, 0.28);
   margin-left: 18px;
   transition: 0.2s ease;
@@ -529,7 +559,6 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-/* --- ANIMATIONS --- */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.2s ease;
@@ -541,14 +570,15 @@ onMounted(() => {
   transform: translateY(8px);
 }
 
-/* --- RESPONSIVE --- */
-@media (max-width: 1100px) {
+@media (max-width: 1180px) {
   .nav-links {
-    gap: 20px;
+    gap: 16px;
   }
 
-  .nav-links a {
-    font-size: 0.8rem;
+  .nav-links a,
+  .dropdown-btn {
+    font-size: 0.68rem;
+    letter-spacing: 0.045em;
   }
 }
 
@@ -582,8 +612,8 @@ onMounted(() => {
   }
 
   .sub {
-    font-size: 0.56rem;
-    letter-spacing: 1.8px;
+    font-size: 0.54rem;
+    letter-spacing: 1.6px;
   }
 }
 
@@ -603,8 +633,8 @@ onMounted(() => {
   }
 
   .sub {
-    font-size: 0.5rem;
-    letter-spacing: 1.2px;
+    font-size: 0.48rem;
+    letter-spacing: 1.1px;
     margin-top: -2px;
   }
 
@@ -628,13 +658,13 @@ onMounted(() => {
 
   .mobile-link {
     padding: 15px 14px;
-    font-size: 0.98rem;
+    font-size: 0.88rem;
   }
 
   .sub-link {
     padding: 12px 14px 12px 22px;
     margin-left: 14px;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
   }
 }
 
@@ -648,8 +678,8 @@ onMounted(() => {
   }
 
   .sub {
-    font-size: 0.45rem;
-    letter-spacing: 0.9px;
+    font-size: 0.43rem;
+    letter-spacing: 0.8px;
   }
 
   .mini-tools {
@@ -661,57 +691,5 @@ onMounted(() => {
     width: 40px;
     height: 40px;
   }
-}
-
-.dropdown {
-  position: relative;
-}
-
-.dropdown-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  color: #cbd5e1;
-  font-weight: 800;
-  font-size: 0.84rem;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: 0.25s ease;
-  letter-spacing: 0.04em;
-}
-
-.dropdown-btn:hover {
-  color: #ffd700;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  width: 200px;
-  background: #243125;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  overflow: hidden;
-  z-index: 3000;
-  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.35);
-}
-
-.dropdown-item {
-  display: block;
-  padding: 12px 14px;
-  color: #e2e8f0 !important;
-  text-decoration: none;
-  text-transform: none !important;
-  font-size: 0.92rem !important;
-  letter-spacing: 0 !important;
-}
-
-.dropdown-item:hover,
-.dropdown-item.router-link-exact-active {
-  background: rgba(255, 215, 0, 0.1);
-  color: #ffd700 !important;
 }
 </style>

@@ -74,7 +74,7 @@ class PostResource extends Resource
                     ->label('Type de publication')
                     ->options([
                         Post::TYPE_ARTICLE => 'Actualité / Article',
-                        Post::TYPE_PDF     => 'Document Officiel / PDF',
+                        Post::TYPE_PDF     => 'Recrutement / Pdf',
                         Post::TYPE_VIDEO => 'Vidéothèque / Vidéo',
                     ])
                     ->required()
