@@ -11,10 +11,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PostController extends Controller
 {
-    /**
-     * ✅ 9 derniers posts publics (HOME)
-     * Optionnel: supporte ?type=flash etc.
-     */
+    
    public function latest(Request $request)
 {
     return Post::query()
@@ -25,7 +22,7 @@ class PostController extends Controller
             Post::TYPE_ARTICLE, // actualité
             Post::TYPE_VIDEO,   // video
         ])
-        ->limit(5) // ✅ tu avais 9, mais tu veux 5 sur accueil
+        ->limit(5) // ✅ les 5 sur accueil
         ->get([
             'id',
             'title',
@@ -108,45 +105,75 @@ private function resolveCountry(?string $ip): ?string
      * - ?type=flash (filtre type)
      */
     public function index(Request $request)
-    {
-        $perPage = (int) $request->query('per_page', 9);
-        $perPage = max(5, min($perPage, 30));
+{
+    $perPage = (int) $request->query('per_page', 9);
+    $perPage = max(5, min($perPage, 30));
 
-        $q = trim((string) $request->query('q', ''));
-        $type = trim((string) $request->query('type', ''));
+    $q = trim((string) $request->query('q', ''));
+    $type = trim((string) $request->query('type', ''));
 
-        $query = Post::query()
-            ->published()
-            ->with(['media', 'author'])
-            ->publicOrder();
+    $query = Post::query()
+        ->published()
+        ->with(['media', 'author'])
+        ->whereIn('type', [
+            Post::TYPE_ARTICLE,
+            Post::TYPE_VIDEO,
+        ])
+        ->publicOrder();
 
-        // ✅ Filtre par type (si fourni)
-        if ($type !== '') {
-            $allowed = [
-                Post::TYPE_FLASH,
-                Post::TYPE_ARTICLE,
-                Post::TYPE_RECRUTEMENT,
-                Post::TYPE_PDF,
-                Post::TYPE_VIDEO, // ✅ ajout
-            ];
+    // ✅ Filtre optionnel, mais seulement actualité ou vidéo
+    if ($type !== '') {
+        $allowed = [
+            Post::TYPE_ARTICLE,
+            Post::TYPE_VIDEO,
+        ];
 
-            if (in_array($type, $allowed, true)) {
-                $query->where('type', $type);
-            }
+        if (in_array($type, $allowed, true)) {
+            $query->where('type', $type);
         }
+    }
 
-        // ✅ Recherche (optionnelle)
-        if ($q !== '') {
-            $query->where(function ($sub) use ($q) {
-                $sub->where('title', 'ilike', "%{$q}%")
-                    ->orWhere('content', 'ilike', "%{$q}%");
-            });
-        }
+    if ($q !== '') {
+        $query->where(function ($sub) use ($q) {
+            $sub->where('title', 'ilike', "%{$q}%")
+                ->orWhere('content', 'ilike', "%{$q}%");
+        });
+    }
 
-        // ✅ IMPORTANT: on limite les colonnes renvoyées (plus propre + évite fuite)
-        // Laravel paginate() ne supporte pas directement ->get([...])
-        // Donc on fait un select() avant paginate.
-        $query->select([
+    $query->select([
+        'id',
+        'title',
+        'slug',
+        'content',
+        'status',
+        'type',
+        'thumbnail',
+        'pdf_path',
+        'video_url',
+        'video_platform',
+        'video_thumbnail_url',
+        'published_at',
+        'validated_at',
+        'validated_by',
+        'user_id',
+        'created_at',
+    ]);
+
+    return response()->json($query->paginate($perPage));
+}
+
+public function comOps(Request $request)
+{
+    $perPage = (int) $request->query('per_page', 12);
+    $perPage = max(6, min($perPage, 30));
+
+    $q = trim((string) $request->query('q', ''));
+
+    $query = Post::query()
+        ->published()
+        ->where('type', Post::TYPE_FLASH)
+        ->publicOrder()
+        ->select([
             'id',
             'title',
             'slug',
@@ -154,22 +181,19 @@ private function resolveCountry(?string $ip): ?string
             'status',
             'type',
             'thumbnail',
-            'pdf_path',
-
-            // ✅ champs vidéo
-            'video_url',
-            'video_platform',
-            'video_thumbnail_url',
-
             'published_at',
-            'validated_at',
-            'validated_by',
-            'user_id',
             'created_at',
         ]);
 
-        return response()->json($query->paginate($perPage));
+    if ($q !== '') {
+        $query->where(function ($sub) use ($q) {
+            $sub->where('title', 'ilike', "%{$q}%")
+                ->orWhere('content', 'ilike', "%{$q}%");
+        });
     }
+
+    return response()->json($query->paginate($perPage));
+}
 
     /**
      * ✅ Flashs du bandeau (strict: publiés + moins de 24h)

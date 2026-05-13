@@ -27,7 +27,7 @@ Route::middleware('throttle:api-public')->group(function () {
         Route::get('/', [PostController::class, 'index']);
         Route::get('/flashes', [PostController::class, 'flashes']);
         Route::get('/latest', [PostController::class, 'latest']);
-        Route::get('/latest-pdfs', [PostController::class, 'latestPdfs']);  
+        Route::get('/com-ops', [PostController::class, 'comOps']);        Route::get('/latest-pdfs', [PostController::class, 'latestPdfs']);  
         Route::get('/photos', [PostController::class, 'photos']);
         Route::get('/videos', [PostController::class, 'videos']);
         Route::get('/recruitment', [PostController::class, 'recruitment']);

@@ -10,16 +10,16 @@ import Card from 'primevue/card'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
 import heroImg from '@/assets/images/FAMA-IMAGE/37.jpg'
-import famaImg from '@/assets/images/FAMA-IMAGE/23.jpg'
+import famaImg from '@/assets/images/FAMA-IMAGE/6.jpg'
 import maliImg from '@/assets/images/FAMA-IMAGE/33.jpg'
-import heroImg1 from '@/assets/images/FAMA-IMAGE/43.jpg'
-import famaImg1 from '@/assets/images/FAMA-IMAGE/5.jpg'
-import maliImg1 from '@/assets/images/FAMA-IMAGE/6.jpg'
+import heroImg1 from '@/assets/images/FAMA-IMAGE/30.jpg'
+import famaImg1 from '@/assets/images/FAMA-IMAGE/29.jpg'
+import maliImg1 from '@/assets/images/FAMA-IMAGE/46.jpg'
 import heroImg2 from '@/assets/images/FAMA-IMAGE/32.jpg'
-import famaImg2 from '@/assets/images/FAMA-IMAGE/39.jpg'
+import famaImg2 from '@/assets/images/FAMA-IMAGE/26.jpg'
 import maliImg2 from '@/assets/images/FAMA-IMAGE/9.jpg'
-import heroImg12 from '@/assets/images/FAMA-IMAGE/20.jpg'
-import famaImg12 from '@/assets/images/FAMA-IMAGE/30.jpg'
+import heroImg12 from '@/assets/images/FAMA-IMAGE/34.jpg'
+import famaImg12 from '@/assets/images/FAMA-IMAGE/43.jpg'
 import maliImg12 from '@/assets/images/FAMA-IMAGE/44.jpg'
 
 
@@ -59,6 +59,11 @@ useHead({
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }
   ]
 })
+
+const truncateTitle = (title, limit = 80) => {
+  if (!title) return ''
+  return title.length > limit ? `${title.substring(0, limit).trim()}...` : title
+}
 
 const currentBgIndex = ref(0)
 const backgroundImages = [heroImg, famaImg, maliImg, heroImg1, famaImg1, maliImg1,heroImg2, famaImg2, maliImg2, heroImg12, famaImg12, maliImg12]
@@ -245,11 +250,11 @@ const handleCardKeyPress = (event, post) => {
 
           <div class="hero-btns">
             <Button
-              label="COMMUNIQUÉS OFFICIELS"
+              label="RECRUTEMENTS & CONCOURS"
               icon="pi pi-file"
               class="btn-fama-gold hero-action-btn"
-              @click="router.push('/portfolio')"
-              aria-label="Voir les communiqués officiels"
+              @click="router.push('/recrutement')"
+              aria-label="Voir les recrutements et concours"
             />
             <Button
               label="DÉCOUVRIR L'INSTITUTION"
@@ -322,7 +327,7 @@ const handleCardKeyPress = (event, post) => {
                   {{ new Date(post.created_at).toLocaleDateString('fr-FR') }}
                 </span>
 
-                <h3>{{ post.title .substring(0, 95)}}</h3>
+                <h3>{{ truncateTitle(post.title, 80) }}</h3>
 
                 <div class="card-footer-link">
                   Consulter <i class="pi pi-arrow-right ml-2" aria-hidden="true"></i>

@@ -7,17 +7,76 @@ import SidebarOfficial from '@/components/SidebarOfficial.vue'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import Skeleton from 'primevue/skeleton'
-import Button from 'primevue/button'
+
+import aboutImg1 from '@/assets/images/FAMA-IMAGE/14.jpg'
+import aboutImg2 from '@/assets/images/FAMA-IMAGE/23.jpg'
+
+const siteUrl = typeof window !== 'undefined' ? window.location.origin : ''
+
+const pageTitle = 'À propos | Forces Armées Maliennes'
+const pageDescription =
+  'Présentation officielle des Forces Armées Maliennes : missions, organisation institutionnelle, ministère, état-major général, directions, services et structures de défense nationale.'
 
 useHead({
-  title: 'À propos | FAMa - Portail Officiel des Forces Armées Maliennes',
+  title: pageTitle,
   meta: [
+    { name: 'description', content: pageDescription },
     {
-      name: 'description',
+      name: 'keywords',
       content:
-        'Présentation officielle des Forces Armées Maliennes, de leurs missions, de leur organisation institutionnelle et des différentes structures de commandement.'
-    }
-  ]
+        'Forces Armées Maliennes, FAMa, Ministère de la Défense Mali, État-Major Général des Armées, Défense nationale, Armée malienne, structures militaires Mali',
+    },
+    { name: 'robots', content: 'index, follow, max-image-preview:large' },
+
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: 'À propos des Forces Armées Maliennes' },
+    { property: 'og:description', content: pageDescription },
+    { property: 'og:url', content: `${siteUrl}/about` },
+    { property: 'og:site_name', content: 'Forces Armées Maliennes' },
+    { property: 'og:locale', content: 'fr_FR' },
+    { property: 'og:image', content: `${siteUrl}/images/og-default.jpg` },
+    { property: 'og:image:alt', content: 'Forces Armées Maliennes' },
+
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'À propos des Forces Armées Maliennes' },
+    { name: 'twitter:description', content: pageDescription },
+    { name: 'twitter:image', content: `${siteUrl}/images/og-default.jpg` },
+  ],
+  link: [{ rel: 'canonical', href: `${siteUrl}/about` }],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'GovernmentOrganization',
+        name: 'Forces Armées Maliennes',
+        alternateName: 'FAMa',
+        url: siteUrl,
+        description: pageDescription,
+      }),
+    },
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Accueil',
+            item: siteUrl,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'À propos',
+            item: `${siteUrl}/about`,
+          },
+        ],
+      }),
+    },
+  ],
 })
 
 const staffs = ref([])
@@ -25,8 +84,27 @@ const isLoading = ref(false)
 const loadError = ref('')
 
 const sortedStaffs = computed(() =>
-  [...staffs.value].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  [...staffs.value].sort((a, b) => {
+    const orderA = a.order ?? 999999
+    const orderB = b.order ?? 999999
+
+    if (orderA !== orderB) return orderA - orderB
+
+    return (a.name || '').localeCompare(b.name || 'fr')
+  })
 )
+
+const getStaffTypeLabel = (s) => {
+  const name = `${s.name || ''} ${s.initials || ''}`.toLowerCase()
+
+  if (name.includes('minist')) return 'MINISTÈRE'
+  if (name.includes('état-major général') || name.includes('etat-major general') || name.includes('emga')) return 'ÉTAT-MAJOR GÉNÉRAL'
+  if (name.includes('état-major') || name.includes('etat-major')) return 'ÉTAT-MAJOR'
+  if (name.includes('direction') || name.startsWith('d')) return 'DIRECTION'
+  if (name.includes('service')) return 'SERVICE'
+
+  return 'STRUCTURE'
+}
 
 const fetchStaffs = async () => {
   isLoading.value = true
@@ -34,17 +112,17 @@ const fetchStaffs = async () => {
 
   try {
     const res = await fetch('/api/public/staffs', {
-      headers: { Accept: 'application/json' }
+      headers: { Accept: 'application/json' },
     })
 
     if (!res.ok) {
-      loadError.value = "Impossible de charger les structures."
+      loadError.value = 'Impossible de charger les structures.'
       return
     }
 
     staffs.value = await res.json()
   } catch (e) {
-    loadError.value = "Erreur réseau. Veuillez réessayer plus tard."
+    loadError.value = 'Erreur réseau. Veuillez réessayer plus tard.'
   } finally {
     isLoading.value = false
   }
@@ -54,68 +132,81 @@ onMounted(fetchStaffs)
 </script>
 
 <template>
-
+  <div class="about-page">
     <div class="main-layout container">
-
       <section class="content-column">
-
-      <section class="hero-premium">
-          <div class="hero-overlay"></div>
-
+        <section class="hero-premium">
           <div class="hero-content">
-            <div class="hero-topline">République du Mali • Forces Armées Maliennes</div>
+            <div class="hero-text-block">
+              <div class="hero-topline">République du Mali • Défense nationale</div>
 
-            <h1 class="hero-title">
-              Institution militaire au service de la souveraineté nationale
-            </h1>
+              <h1 class="hero-title">
+                Forces Armées Maliennes
+              </h1>
 
-            <p class="hero-text">
-              Les Forces Armées Maliennes assurent la défense de l’intégrité territoriale,
-              la protection des institutions républicaines, la sécurisation des populations
-              et l’exécution des missions militaires décidées par l’État.
-            </p>
+              <p class="hero-text">
+                Les Forces Armées Maliennes constituent l’outil de défense de l’État.
+                Elles participent à la protection de la souveraineté nationale, à la défense
+                du territoire, à la sécurisation des populations et à l’exécution des missions
+                militaires décidées par les autorités compétentes.
+              </p>
 
-            <div class="hero-chips">
-              <span>Défense</span>
-              <span>Commandement</span>
-              <span>Organisation</span>
-              <span>Souveraineté</span>
+              <div class="hero-chips">
+                <span>Défense nationale</span>
+                <span>Souveraineté</span>
+                <span>Commandement</span>
+                <span>Service de la Nation</span>
+              </div>
+            </div>
+
+            <div class="hero-image-card">
+              <img :src="aboutImg1" alt="Forces Armées Maliennes" />
             </div>
           </div>
         </section>
 
-
+        <section class="section-box intro-box">
           <div class="section-head">
             <h2>Présentation générale</h2>
             <div class="section-line"></div>
           </div>
 
-          <div class="intro-content">
-            <p>
-              Les Forces Armées Maliennes constituent l’outil principal de défense de l’État.
-              Elles regroupent des structures de commandement, des directions, des services,
-              ainsi que des entités spécialisées chargées de la planification, de la coordination,
-              de l’administration, du soutien et de la conduite des opérations.
-            </p>
+          <div class="intro-grid">
+            <div class="intro-content">
+              <p>
+                Les Forces Armées Maliennes regroupent des structures de commandement,
+                des directions, des services, des organismes spécialisés et des entités
+                d’appui chargés de la planification, de la coordination, de l’administration,
+                du soutien et de la conduite des opérations.
+              </p>
 
-            <p>
-              Leur organisation répond à une logique de discipline, d’efficacité et de continuité
-              du commandement, afin de garantir l’exécution des missions militaires dans le respect
-              des principes républicains et des intérêts supérieurs de la Nation.
-            </p>
+              <p>
+                Leur organisation repose sur la discipline, la continuité du commandement,
+                l’efficacité opérationnelle et le respect des principes républicains.
+              </p>
+            </div>
+
+            <div class="intro-image">
+              <img :src="aboutImg2" alt="Organisation institutionnelle des FAMa" />
+            </div>
           </div>
+        </section>
 
-       <div class="section-head">
+        <section class="section-box missions-box">
+          <div class="section-head">
             <h2>Missions essentielles</h2>
             <div class="section-line"></div>
           </div>
-          <br>
+
           <div class="mission-grid">
             <div class="mission-item">
               <div class="mission-number">01</div>
               <div class="mission-body">
                 <h3>Défense du territoire</h3>
-                <p>Assurer l’intégrité du territoire national et la protection de la souveraineté de l’État.</p>
+                <p>
+                  Assurer l’intégrité du territoire national et contribuer à la protection
+                  de la souveraineté de l’État.
+                </p>
               </div>
             </div>
 
@@ -123,43 +214,56 @@ onMounted(fetchStaffs)
               <div class="mission-number">02</div>
               <div class="mission-body">
                 <h3>Protection des populations</h3>
-                <p>Contribuer à la sécurisation des populations, des institutions et des espaces sensibles.</p>
+                <p>
+                  Participer à la sécurisation des populations, des institutions et des
+                  espaces stratégiques.
+                </p>
               </div>
             </div>
 
             <div class="mission-item">
               <div class="mission-number">03</div>
               <div class="mission-body">
-                <h3>Organisation du commandement</h3>
-                <p>Structurer, coordonner et appuyer les opérations à travers les états-majors, directions et services.</p>
+                <h3>Appui au commandement</h3>
+                <p>
+                  Structurer, coordonner et soutenir les opérations à travers les
+                  structures de commandement, directions et services.
+                </p>
               </div>
             </div>
           </div>
+        </section>
 
+        <section class="section-box org-box">
           <div class="section-head">
             <h2>Organisation institutionnelle</h2>
             <div class="section-line"></div>
           </div>
 
           <p class="org-text">
-            L’organisation militaire s’appuie sur plusieurs structures hiérarchisées :
-            états-majors, directions, services techniques, structures d’appui, organismes spécialisés
-            et entités relevant du ministère en charge de la Défense.
+            L’organisation institutionnelle de la défense comprend plusieurs niveaux :
+            ministère, état-major général, états-majors, directions, services techniques,
+            structures d’appui et organismes spécialisés.
           </p>
 
           <div class="org-tags">
-            <Tag value="États-majors" severity="success" rounded />
+            <Tag value="Ministère" severity="success" rounded />
+            <Tag value="État-major général" severity="success" rounded />
+            <Tag value="États-majors" severity="info" rounded />
             <Tag value="Directions" severity="warning" rounded />
-            <Tag value="Services militaires" severity="danger" rounded />
-            <Tag value="Structures rattachées" severity="info" rounded />
+            <Tag value="Services" severity="secondary" rounded />
           </div>
-<div class="section-head">
-            <h2>États-majors, directions et services</h2>
+        </section>
+
+        <section class="section-box structures-box">
+          <div class="section-head">
+            <h2>Structures institutionnelles</h2>
             <div class="section-line"></div>
           </div>
 
           <p class="staff-intro">
-            Les structures ci-dessous sont alimentées dynamiquement depuis l’administration du portail.
+            Cette section présente les structures institutionnelles de la défense :
+            ministère, état-major général, états-majors, directions, services et structures spécialisées.
           </p>
 
           <div v-if="loadError" class="error-box">
@@ -191,73 +295,66 @@ onMounted(fetchStaffs)
               <Card class="staff-card compact-card premium-card">
                 <template #content>
                   <div class="staff-row">
-
                     <div class="staff-thumb" v-if="s.logo">
                       <img :src="`/storage/${s.logo}`" :alt="s.name" />
                     </div>
+
                     <div class="staff-thumb fallback" v-else>
-                      {{ (s.initials || 'EM').slice(0, 4) }}
+                      {{ (s.initials || 'FAMa').slice(0, 4) }}
                     </div>
 
                     <div class="staff-col">
                       <div class="staff-top">
                         <Tag
-                          :value="s.initials || 'STRUCTURE'"
+                          :value="getStaffTypeLabel(s)"
                           severity="success"
                           rounded
                           class="mini-tag"
                         />
+
+                        <span v-if="s.order !== null && s.order !== undefined" class="order-badge">
+                          N° {{ s.order }}
+                        </span>
                       </div>
 
                       <h3 class="staff-name" :title="s.name">
                         {{ s.name }}
                       </h3>
 
+                      <div class="staff-subline">
+                        {{ s.initials || 'Structure institutionnelle' }}
+                      </div>
+
                       <div class="staff-meta">
-                        <span class="meta-k">Chef :</span>
+                        <span class="meta-k">Responsable :</span>
                         <span class="meta-v">{{ s.leader_name || 'Non renseigné' }}</span>
                       </div>
 
                       <div class="staff-meta">
-                        <span class="meta-k">Grade :</span>
+                        <span class="meta-k">Grade / Fonction :</span>
                         <span class="meta-v">{{ s.leader_rank || '—' }}</span>
                       </div>
                     </div>
-
                   </div>
                 </template>
               </Card>
             </RouterLink>
           </div>
-
+        </section>
       </section>
-
 
       <aside class="sidebar-column">
         <SidebarOfficial />
       </aside>
-
-
+    </div>
   </div>
 </template>
 
 <style scoped>
-.rich-text-content {
-  /* Min: 1rem, Idéal: 2.5vw de la largeur d'écran, Max: 1.2rem */
-  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.2rem);
-  line-height: 1.8;
-  color: var(--text-muted, #475569);
-  margin-bottom: 50px;
-  word-break: break-word; /* Évite que les longs mots dépassent */
-}
-/* ==========================================
-   1. STYLES DE BASE (MODE CLAIR)
-   ========================================== */
 .about-page {
   min-height: 100vh;
   padding: 36px 0 50px;
-  background: linear-gradient(to bottom, #f8fafc 0%, #eef2f7 100%);
-  transition: all 0.3s ease;
+  background: #f4f7f5;
 }
 
 .container {
@@ -273,57 +370,53 @@ onMounted(fetchStaffs)
 }
 
 .content-column {
-  background: #fff;
-  border-radius: 20px;
+  background: #ffffff;
+  border-radius: 22px;
   padding: 28px;
   border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
 .hero-premium {
   position: relative;
-  border-radius: 20px;
+  border-radius: 22px;
   overflow: hidden;
   margin-bottom: 26px;
-  background: linear-gradient(120deg, rgba(7,14,23,0.95), rgba(15,23,42,0.92)),
-              linear-gradient(90deg, #14B82C 0%, #FFD700 50%, #CE1126 100%);
-}
-
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 30%),
-              linear-gradient(to right, rgba(20,184,44,0.08), rgba(255,215,0,0.05), rgba(206,17,38,0.08));
+  background:
+    linear-gradient(135deg, rgba(18, 43, 25, 0.98), rgba(15, 23, 42, 0.96));
 }
 
 .hero-content {
   position: relative;
-  z-index: 2;
-  padding: 34px 30px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  align-items: center;
+  padding: 34px;
 }
 
 .hero-topline {
-  color: rgba(255,255,255,0.75);
+  color: rgba(255, 215, 0, 0.86);
   text-transform: uppercase;
   letter-spacing: 1.2px;
   font-size: 0.76rem;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 14px;
 }
 
 .hero-title {
   margin: 0 0 16px;
-  color: #fff;
-  font-size: clamp(2rem, 4vw, 3rem);
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 3.1rem);
   line-height: 1.08;
-  font-weight: 900;
+  font-weight: 950;
 }
 
 .hero-text {
   max-width: 850px;
   margin: 0;
-  color: rgba(255,255,255,0.92);
-  line-height: 1.9;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.85;
   font-size: 1rem;
 }
 
@@ -331,235 +424,384 @@ onMounted(fetchStaffs)
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 22px;
 }
 
 .hero-chips span {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  border: 1px solid rgba(255, 215, 0, 0.18);
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 800;
+}
+
+.hero-image-card {
+  height: 280px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 215, 0, 0.24);
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.22);
+}
+
+.hero-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .section-box {
   margin-top: 24px;
-  padding: 22px 22px 20px;
-  border-radius: 18px;
-  border: 1px solid rgba(15,23,42,0.06);
-  background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
 }
 
 .section-head h2 {
   margin: 0;
   font-size: 1.35rem;
   color: #0f172a;
-  font-weight: 900;
+  font-weight: 950;
 }
 
 .section-line {
-  width: 90px;
+  width: 80px;
   height: 4px;
   border-radius: 999px;
   margin-top: 10px;
-  background: linear-gradient(90deg, #14B82C, #FFD700, #CE1126);
+  background: #14b82c;
 }
 
-.intro-content p, .org-text, .staff-intro {
+.intro-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.intro-content p,
+.org-text,
+.staff-intro {
   color: #334155;
   line-height: 1.85;
   margin: 0 0 14px;
 }
 
+.intro-image {
+  height: 220px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.intro-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .mission-grid {
   display: grid;
   gap: 14px;
+  margin-top: 18px;
 }
 
 .mission-item {
   display: grid;
   grid-template-columns: 56px 1fr;
   gap: 14px;
-  padding: 14px;
-  border-radius: 14px;
-  background: #fff;
-  border: 1px solid rgba(15,23,42,0.05);
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .mission-number {
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   border-radius: 14px;
-  display: grid; place-items: center;
-  font-weight: 900; color: #14B82C;
-  background: rgba(20,184,44,0.08);
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  color: #0f7a21;
+  background: rgba(20, 184, 44, 0.1);
 }
 
-.mission-body h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 900; color: #0f172a; }
-.mission-body p { margin: 0; color: #475569; font-size: 0.94rem; }
+.mission-body h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 950;
+  color: #0f172a;
+}
 
-.org-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.mission-body p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
 
-.compact-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
-.staff-link { display: block; text-decoration: none; width: 100%; }
+.org-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.compact-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.staff-link {
+  display: block;
+  text-decoration: none;
+  width: 100%;
+}
 
 .premium-card {
-  border: 1px solid rgba(15,23,42,0.08);
-  background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff;
   transition: all 0.22s ease;
   padding: 12px 20px;
   border-radius: 16px;
 }
 
 .premium-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(20,184,44,0.22);
+  transform: translateY(-2px);
+  border-color: rgba(20, 184, 44, 0.28);
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
 }
 
-.staff-row { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; }
+.staff-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
 .staff-thumb {
-  width: 52px; height: 52px; border-radius: 14px; overflow: hidden;
-  background: #f1f5f9; border: 1px solid rgba(20,184,44,0.18);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid rgba(20, 184, 44, 0.18);
+  flex-shrink: 0;
 }
-.staff-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.staff-thumb.fallback { display: grid; place-items: center; font-size: 0.78rem; font-weight: 900; color: #14B82C; background: #f0fdf4; }
 
-.staff-name { margin: 0 0 8px; font-size: 0.82rem; font-weight: 900; color: #0f172a; text-transform: uppercase; }
-.staff-meta { font-size: 0.76rem; margin-top: 2px; }
-.meta-k { color: #64748b; font-weight: 800; margin-right: 4px; }
-.meta-v { color: #1e293b; font-weight: 700; }
+.staff-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-.sidebar-column { position: sticky; top: 20px; align-self: start; }
+.staff-thumb.fallback {
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 950;
+  color: #14b82c;
+  background: #f0fdf4;
+}
 
-/* ==========================================
-   3. RESPONSIVE
-   ========================================== */
-   /* Dans ta section @media (max-width: 768px) */
-@media (max-width: 768px) {
-  .rich-text-content {
-    font-size: 1.05rem; /* On réduit un peu pour le mobile */
-    line-height: 1.6;    /* On resserre un peu l'interligne */
+.staff-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.order-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.staff-name {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 950;
+  color: #0f172a;
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+
+.staff-subline {
+  margin-bottom: 7px;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.staff-meta {
+  font-size: 0.78rem;
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+.meta-k {
+  color: #64748b;
+  font-weight: 850;
+  margin-right: 4px;
+}
+
+.meta-v {
+  color: #1e293b;
+  font-weight: 750;
+}
+
+.error-box {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.sidebar-column {
+  align-self: stretch;
+  min-height: 100%;
+}
+
+/* Dark mode propre */
+:global(html.dark) .about-page {
+  background: #263827;
+}
+
+:global(html.dark) .content-column {
+  background: #2d392e;
+  border-color: rgba(255, 215, 0, 0.14);
+}
+
+:global(html.dark) .section-box {
+  background: #243125;
+  border-color: rgba(255, 215, 0, 0.14);
+}
+
+:global(html.dark) .section-head h2,
+:global(html.dark) .staff-name,
+:global(html.dark) .mission-body h3 {
+  color: #ffd700;
+}
+
+:global(html.dark) .intro-content p,
+:global(html.dark) .org-text,
+:global(html.dark) .staff-intro,
+:global(html.dark) .mission-body p {
+  color: #e2e8f0;
+}
+
+:global(html.dark) .mission-item,
+:global(html.dark) .premium-card {
+  background: #2d392e;
+  border-color: rgba(255, 215, 0, 0.18);
+}
+
+:global(html.dark) .staff-subline {
+  color: #cbd5e1;
+}
+
+:global(html.dark) .order-badge {
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffd700;
+}
+
+:global(html.dark) .meta-k {
+  color: #cbd5e1;
+}
+
+:global(html.dark) .meta-v {
+  color: #ffffff;
+}
+
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-content,
+  .intro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-image-card {
+    height: 240px;
   }
 }
-@media (max-width: 1200px) { .compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 1024px) { .main-layout { grid-template-columns: 1fr; } .sidebar-column { display: none; } }
-@media (max-width: 700px) { .compact-grid { grid-template-columns: 1fr; } .content-column { padding: 18px; } }
-</style>
 
-<style>
+@media (max-width: 700px) {
+  .about-page {
+    padding: 0;
+  }
 
-/* 1. Fond de page : Vert militaire très profond (au lieu du noir) */
-html.dark, html.dark body {
-  background-color: #334a36 !important; /* Un vert très sombre */
-  color: #334a36!important;
-}
-/* ON FORCE LE LOOK TACTIQUE SUR LES TROIS BLOCS QUE TU AS CITÉS */
-html.dark .intro-box,
-html.dark .missions-box,
-html.dark .org-box,
-html.dark .staffs-box {
-    /* On remplace le blanc par ton vert militaire profond */
-    background: linear-gradient(135deg, #2d392e 0%, #213024 100%) !important;
+  .container {
+    padding: 0;
+  }
 
-    /* On ajoute la bordure Or/Vert pour le côté Institutionnel */
-    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  .content-column {
+    border-radius: 0;
+    padding: 16px;
+  }
 
-    /* On ajoute l'ombre portée pour décoller le bloc du fond */
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+  .hero-content {
+    padding: 24px 18px;
+  }
 
-    /* On s'assure que le contenu respire */
-    padding: 30px !important;
-    border-radius: 18px !important;
-}
+  .hero-image-card {
+    height: 210px;
+  }
 
-/* ON CORRIGE LES TITRES À L'INTÉRIEUR DE CES BLOCS */
-html.dark .intro-box h2,
-html.dark .missions-box h2,
-html.dark .org-box h2 {
-    color: #ffd700 !important; /* Or FAMa */
-    text-transform: uppercase;
-    font-weight: 900;
-}
+  .section-box {
+    padding: 18px;
+  }
 
-/* ON CORRIGE LES TEXTES */
-html.dark .intro-box p,
-html.dark .org-box .org-text,
-html.dark .missions-box .mission-body p {
-    color: #e2e8f0 !important; /* Blanc cassé lisible */
-}
+  .mission-item {
+    grid-template-columns: 1fr;
+  }
 
-/* LES PETITES LIGNES SOUS LES TITRES */
-html.dark .section-line {
-    background: linear-gradient(90deg, #14B82C, #FFD700) !important;
-    height: 3px !important;
-}
-html.dark .about-page {
-  background: #334a36!important;
-  background-image: radial-gradient(circle at top right, rgba(20,184,44,0.1), transparent 25%),
-                    linear-gradient(to bottom, #334a36 0%, #334a36 d 100%) !important;
-}
+  .mission-number {
+    width: 48px;
+    height: 48px;
+  }
 
-/* 2. Colonne de contenu : Un vert légèrement différent pour contraster */
-html.dark .content-column {
-  background-color: #334a36 !important; /* Un vert encore plus profond */
-  border-color: rgba(255, 255, 255, 0.05) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
-}
+  .premium-card {
+    padding: 12px 14px;
+  }
 
-/* 3. Blocs de section : Vert militaire moyen */
-html.dark .section-box {
-  background: linear-gradient(to bottom right, #2d392e  #213024) !important;
-  border-color: rgba(20, 184, 44, 0.2) !important; /* Bordure verte pour l'effet tactique */
-}
+  .staff-row {
+    grid-template-columns: 46px 1fr;
+    gap: 10px;
+  }
 
-/* 4. Titres et textes : C'est ici qu'on met ton OR FAMa */
-html.dark .section-head h2,
-html.dark .staff-name,
-html.dark h1,
-html.dark h3 {
-  color: #ffd700 !important; /* Or pur */
-}
+  .staff-thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+  }
 
-/* 5. Paragraphes : Blanc cassé pour la lisibilité */
-html.dark .intro-content p,
-html.dark .org-text,
-html.dark .staff-intro,
-html.dark .mission-body p {
-  color: #e2e8f0 !important;
-}
+  .staff-name {
+    font-size: 0.82rem;
+  }
 
-/* 6. Cartes & Missions : Fond vert militaire, bordure or pour le lookpremium */
-html.dark .mission-item,
-html.dark .premium-card {
-  background-color: #2d392e !important;
-  border-color: rgba(255, 215, 0, 0.3) !important; /* Bordure or transparente */
-}
-
-/* 7. Métadonnées : Labels gris clair, valeurs en VERT FAMa brillant */
-html.dark .meta-k { color: #a0aec0 !important; }
-html.dark .meta-v { color: #14B82C !important; }
-
-/* 8. Vignettes Staff : Fond vert, bordure verte */
-html.dark .staff-thumb {
-  background-color: #2d392e important;
-  border-color: #14B82C !important;
-}
-
-/* Correction PrimeVue & Skeletons */
-html.dark .p-card {
-  background-color: #2d392e  !important;
-  border-color: rgba(255, 215, 0, 0.3) !important;
-}
-
-html.dark .p-skeleton {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-}
-/* On force le vert militaire profond sur TOUT ce qui essaie d'être noir ou gris très sombre */
-html.dark .bg-black,
-html.dark .bg-gray-950,
-html.dark .p-card,
-html.dark section {
-  background-color: #2d392e  !important; /* Ton vert militaire profond exact */
+  .staff-subline,
+  .staff-meta {
+    font-size: 0.73rem;
+  }
 }
 </style>

@@ -75,7 +75,7 @@ const fetchPage = async () => {
   loadingMore.value = true
 
   try {
-    const res = await axios.get('/api/posts', {
+    const res = await axios.get('/api/posts/com-ops' , {
       params: {
         page: page.value,
         per_page: perPage.value,
@@ -187,7 +187,7 @@ const items = computed(() => flashes.value)
             :style="{ animationDelay: `${index * 40}ms` }"
             @click="router.push(`/posts/${post.slug}`)"
           >
-            <div class="badge">FLASH</div>
+           
 
             <div class="media" v-if="getPostImage(post)">
               <img :src="getPostImage(post)" alt="" loading="lazy" class="flash-img" />

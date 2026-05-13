@@ -7,159 +7,216 @@ use App\Filament\Resources\Staff\Pages\EditStaff;
 use App\Filament\Resources\Staff\Pages\ListStaff;
 use App\Models\Staff;
 use BackedEnum;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-
-// Importations alignées sur ton PostResource
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\RichEditor;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ImageColumn;
 
 class StaffResource extends Resource
 {
     protected static ?string $model = Staff::class;
-    protected static ?string $navigationLabel = 'États-Majors';
-    protected static ?string $modelLabel = 'État-Major';
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    protected static ?string $navigationLabel = 'Structures institutionnelles';
+    protected static ?string $modelLabel = 'Structure';
+    protected static ?string $pluralModelLabel = 'Structures institutionnelles';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            
-            // 1. Identité de l'unité
-            Section::make('Identité de l’État-Major')
+            Section::make('Identification de la structure')
+                ->description('Ministère, état-major, direction, service ou structure spécialisée.')
                 ->schema([
-                    Grid::make(2)->schema([
+                    Grid::make(3)->schema([
                         TextInput::make('name')
                             ->label('Nom complet')
                             ->required()
+                            ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
-                        
+
                         TextInput::make('initials')
-                            ->label('Initiales (ex: EMAT)')
-                            ->required(),
+                            ->label('Sigle / Initiales')
+                            ->placeholder('Ex : EMGA, EMAT, DTTIA')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('order')
+                            ->label('Ordre d’affichage')
+                            ->numeric()
+                            ->nullable()
+                            ->placeholder('Ex : 1')
+                            ->helperText('Plus le chiffre est petit, plus la structure apparaît en haut. Laissez vide si non défini.'),
                     ]),
 
                     TextInput::make('slug')
-                        ->label('Lien URL (Slug)')
+                        ->label('Lien URL')
                         ->disabled()
                         ->dehydrated()
-                        ->required(),
+                        ->required()
+                        ->unique(ignoreRecord: true),
 
                     Grid::make(2)->schema([
                         FileUpload::make('logo')
                             ->label('Logo / Emblème')
                             ->image()
                             ->disk('public')
-                            ->directory('staff-logos'),
-                        
+                            ->directory('staff-logos')
+                            ->imageEditor()
+                            ->maxSize(2048),
+
                         TextInput::make('motto')
-                            ->label('Devise (Ex: S\'instruire pour mieux servir)'),
+                            ->label('Devise')
+                            ->placeholder("Ex : S'instruire pour mieux servir")
+                            ->maxLength(255),
                     ]),
                 ]),
 
-            // 2. Commandement (Le Chef)
-            Section::make('Commandement (Chef d’État-Major)')
+            Section::make('Commandement / Responsable')
+                ->description('Informations sur le responsable actuel de la structure.')
                 ->schema([
                     Grid::make(2)->schema([
                         TextInput::make('leader_rank')
-                            ->label('Grade du Chef'),
-                        
+                            ->label('Grade / Fonction')
+                            ->maxLength(255),
+
                         TextInput::make('leader_name')
-                            ->label('Nom complet du Chef'),
+                            ->label('Nom complet')
+                            ->maxLength(255),
                     ]),
 
                     FileUpload::make('leader_photo')
-                        ->label('Photo du Chef')
+                        ->label('Photo du responsable')
                         ->image()
                         ->disk('public')
-                        ->directory('leaders'),
+                        ->directory('leaders')
+                        ->imageEditor()
+                        ->maxSize(2048),
 
-                    // Utilisation de Textarea ou RichEditor selon tes besoins
                     Textarea::make('leader_word')
-                        ->label('Mot du Chef')
-                        ->rows(5),
+                        ->label('Mot du responsable')
+                        ->rows(5)
+                        ->columnSpanFull(),
                 ]),
 
-            // 3. Détails et Missions
-            Section::make('Détails et Missions')
+            Section::make('Présentation, détails et missions')
+                ->description('Mise en forme simple autorisée : gras, italique, listes et liens.')
                 ->schema([
-                    Textarea::make('description')
+                    RichEditor::make('description')
                         ->label('Description générale')
-                        ->rows(5),
-                    
-                    Textarea::make('missions')
+                        ->toolbarButtons([
+                            'bold',
+                            'italic',
+                            'underline',
+                            'bulletList',
+                            'orderedList',
+                            'link',
+                            'undo',
+                            'redo',
+                        ])
+                        ->columnSpanFull(),
+
+                    RichEditor::make('missions')
                         ->label('Missions et attributions')
-                        ->rows(5),
+                        ->toolbarButtons([
+                            'bold',
+                            'italic',
+                            'underline',
+                            'bulletList',
+                            'orderedList',
+                            'link',
+                            'undo',
+                            'redo',
+                        ])
+                        ->columnSpanFull(),
                 ]),
 
-                Section::make('Contact')
-    ->schema([
-        Grid::make(2)->schema([
-            TextInput::make('contact_email')
-                ->label('Email de contact')
-                ->email(),
+            Section::make('Contact')
+                ->description('Coordonnées publiques de la structure.')
+                ->schema([
+                    Grid::make(2)->schema([
+                        TextInput::make('contact_email')
+                            ->label('Email de contact')
+                            ->email()
+                            ->maxLength(255),
 
-            TextInput::make('contact_phone')
-                ->label('Téléphone'),
-        ]),
+                        TextInput::make('contact_phone')
+                            ->label('Téléphone')
+                            ->tel()
+                            ->maxLength(255),
+                    ]),
 
-        Grid::make(2)->schema([
-            TextInput::make('contact_hotline')
-                ->label('Numéro vert (optionnel)'),
+                    Grid::make(2)->schema([
+                        TextInput::make('contact_hotline')
+                            ->label('Numéro vert')
+                            ->maxLength(255),
 
-            TextInput::make('contact_hours')
-                ->label('Heures d’ouverture (optionnel)'),
-        ]),
+                        TextInput::make('contact_hours')
+                            ->label('Heures d’ouverture')
+                            ->maxLength(255),
+                    ]),
 
-        TextInput::make('contact_address')
-            ->label('Adresse')
-            ->columnSpanFull(),
+                    TextInput::make('contact_address')
+                        ->label('Adresse')
+                        ->maxLength(255)
+                        ->columnSpanFull(),
 
-        TextInput::make('contact_map_url')
-            ->label('Lien carte (Google Maps / OSM)')
-            ->url()
-            ->columnSpanFull(),
+                    TextInput::make('contact_map_url')
+                        ->label('Lien carte')
+                        ->url()
+                        ->maxLength(255)
+                        ->columnSpanFull(),
 
-        Textarea::make('contact_socials')
-            ->label('Réseaux sociaux (JSON)')
-            ->helperText('Ex: {"facebook":"https://...","x":"https://...","youtube":"https://..."}')
-            ->rows(3)
-            ->columnSpanFull(),
-    ]),
+                    Textarea::make('contact_socials')
+                        ->label('Réseaux sociaux')
+                        ->helperText('Format JSON : {"facebook":"https://...","x":"https://...","youtube":"https://..."}')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                ]),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('order')
             ->columns([
+                TextColumn::make('order')
+                    ->label('Ordre')
+                    ->sortable()
+                    ->badge()
+                    ->placeholder('—'),
+
                 ImageColumn::make('logo')
                     ->label('Logo')
                     ->disk('public')
                     ->circular(),
 
                 TextColumn::make('name')
-                    ->label('Nom')
+                    ->label('Structure')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('initials')
-                    ->label('Initiales')
-                    ->badge(),
+                    ->label('Sigle')
+                    ->badge()
+                    ->searchable(),
 
                 TextColumn::make('leader_name')
-                    ->label('Chef actuel')
+                    ->label('Responsable')
+                    ->placeholder('Non renseigné')
                     ->description(fn (Staff $record): string => $record->leader_rank ?? ''),
 
                 TextColumn::make('created_at')
@@ -167,15 +224,11 @@ class StaffResource extends Resource
                     ->dateTime('d/m/Y')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                // Ajoute des filtres ici si nécessaire
-            ])
+            ->filters([])
             ->actions([
                 // \Filament\Tables\Actions\EditAction::make(),
             ])
-            ->bulkActions([
-               
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getPages(): array

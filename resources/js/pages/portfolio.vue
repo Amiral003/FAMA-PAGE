@@ -170,7 +170,11 @@ watch(search, () => {
 })
 
 // -------------------- COMPUTED --------------------
-const filteredPosts = computed(() => posts.value)
+const filteredPosts = computed(() =>
+  posts.value.filter((post) =>
+    ['article', 'video'].includes(post.type)
+  )
+)
 const recentPdfs = ref([])
 const fetchRecentPdfs = async () => {
   try {

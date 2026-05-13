@@ -29,7 +29,6 @@ const currentUrl = computed(() => {
   return `${siteUrl.value}${route.fullPath}`
 })
 
-// --- VIDÉO HELPERS ---
 const isVideo = computed(() => post.value?.type === 'video')
 
 const isMp4Video = computed(() => {
@@ -44,39 +43,17 @@ const getYoutubeId = (url) => {
   try {
     const u = new URL(url)
 
-    if (u.hostname.includes('youtu.be')) {
-      return u.pathname.replace('/', '') || null
-    }
-
-    if (u.searchParams.get('v')) {
-      return u.searchParams.get('v')
-    }
-
-    if (u.pathname.includes('/embed/')) {
-      return u.pathname.split('/embed/')[1]?.split('/')[0] || null
-    }
-
-    if (u.pathname.includes('/shorts/')) {
-      return u.pathname.split('/shorts/')[1]?.split('/')[0] || null
-    }
+    if (u.hostname.includes('youtu.be')) return u.pathname.replace('/', '') || null
+    if (u.searchParams.get('v')) return u.searchParams.get('v')
+    if (u.pathname.includes('/embed/')) return u.pathname.split('/embed/')[1]?.split('/')[0] || null
+    if (u.pathname.includes('/shorts/')) return u.pathname.split('/shorts/')[1]?.split('/')[0] || null
 
     return null
   } catch {
-    if (url.includes('youtu.be/')) {
-      return url.split('youtu.be/')[1]?.split('?')[0] || null
-    }
-
-    if (url.includes('watch?v=')) {
-      return url.split('watch?v=')[1]?.split('&')[0] || null
-    }
-
-    if (url.includes('/embed/')) {
-      return url.split('/embed/')[1]?.split('?')[0] || null
-    }
-
-    if (url.includes('/shorts/')) {
-      return url.split('/shorts/')[1]?.split('?')[0] || null
-    }
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1]?.split('?')[0] || null
+    if (url.includes('watch?v=')) return url.split('watch?v=')[1]?.split('&')[0] || null
+    if (url.includes('/embed/')) return url.split('/embed/')[1]?.split('?')[0] || null
+    if (url.includes('/shorts/')) return url.split('/shorts/')[1]?.split('?')[0] || null
 
     return null
   }
@@ -101,7 +78,6 @@ const youtubeEmbedUrl = computed(() => {
   return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`
 })
 
-// --- MÉDIAS ---
 const allMedia = computed(() => {
   const images = []
   if (post.value?.thumbnail) images.push({ file_path: post.value.thumbnail })
@@ -111,8 +87,16 @@ const allMedia = computed(() => {
 
 const coverImage = computed(() => {
   const image = post.value?.thumbnail || post.value?.media?.[0]?.file_path || null
-  if (!image || !siteUrl.value) return ''
-  return `${siteUrl.value}/storage/${image}`
+
+  if (image && siteUrl.value) {
+    return `${siteUrl.value}/storage/${image}`
+  }
+
+  if (siteUrl.value) {
+    return `${siteUrl.value}/images/og-default.jpg`
+  }
+
+  return ''
 })
 
 const plainTextFromHtml = (html = '') => {
@@ -138,7 +122,6 @@ const seoDescription = computed(() => {
 })
 
 const seoType = computed(() => (isVideo.value ? 'video.other' : 'article'))
-
 const publishedDate = computed(() => post.value?.published_at || post.value?.created_at || null)
 const modifiedDate = computed(() => post.value?.updated_at || publishedDate.value || null)
 const authorName = computed(() => post.value?.user?.name || 'DIRPA')
@@ -213,8 +196,8 @@ const breadcrumbSchema = computed(() => {
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Communiqués',
-        item: `${siteUrl.value}/portfolio`,
+        name: 'Actualités',
+        item: `${siteUrl.value}/actualites`,
       },
       {
         '@type': 'ListItem',
@@ -260,27 +243,29 @@ useHead(() => {
       { property: 'og:url', content: currentUrl.value },
       { property: 'og:site_name', content: 'Forces Armées Maliennes' },
       { property: 'og:locale', content: 'fr_FR' },
-      { property: 'og:image', content: coverImage.value || `${siteUrl.value}/images/og-default.jpg` },
+
+      { property: 'og:image', content: coverImage.value },
+      { property: 'og:image:secure_url', content: coverImage.value },
+      { property: 'og:image:alt', content: post.value?.title || 'Forces Armées Maliennes' },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
 
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: seoTitle.value },
       { name: 'twitter:description', content: seoDescription.value },
-      { name: 'twitter:image', content: coverImage.value || `${siteUrl.value}/images/og-default.jpg` },
+      { name: 'twitter:image', content: coverImage.value },
     ],
-    link: [
-      { rel: 'canonical', href: currentUrl.value },
-    ],
+    link: [{ rel: 'canonical', href: currentUrl.value }],
     script: scripts,
   }
 })
 
-// --- DATA FETCHING ---
 onMounted(async () => {
   try {
     const res = await axios.get(`/api/posts/${route.params.slug}`)
     post.value = res.data.data || res.data
   } catch (e) {
-    router.push('/portfolio')
+    router.push('/actualites')
   } finally {
     loading.value = false
   }
@@ -292,17 +277,17 @@ const getRelativeDate = (date) =>
     : ''
 
 const openPdf = (path) => {
+  if (!path) return
   window.open(`/storage/${path}`, '_blank')
 }
 
-// --- PARTAGE ---
 const share = (platform) => {
   const fullUrl = typeof window !== 'undefined'
     ? window.location.origin + route.fullPath
     : currentUrl.value
 
   const rawTitle = post.value?.title || 'Communiqué'
-  const shortTitle = rawTitle.length > 60 ? `${rawTitle.substring(0, 60)}...` : rawTitle
+  const shortTitle = rawTitle.length > 70 ? `${rawTitle.substring(0, 70)}...` : rawTitle
   const message = `${shortTitle}\n\n${fullUrl}`
 
   let shareUrl = ''
@@ -313,9 +298,7 @@ const share = (platform) => {
     shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`
   }
 
-  if (shareUrl) {
-    window.open(shareUrl, '_blank')
-  }
+  if (shareUrl) window.open(shareUrl, '_blank')
 }
 </script>
 
@@ -329,35 +312,35 @@ const share = (platform) => {
           <Button
             icon="pi pi-arrow-left"
             label="Retour"
-            link
-            class="back-btn"
+            class="back-btn-modern"
             @click="router.back()"
           />
 
-          <div class="share-actions" aria-label="Actions de partage">
-            <Button
-              icon="pi pi-facebook"
-              rounded
-              text
-              severity="secondary"
+          <div class="share-actions-minimal" aria-label="Actions de partage">
+            <button
+              class="minimal-share-btn"
+              type="button"
               @click="share('facebook')"
               aria-label="Partager sur Facebook"
-            />
-            <Button
-              icon="pi pi-whatsapp"
-              rounded
-              text
-              severity="secondary"
+            >
+              <i class="pi pi-facebook" aria-hidden="true"></i>
+            </button>
+
+            <button
+              class="minimal-share-btn"
+              type="button"
               @click="share('whatsapp')"
               aria-label="Partager sur WhatsApp"
-            />
+            >
+              <i class="pi pi-whatsapp" aria-hidden="true"></i>
+            </button>
           </div>
         </nav>
 
         <header class="post-header">
           <div class="meta-badges">
             <Tag
-              :value="post.type === 'video' ? 'VIDÉO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ')"
+              :value="post.type === 'video' ? 'VIDÉO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'ACTUALITÉ')"
               :severity="post.type === 'video' ? 'info' : (post.pdf_path ? 'danger' : 'success')"
               class="fama-tag"
             />
@@ -374,7 +357,7 @@ const share = (platform) => {
         </header>
 
         <section class="media-section" aria-label="Média principal de l’article">
-          <div v-if="isVideo" class="video-container shadow-2">
+          <div v-if="isVideo" class="video-container">
             <iframe
               v-if="youtubeEmbedUrl"
               :src="youtubeEmbedUrl"
@@ -442,19 +425,30 @@ const share = (platform) => {
         <section class="post-body" aria-label="Contenu de l’article">
           <div class="rich-text-content" v-html="post.content"></div>
 
-          <div v-if="post.pdf_path" class="pdf-action-card staff-info-block">
-            <div class="pdf-info">
-              <i class="pi pi-file-pdf pdf-icon" aria-hidden="true"></i>
+          <div v-if="post.pdf_path" class="pdf-action-card-modern">
+            <div class="pdf-info-modern">
+              <div class="pdf-icon-box">
+                <i class="pi pi-file-pdf" aria-hidden="true"></i>
+              </div>
+
               <div>
-                <span class="pdf-title">Consulter le document officiel</span>
-                <p class="pdf-sub">Format PDF - Certification DIRPA</p>
+                <span class="pdf-title-modern">Document officiel joint</span>
+                <p class="pdf-sub-modern">
+                  Consultez ou téléchargez le fichier PDF publié officiellement par les FAMa.
+                </p>
               </div>
             </div>
 
-            <div class="pdf-buttons">
-              <Button label="Lire" icon="pi pi-eye" text @click="openPdf(post.pdf_path)" />
-              <a :href="`/storage/${post.pdf_path}`" download class="btn-download">
-                <i class="pi pi-download mr-2" aria-hidden="true"></i>
+            <div class="pdf-buttons-modern">
+              <Button
+                label="Ouvrir le PDF"
+                icon="pi pi-eye"
+                class="pdf-read-btn"
+                @click="openPdf(post.pdf_path)"
+              />
+
+              <a :href="`/storage/${post.pdf_path}`" download class="pdf-download-btn">
+                <i class="pi pi-download" aria-hidden="true"></i>
                 Télécharger
               </a>
             </div>
@@ -520,7 +514,7 @@ const share = (platform) => {
 
 .main-layout {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 40px;
   align-items: start;
 }
@@ -528,9 +522,10 @@ const share = (platform) => {
 .content-card {
   width: 100%;
   padding: 40px 50px;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .top-nav {
@@ -539,6 +534,47 @@ const share = (platform) => {
   align-items: center;
   gap: 14px;
   margin-bottom: 30px;
+}
+
+.back-btn-modern {
+  border: 1px solid rgba(20, 184, 44, 0.22) !important;
+  background: #f8fafc !important;
+  color: #1e293b !important;
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+  padding: 0.7rem 1rem !important;
+}
+
+.back-btn-modern:hover {
+  background: #eef7f0 !important;
+  color: #0f7a21 !important;
+}
+
+.share-actions-minimal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minimal-share-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #ffffff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.minimal-share-btn:hover {
+  background: #f8fafc;
+  color: #14b82c;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 .post-header {
@@ -554,17 +590,17 @@ const share = (platform) => {
 }
 
 .publish-date {
-  font-size: 0.9rem;
-  color: #8892b0;
-  font-weight: 500;
+  font-size: 0.92rem;
+  color: #64748b;
+  font-weight: 700;
 }
 
 .post-title {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  font-weight: 900;
-  line-height: 1.15;
-  color: var(--text-main, #1e293b);
-  letter-spacing: -0.02em;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  font-weight: 950;
+  line-height: 1.13;
+  color: var(--text-main, #0f172a);
+  letter-spacing: -0.03em;
 }
 
 .media-section {
@@ -573,9 +609,10 @@ const share = (platform) => {
 
 .video-container {
   aspect-ratio: 16 / 9;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  background: #000;
+  background: #0f172a;
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.16);
 }
 
 .video-container iframe,
@@ -586,28 +623,37 @@ const share = (platform) => {
 }
 
 .carousel-wrapper {
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.1);
 }
 
 .image-slide {
-  height: 550px;
+  min-height: 520px;
+  max-height: 680px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: #ffffff;
   margin: 0;
+  padding: 14px;
 }
 
 :deep(.main-post-img) {
   width: 100%;
-  height: 550px;
+  height: auto;
+  max-height: 650px;
   object-fit: contain;
+  display: block;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .rich-text-content {
-  font-size: 1.2rem;
-  line-height: 1.8;
+  font-size: 1.18rem;
+  line-height: 1.85;
   color: var(--text-muted, #475569);
   margin-bottom: 50px;
   word-break: break-word;
@@ -617,65 +663,100 @@ const share = (platform) => {
   margin-bottom: 1.5rem;
 }
 
-.pdf-action-card {
+.rich-text-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+}
+
+.pdf-action-card-modern {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  padding: 20px 30px;
-  border-radius: 16px;
-  margin: 40px 0;
-  border-left: 5px solid #ef4444;
+  gap: 24px;
+  padding: 22px;
+  border-radius: 18px;
+  margin: 38px 0;
+  background: linear-gradient(135deg, #fff7f7 0%, #ffffff 55%, #f8fafc 100%);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
-.pdf-info {
+.pdf-info-modern {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 }
 
-.pdf-icon {
-  font-size: 2.2rem;
-  color: #ef4444;
+.pdf-icon-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: #fee2e2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.pdf-title {
-  font-weight: 800;
-  font-size: 1.1rem;
+.pdf-icon-box i {
+  font-size: 1.9rem;
+}
+
+.pdf-title-modern {
+  font-weight: 900;
+  font-size: 1.08rem;
+  color: #0f172a;
   display: block;
 }
 
-.pdf-sub {
-  font-size: 0.85rem;
-  opacity: 0.7;
-  margin: 0;
+.pdf-sub-modern {
+  font-size: 0.92rem;
+  color: #64748b;
+  margin: 4px 0 0;
+  line-height: 1.5;
 }
 
-.pdf-buttons {
+.pdf-buttons-modern {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.btn-download {
-  background: #14b82c;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 800;
-  transition: transform 0.2s;
+.pdf-read-btn {
+  background: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  font-weight: 850 !important;
 }
 
-.btn-download:hover {
-  transform: translateY(-2px);
+.pdf-download-btn {
+  min-height: 42px;
+  background: #14b82c;
+  color: white;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 850;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.pdf-download-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.96);
 }
 
 .post-footer {
-  margin-top: 60px;
-  padding-top: 40px;
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  margin-top: 58px;
+  padding-top: 34px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .signature-box {
@@ -688,18 +769,21 @@ const share = (platform) => {
   background: #14b82c;
   margin-left: auto;
   margin-bottom: 15px;
+  border-radius: 99px;
 }
 
 .signature-name {
   font-size: 1.4rem;
-  font-weight: 900;
+  font-weight: 950;
   margin-bottom: 5px;
+  color: #0f172a;
 }
 
 .signature-rank {
   font-size: 0.9rem;
-  opacity: 0.7;
-  font-weight: 500;
+  opacity: 0.75;
+  font-weight: 600;
+  color: #475569;
 }
 
 .sidebar-column {
@@ -736,7 +820,7 @@ const share = (platform) => {
 
 .video-fallback a {
   color: #ffd700;
-  font-weight: 700;
+  font-weight: 800;
   text-decoration: none;
 }
 
@@ -780,8 +864,13 @@ const share = (platform) => {
     margin-bottom: 20px;
   }
 
-  :deep(.back-btn .p-button-label) {
+  :deep(.back-btn-modern .p-button-label) {
     display: none;
+  }
+
+  .minimal-share-btn {
+    width: 40px;
+    height: 40px;
   }
 
   .post-header {
@@ -795,31 +884,22 @@ const share = (platform) => {
     margin-bottom: 14px;
   }
 
-  .publish-date {
-    font-size: 0.9rem;
-  }
-
   .post-title {
     font-size: 1.7rem;
     line-height: 1.24;
   }
 
-  .media-section {
-    margin-bottom: 28px;
-  }
-
-  .video-container,
-  .carousel-wrapper {
-    border-radius: 12px;
-  }
-
   .image-slide {
-    height: 300px;
-  }
+  min-height: 430px;
+  max-height: 620px;
+  padding: 6px;
+}
 
-  :deep(.main-post-img) {
-    height: 300px;
-  }
+:deep(.main-post-img) {
+  width: 100%;
+  max-height: 600px;
+  border-radius: 10px;
+}
 
   .rich-text-content {
     font-size: 1.02rem;
@@ -827,55 +907,23 @@ const share = (platform) => {
     margin-bottom: 34px;
   }
 
-  .pdf-action-card {
+  .pdf-action-card-modern {
     flex-direction: column;
     align-items: stretch;
     padding: 16px;
-    gap: 16px;
-    margin: 28px 0;
-    border-radius: 14px;
   }
 
-  .pdf-info {
-    gap: 14px;
-    align-items: flex-start;
-  }
-
-  .pdf-icon {
-    font-size: 2rem;
-    margin-top: 2px;
-  }
-
-  .pdf-title {
-    font-size: 1rem;
-  }
-
-  .pdf-sub {
-    font-size: 0.84rem;
-  }
-
-  .pdf-buttons {
+  .pdf-buttons-modern {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
   }
 
-  .pdf-buttons :deep(.p-button) {
+  .pdf-buttons-modern :deep(.p-button),
+  .pdf-download-btn {
     width: 100%;
     min-height: 48px;
     justify-content: center;
-  }
-
-  .btn-download {
-    width: 100%;
-    text-align: center;
-    padding: 12px 16px;
-  }
-
-  .post-footer {
-    margin-top: 34px;
-    padding-top: 24px;
   }
 
   .signature-box {
@@ -884,15 +932,6 @@ const share = (platform) => {
 
   .fama-divider {
     margin-left: 0;
-  }
-
-  .signature-name {
-    font-size: 1.15rem;
-  }
-
-  .signature-rank {
-    font-size: 0.88rem;
-    line-height: 1.5;
   }
 }
 
@@ -905,25 +944,17 @@ const share = (platform) => {
     font-size: 1.5rem;
   }
 
-  .publish-date {
-    font-size: 0.84rem;
-  }
-
   .image-slide {
-    height: 250px;
+    min-height: 240px;
+    max-height: 360px;
   }
 
   :deep(.main-post-img) {
-    height: 250px;
+    max-height: 340px;
   }
 
   .rich-text-content {
     font-size: 0.96rem;
-  }
-
-  .top-nav :deep(.p-button) {
-    min-width: 42px;
-    min-height: 42px;
   }
 }
 </style>

@@ -24,6 +24,11 @@ class Staff extends Model
 'contact_socials'
 ];
 
+protected $casts = [
+    'order' => 'integer',
+    'contact_socials' => 'array',
+];
+
 
 
 public function contactMessages()
