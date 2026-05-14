@@ -130,9 +130,21 @@ onBeforeUnmount(() => {
         <Tag value="Documents officiels" severity="success" class="hero-tag" />
         <h1>Recrutement & Concours</h1>
         <p>
-          Retrouvez ici les avis de recrutement, concours d’entrée dans les écoles militaires
-          et communiqués officiels publiés par les Forces Armées Maliennes.
-        </p>
+  Retrouvez ici les avis de recrutement, concours d’entrée dans les écoles militaires
+  et communiqués officiels publiés par les Forces Armées Maliennes.
+</p>
+
+<div class="hero-actions">
+  <a
+    href="https://recrutement.mil.ml"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="official-recruitment-btn"
+  >
+    <i class="pi pi-external-link"></i>
+    Accéder à la plateforme de recrutement
+  </a>
+</div>
       </div>
 
       <div class="hero-badge" aria-hidden="true">
@@ -697,6 +709,35 @@ onBeforeUnmount(() => {
 
 :global(html.dark) .pagination {
   color: #d9dfd4;
+}
+
+.hero-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.official-recruitment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #ffd700;
+  color: #172216;
+  font-weight: 950;
+  text-decoration: none;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.official-recruitment-btn:hover {
+  background: #ffca28;
+  color: #11170f;
+  transform: translateY(-1px);
 }
 
 /* RESPONSIVE */

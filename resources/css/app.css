@@ -81,10 +81,7 @@ html.dark .bg-slate-50,
 html.dark .bg-gray-50,
 html.dark .about-content-card,
 html.dark .article-body-container,
-html.dark div[class*="form-container"],
-html.dark .about-page section div,
-html.dark .about-page .rounded-xl,
-html.dark .about-page .rounded-2xl {
+html.dark div[class*="form-container"] {
     background-color: #1f261b !important;
     background: #1f261b !important;
     color: #ebede9 !important;
@@ -210,4 +207,353 @@ html.dark .staff-info-block span {
     .container-institutional {
         padding-inline: 1.5rem;
     }
+}
+
+/* -------------------- FIX VIDÉOTHÈQUE DARK MODE -------------------- */
+
+html.dark .video-library-page,
+html.dark .video-library-page .video-container {
+    background: #243125 !important;
+    color: #ebede9 !important;
+}
+
+html.dark .video-library-page .video-header,
+html.dark .video-library-page .video-item-card,
+html.dark .video-library-page .video-empty,
+html.dark .video-library-page .video-skeleton-card {
+    background: #1f261b !important;
+    color: #ebede9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+}
+
+html.dark .video-library-page .video-page-title,
+html.dark .video-library-page .video-title {
+    color: #ffffff !important;
+}
+
+html.dark .video-library-page .video-page-subtitle,
+html.dark .video-library-page .video-sub,
+html.dark .video-library-page .video-date,
+html.dark .video-library-page .video-excerpt,
+html.dark .video-library-page .video-end-feed p {
+    color: #dbe4dc !important;
+}
+
+html.dark .video-library-page .video-search-input {
+    background: #151c14 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: none !important;
+}
+
+html.dark .video-library-page .video-search-input::placeholder {
+    color: #9ca89c !important;
+}
+
+html.dark .video-library-page .video-search-wrapper i {
+    color: #a8b5aa !important;
+}
+
+html.dark .video-library-page .video-thumb,
+html.dark .video-library-page .video-thumb img,
+html.dark .video-library-page .video-thumb-overlay {
+    border: none !important;
+    background-color: transparent !important;
+}
+
+html.dark .video-library-page .video-play-button {
+    background: rgba(0, 0, 0, 0.6) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+html.dark .video-library-page .video-platform-tag,
+html.dark .video-library-page .p-tag {
+    background: rgba(34, 197, 94, 0.14) !important;
+    color: #bbf7d0 !important;
+    border: 1px solid rgba(34, 197, 94, 0.25) !important;
+    box-shadow: none !important;
+}
+
+html.dark .video-library-page .video-watch-button {
+    background: #15803d !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+html.dark .video-library-page .video-watch-button:hover {
+    background: #166534 !important;
+}
+
+html.dark .video-library-page .p-skeleton {
+    background: #2f3a2b !important;
+}
+
+html.dark .video-library-page .video-eyebrow {
+    background: rgba(34, 197, 94, 0.13) !important;
+    color: #bbf7d0 !important;
+    border: 1px solid rgba(34, 197, 94, 0.22) !important;
+}
+
+html.dark .video-library-page * {
+    box-shadow: none;
+}
+
+
+/* FIX périmètre pointillé vidéothèque dark mode */
+html.dark .video-library-page *,
+html.dark .video-library-page *::before,
+html.dark .video-library-page *::after {
+    outline: none !important;
+}
+
+html.dark .video-library-page,
+html.dark .video-library-page .video-container,
+html.dark .video-library-page .video-header,
+html.dark .video-library-page .video-grid,
+html.dark .video-library-page .video-loading-grid,
+html.dark .video-library-page .video-item-card,
+html.dark .video-library-page .video-empty,
+html.dark .video-library-page .video-sentinel,
+html.dark .video-library-page .video-end-feed {
+    border-style: solid !important;
+    outline: none !important;
+}
+
+html.dark .video-library-page .video-empty {
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.hero-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.official-recruitment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #ffd700;
+  color: #172216;
+  font-weight: 950;
+  text-decoration: none;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.official-recruitment-btn:hover {
+  background: #ffca28;
+  color: #11170f;
+  transform: translateY(-1px);
+}
+
+/* -------------------- FIX ABOUT PAGE DARK MODE -------------------- */
+
+html.dark .about-page *,
+html.dark .about-page *::before,
+html.dark .about-page *::after {
+    box-shadow: none;
+}
+
+html.dark .about-page {
+    background: #243125 !important;
+}
+
+html.dark .about-page .content-column,
+html.dark .about-page .section-box,
+html.dark .about-page .mission-item,
+html.dark .about-page .premium-card,
+html.dark .about-page .p-card {
+    background: #1f261b !important;
+    color: #ebede9 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .about-page .p-card-body,
+html.dark .about-page .p-card-content {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+}
+
+html.dark .about-page .hero-premium,
+html.dark .about-page .hero-premium *,
+html.dark .about-page .hero-content,
+html.dark .about-page .hero-text-block,
+html.dark .about-page .hero-image-card {
+    border-color: transparent !important;
+}
+
+html.dark .about-page .intro-image,
+html.dark .about-page .staff-thumb {
+    background: #151c14 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .about-page h1,
+html.dark .about-page h2,
+html.dark .about-page h3,
+html.dark .about-page .staff-name {
+    color: #ffffff !important;
+}
+
+html.dark .about-page p,
+html.dark .about-page span,
+html.dark .about-page .staff-subline,
+html.dark .about-page .meta-k,
+html.dark .about-page .meta-v {
+    color: #dbe4dc !important;
+}
+
+html.dark .about-page .hero-topline {
+    color: #ffca28 !important;
+}
+
+html.dark .about-page .hero-chips span {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .about-page .mission-number {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #22c55e !important;
+    border: 0 !important;
+}
+
+html.dark .about-page .p-tag {
+    background: rgba(34, 197, 94, 0.13) !important;
+    color: #bbf7d0 !important;
+    border: 1px solid rgba(34, 197, 94, 0.25) !important;
+    box-shadow: none !important;
+}
+
+/* -------------------- FIX RECRUTEMENT DARK MODE -------------------- */
+
+html.dark .recruitment-page {
+    background: #243125 !important;
+    color: #ebede9 !important;
+}
+
+html.dark .recruitment-page *,
+html.dark .recruitment-page *::before,
+html.dark .recruitment-page *::after {
+    outline: none !important;
+}
+
+html.dark .recruitment-page .toolbar,
+html.dark .recruitment-page .docs-list,
+html.dark .recruitment-page .doc-body,
+html.dark .recruitment-page .doc-actions,
+html.dark .recruitment-page .doc-meta {
+    background: transparent !important;
+    border: none !important;
+}
+
+html.dark .recruitment-page .doc-card,
+html.dark .recruitment-page .empty-state,
+html.dark .recruitment-page .skeleton-card {
+    background: #1f261b !important;
+    color: #ebede9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+}
+
+html.dark .recruitment-page .doc-preview {
+    background: #151c14 !important;
+    border: none !important;
+}
+
+html.dark .recruitment-page .doc-sheet {
+    background: #f8fafc !important;
+    border: none !important;
+}
+
+html.dark .recruitment-page .doc-sheet img {
+    background: #ffffff !important;
+    border: none !important;
+}
+
+html.dark .recruitment-page .pdf-fallback {
+    background: #f8fafc !important;
+    color: #991b1b !important;
+}
+
+html.dark .recruitment-page h1,
+html.dark .recruitment-page h2,
+html.dark .recruitment-page .doc-body h2,
+html.dark .recruitment-page .empty-state h2 {
+    color: #ffffff !important;
+}
+
+html.dark .recruitment-page p,
+html.dark .recruitment-page span,
+html.dark .recruitment-page .excerpt,
+html.dark .recruitment-page .doc-meta,
+html.dark .recruitment-page .pagination {
+    color: #dbe4dc !important;
+}
+
+html.dark .recruitment-page .recruitment-hero h1 {
+    color: #ffca28 !important;
+}
+
+html.dark .recruitment-page .recruitment-hero p {
+    color: #e4ebe5 !important;
+}
+
+html.dark .recruitment-page .search-input {
+    background: #151c14 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: none !important;
+}
+
+html.dark .recruitment-page .search-input::placeholder {
+    color: #9ca89c !important;
+}
+
+html.dark .recruitment-page .search-wrap i {
+    color: #a8b5aa !important;
+}
+
+html.dark .recruitment-page .count {
+    background: #1f261b !important;
+    color: #ffca28 !important;
+    border: 1px solid rgba(255, 202, 40, 0.16) !important;
+}
+
+html.dark .recruitment-page .p-tag {
+    background: rgba(34, 197, 94, 0.14) !important;
+    color: #bbf7d0 !important;
+    border: 1px solid rgba(34, 197, 94, 0.25) !important;
+    box-shadow: none !important;
+}
+
+html.dark .recruitment-page .details-btn {
+    background: #2e392a !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+html.dark .recruitment-page .pdf-btn {
+    background: #11170f !important;
+    color: #ffca28 !important;
+    border: 1px solid rgba(255, 202, 40, 0.16) !important;
+}
+
+html.dark .recruitment-page .official-recruitment-btn {
+    background: #ffca28 !important;
+    color: #11170f !important;
+    border: none !important;
+}
+
+html.dark .recruitment-page .p-skeleton {
+    background: #2f3a2b !important;
 }

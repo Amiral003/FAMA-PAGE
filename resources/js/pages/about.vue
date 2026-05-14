@@ -43,40 +43,6 @@ useHead({
     { name: 'twitter:image', content: `${siteUrl}/images/og-default.jpg` },
   ],
   link: [{ rel: 'canonical', href: `${siteUrl}/about` }],
-  script: [
-    {
-      type: 'application/ld+json',
-      children: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'GovernmentOrganization',
-        name: 'Forces Armées Maliennes',
-        alternateName: 'FAMa',
-        url: siteUrl,
-        description: pageDescription,
-      }),
-    },
-    {
-      type: 'application/ld+json',
-      children: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: 'Accueil',
-            item: siteUrl,
-          },
-          {
-            '@type': 'ListItem',
-            position: 2,
-            name: 'À propos',
-            item: `${siteUrl}/about`,
-          },
-        ],
-      }),
-    },
-  ],
 })
 
 const staffs = ref([])
@@ -90,7 +56,7 @@ const sortedStaffs = computed(() =>
 
     if (orderA !== orderB) return orderA - orderB
 
-    return (a.name || '').localeCompare(b.name || 'fr')
+    return (a.name || '').localeCompare(b.name || '', 'fr')
   })
 )
 
@@ -98,9 +64,22 @@ const getStaffTypeLabel = (s) => {
   const name = `${s.name || ''} ${s.initials || ''}`.toLowerCase()
 
   if (name.includes('minist')) return 'MINISTÈRE'
-  if (name.includes('état-major général') || name.includes('etat-major general') || name.includes('emga')) return 'ÉTAT-MAJOR GÉNÉRAL'
-  if (name.includes('état-major') || name.includes('etat-major')) return 'ÉTAT-MAJOR'
-  if (name.includes('direction') || name.startsWith('d')) return 'DIRECTION'
+  if (
+    name.includes('état-major général') ||
+    name.includes('etat-major general') ||
+    name.includes('emga')
+  ) {
+    return 'ÉTAT-MAJOR GÉNÉRAL'
+  }
+
+  if (name.includes('état-major') || name.includes('etat-major')) {
+    return 'ÉTAT-MAJOR'
+  }
+
+  if (name.includes('direction') || name.startsWith('d')) {
+    return 'DIRECTION'
+  }
+
   if (name.includes('service')) return 'SERVICE'
 
   return 'STRUCTURE'
@@ -138,17 +117,20 @@ onMounted(fetchStaffs)
         <section class="hero-premium">
           <div class="hero-content">
             <div class="hero-text-block">
-              <div class="hero-topline">République du Mali • Défense nationale</div>
+              <div class="hero-topline">
+                République du Mali • Défense nationale
+              </div>
 
               <h1 class="hero-title">
                 Forces Armées Maliennes
               </h1>
 
               <p class="hero-text">
-                Les Forces Armées Maliennes constituent l’outil de défense de l’État.
-                Elles participent à la protection de la souveraineté nationale, à la défense
-                du territoire, à la sécurisation des populations et à l’exécution des missions
-                militaires décidées par les autorités compétentes.
+                Les Forces Armées Maliennes constituent l’outil de défense de
+                l’État. Elles participent à la protection de la souveraineté
+                nationale, à la défense du territoire, à la sécurisation des
+                populations et à l’exécution des missions militaires décidées
+                par les autorités compétentes.
               </p>
 
               <div class="hero-chips">
@@ -174,20 +156,25 @@ onMounted(fetchStaffs)
           <div class="intro-grid">
             <div class="intro-content">
               <p>
-                Les Forces Armées Maliennes regroupent des structures de commandement,
-                des directions, des services, des organismes spécialisés et des entités
-                d’appui chargés de la planification, de la coordination, de l’administration,
-                du soutien et de la conduite des opérations.
+                Les Forces Armées Maliennes regroupent des structures de
+                commandement, des directions, des services, des organismes
+                spécialisés et des entités d’appui chargés de la planification,
+                de la coordination, de l’administration, du soutien et de la
+                conduite des opérations.
               </p>
 
               <p>
-                Leur organisation repose sur la discipline, la continuité du commandement,
-                l’efficacité opérationnelle et le respect des principes républicains.
+                Leur organisation repose sur la discipline, la continuité du
+                commandement, l’efficacité opérationnelle et le respect des
+                principes républicains.
               </p>
             </div>
 
             <div class="intro-image">
-              <img :src="aboutImg2" alt="Organisation institutionnelle des FAMa" />
+              <img
+                :src="aboutImg2"
+                alt="Organisation institutionnelle des FAMa"
+              />
             </div>
           </div>
         </section>
@@ -201,33 +188,39 @@ onMounted(fetchStaffs)
           <div class="mission-grid">
             <div class="mission-item">
               <div class="mission-number">01</div>
+
               <div class="mission-body">
                 <h3>Défense du territoire</h3>
+
                 <p>
-                  Assurer l’intégrité du territoire national et contribuer à la protection
-                  de la souveraineté de l’État.
+                  Assurer l’intégrité du territoire national et contribuer à la
+                  protection de la souveraineté de l’État.
                 </p>
               </div>
             </div>
 
             <div class="mission-item">
               <div class="mission-number">02</div>
+
               <div class="mission-body">
                 <h3>Protection des populations</h3>
+
                 <p>
-                  Participer à la sécurisation des populations, des institutions et des
-                  espaces stratégiques.
+                  Participer à la sécurisation des populations, des institutions
+                  et des espaces stratégiques.
                 </p>
               </div>
             </div>
 
             <div class="mission-item">
               <div class="mission-number">03</div>
+
               <div class="mission-body">
                 <h3>Appui au commandement</h3>
+
                 <p>
-                  Structurer, coordonner et soutenir les opérations à travers les
-                  structures de commandement, directions et services.
+                  Structurer, coordonner et soutenir les opérations à travers
+                  les structures de commandement, directions et services.
                 </p>
               </div>
             </div>
@@ -241,9 +234,9 @@ onMounted(fetchStaffs)
           </div>
 
           <p class="org-text">
-            L’organisation institutionnelle de la défense comprend plusieurs niveaux :
-            ministère, état-major général, états-majors, directions, services techniques,
-            structures d’appui et organismes spécialisés.
+            L’organisation institutionnelle de la défense comprend plusieurs
+            niveaux : ministère, état-major général, états-majors, directions,
+            services techniques, structures d’appui et organismes spécialisés.
           </p>
 
           <div class="org-tags">
@@ -262,8 +255,9 @@ onMounted(fetchStaffs)
           </div>
 
           <p class="staff-intro">
-            Cette section présente les structures institutionnelles de la défense :
-            ministère, état-major général, états-majors, directions, services et structures spécialisées.
+            Cette section présente les structures institutionnelles de la
+            défense : ministère, état-major général, états-majors, directions,
+            services et structures spécialisées.
           </p>
 
           <div v-if="loadError" class="error-box">
@@ -271,10 +265,15 @@ onMounted(fetchStaffs)
           </div>
 
           <div v-else-if="isLoading" class="staff-grid compact-grid">
-            <Card v-for="i in 12" :key="i" class="staff-card compact-card">
+            <Card
+              v-for="i in 12"
+              :key="i"
+              class="staff-card compact-card"
+            >
               <template #content>
                 <div class="staff-row">
                   <Skeleton shape="circle" size="3rem" />
+
                   <div class="staff-col">
                     <Skeleton width="85%" height="0.9rem" class="mb-2" />
                     <Skeleton width="50%" height="0.8rem" class="mb-2" />
@@ -311,10 +310,6 @@ onMounted(fetchStaffs)
                           rounded
                           class="mini-tag"
                         />
-
-                        <span v-if="s.order !== null && s.order !== undefined" class="order-badge">
-                          N° {{ s.order }}
-                        </span>
                       </div>
 
                       <h3 class="staff-name" :title="s.name">
@@ -327,12 +322,16 @@ onMounted(fetchStaffs)
 
                       <div class="staff-meta">
                         <span class="meta-k">Responsable :</span>
-                        <span class="meta-v">{{ s.leader_name || 'Non renseigné' }}</span>
+
+                        <span class="meta-v">
+                          {{ s.leader_name || 'Non renseigné' }}
+                        </span>
                       </div>
 
                       <div class="staff-meta">
                         <span class="meta-k">Grade / Fonction :</span>
-                        <span class="meta-v">{{ s.leader_rank || '—' }}</span>
+
+                        
                       </div>
                     </div>
                   </div>
@@ -383,11 +382,14 @@ onMounted(fetchStaffs)
   overflow: hidden;
   margin-bottom: 26px;
   background:
-    linear-gradient(135deg, rgba(18, 43, 25, 0.98), rgba(15, 23, 42, 0.96));
+    linear-gradient(
+      135deg,
+      rgba(18, 43, 25, 0.98),
+      rgba(15, 23, 42, 0.96)
+    );
 }
 
 .hero-content {
-  position: relative;
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: 24px;
@@ -619,17 +621,6 @@ onMounted(fetchStaffs)
   flex-wrap: wrap;
 }
 
-.order-badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 3px 8px;
-  background: rgba(15, 23, 42, 0.06);
-  color: #475569;
-  font-size: 0.68rem;
-  font-weight: 900;
-}
-
 .staff-name {
   margin: 0 0 4px;
   font-size: 0.9rem;
@@ -679,55 +670,116 @@ onMounted(fetchStaffs)
   min-height: 100%;
 }
 
-/* Dark mode propre */
+/* ================= DARK MODE ================= */
+
 :global(html.dark) .about-page {
   background: #263827;
 }
 
 :global(html.dark) .content-column {
   background: #2d392e;
-  border-color: rgba(255, 215, 0, 0.14);
+  border-color: rgba(255, 215, 0, 0.08);
+  box-shadow: none;
 }
 
 :global(html.dark) .section-box {
   background: #243125;
-  border-color: rgba(255, 215, 0, 0.14);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
-:global(html.dark) .section-head h2,
-:global(html.dark) .staff-name,
-:global(html.dark) .mission-body h3 {
-  color: #ffd700;
+:global(html.dark) .section-head h2 {
+  color: #f8fafc;
+}
+
+:global(html.dark) .section-line {
+  background: #14b82c;
 }
 
 :global(html.dark) .intro-content p,
 :global(html.dark) .org-text,
 :global(html.dark) .staff-intro,
 :global(html.dark) .mission-body p {
-  color: #e2e8f0;
+  color: #dbe4dc;
 }
 
-:global(html.dark) .mission-item,
-:global(html.dark) .premium-card {
+:global(html.dark) .mission-item {
   background: #2d392e;
-  border-color: rgba(255, 215, 0, 0.18);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global(html.dark) .mission-body h3 {
+  color: #ffffff;
+}
+
+:global(html.dark) .mission-number {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+:global(html.dark) .premium-card {
+  background: #2d392e !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+}
+
+:global(html.dark) .premium-card:hover {
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18) !important;
+}
+
+:global(html.dark) .premium-card :deep(.p-card) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:global(html.dark) .premium-card :deep(.p-card-body),
+:global(html.dark) .premium-card :deep(.p-card-content) {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+:global(html.dark) .staff-name {
+  color: #ffffff;
 }
 
 :global(html.dark) .staff-subline {
   color: #cbd5e1;
 }
 
-:global(html.dark) .order-badge {
-  background: rgba(255, 215, 0, 0.12);
-  color: #ffd700;
-}
-
 :global(html.dark) .meta-k {
-  color: #cbd5e1;
+  color: #a8b5aa;
 }
 
 :global(html.dark) .meta-v {
-  color: #ffffff;
+  color: #f8fafc;
+}
+
+:global(html.dark) .staff-thumb {
+  background: #1f2c21;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:global(html.dark) .staff-thumb.fallback {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+:global(html.dark) .mini-tag,
+:global(html.dark) .org-tags :deep(.p-tag) {
+  background: rgba(34, 197, 94, 0.14) !important;
+  color: #bbf7d0 !important;
+  border: 1px solid rgba(34, 197, 94, 0.22) !important;
+  box-shadow: none !important;
+}
+
+:global(html.dark) :deep(.p-tag) {
+  box-shadow: none !important;
+}
+
+:global(html.dark) :deep(.p-card) {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 @media (max-width: 1024px) {

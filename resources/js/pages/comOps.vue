@@ -199,11 +199,9 @@ const items = computed(() => flashes.value)
                 <span>{{ getRelativeDate(post.published_at || post.created_at) }}</span>
               </div>
 
-              <h2 class="card-title">{{ post.title }}</h2>
+              <h3 class="card-title">{{ post.title }}</h3>
 
-              <p v-if="post.content" class="excerpt">
-                {{ stripHtml(post.content).substring(0, 120) }}...
-              </p>
+              
 
               <div class="cta">
                 <Button
