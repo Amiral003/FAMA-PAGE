@@ -15,6 +15,8 @@ use Illuminate\Auth\Events\Failed;
 use App\Listeners\LogFailedLogin;
 use Illuminate\Auth\Events\Lockout;
 use App\Listeners\LogLockout;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        DB::whenQueryingForLongerThan(300, function ($connection, $event) {
+    Log::warning('Slow SQL Query Detected', [
+        'connection' => $connection->getName(),
+        'sql' => $event->sql,
+        'bindings' => $event->bindings,
+        'time_ms' => $event->time,
+    ]);
+});
         Event::listen(Login::class, UpdateLastLoginData::class);
         Event::listen(Failed::class, LogFailedLogin::class);
         Event::listen(Lockout::class, LogLockout::class);
@@ -81,5 +91,7 @@ class AppServiceProvider extends ServiceProvider
         Limit::perMinute(30)->by('files|' . $request->ip()),
     ];
 });
+
+
     }
 }
