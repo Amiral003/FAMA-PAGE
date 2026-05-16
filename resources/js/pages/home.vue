@@ -896,12 +896,14 @@ const handleCardKeyPress = (event, post) => {
 }
 
 /* =========================
-   OPTIMIZED FOOTER DIGNIFIÉ
+   OPTIMIZED FOOTER DIGNIFIÉ (Adaptatif & Robuste)
 ========================= */
 .fama-footer {
-  background: #152019;
-  color: white;
+  /* Utilise la couleur de surface sombre du thème, ou le vert tactique profond par défaut */
+  background: var(--fama-footer-bg, #152019);
+  color: var(--fama-footer-text, #ffffff);
   padding-top: 74px;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .footer-grid {
@@ -918,14 +920,15 @@ const handleCardKeyPress = (event, post) => {
 }
 
 .footer-title {
-  color: #d8b24b;
+  /* L'or reste la couleur institutionnelle immuable */
+  color: var(--fama-gold, #d8b24b);
   font-weight: 900;
   margin: 0 0 18px;
   font-size: clamp(1.35rem, 3vw, 1.8rem);
 }
 
 .footer-intro {
-  color: #d3d9e2;
+  color: var(--fama-footer-muted, #d3d9e2);
   line-height: 1.78;
   margin: 0;
   font-size: 1rem;
@@ -934,9 +937,10 @@ const handleCardKeyPress = (event, post) => {
 
 /* Alignements de la boite d'honneur */
 .soldier-honor-card {
+  /* Le fond de la carte s'adapte légèrement selon le mode pour rester visible */
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
-  border: 1px solid rgba(216, 178, 75, 0.24);
-  border-left: 4px solid #d8b24b;
+  border: 1px solid var(--fama-border-gold-alpha, rgba(216, 178, 75, 0.24));
+  border-left: 4px solid var(--fama-gold, #d8b24b);
   padding: 22px;
   border-radius: 14px;
   margin-top: 28px;
@@ -944,12 +948,19 @@ const handleCardKeyPress = (event, post) => {
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  flex-grow: 1; /* S'étire pour remplir toute la hauteur */
+  flex-grow: 1;
+}
+
+/* Si ton site passe en mode CLAIR global, on ajuste subtilement le fond de la carte d'honneur
+   pour qu'elle ressorte magnifiquement sur le fond sombre du footer */
+[data-theme="light"] .soldier-honor-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(216, 178, 75, 0.35);
 }
 
 .soldier-icon {
   font-size: 2.15rem;
-  color: #d8b24b;
+  color: var(--fama-gold, #d8b24b);
   opacity: 0.95;
   flex-shrink: 0;
 }
@@ -969,11 +980,10 @@ const handleCardKeyPress = (event, post) => {
   display: inline-block;
 }
 
-/* Réglage d'aération des écritures demandé */
 .honor-content .honor-text {
   font-size: 1rem !important;
-  line-height: 1.75 !important; /* Enlève le côté entassé */
-  letter-spacing: 0.02em;       /* Lisibilité accrue */
+  line-height: 1.75 !important;
+  letter-spacing: 0.02em;
   color: #e2e8f0;
   margin-bottom: 1.25rem;
   text-align: justify;
@@ -994,7 +1004,7 @@ const handleCardKeyPress = (event, post) => {
 .honor-italic {
   font-style: italic;
   background: rgba(216, 178, 75, 0.04);
-  border-left: 3px solid #d8b24b;
+  border-left: 3px solid var(--fama-gold, #d8b24b);
   padding: 12px 16px !important;
   margin: 1.5rem 0;
 }
@@ -1017,7 +1027,7 @@ const handleCardKeyPress = (event, post) => {
 }
 
 .honor-rank {
-  color: #d8b24b;
+  color: var(--fama-gold, #d8b24b);
   font-weight: 800;
   text-transform: uppercase;
   font-size: 0.76rem;
@@ -1037,12 +1047,13 @@ const handleCardKeyPress = (event, post) => {
 }
 
 .copyright {
-  background: #1b281d;
+  background: var(--fama-copyright-bg, #1b281d);
   text-align: center;
   padding: 18px 14px;
   font-size: 0.78rem;
   color: #aeb8c5;
   width: 100%;
+  transition: background-color 0.3s ease;
 }
 
 /* Bouton Scroll Top */
