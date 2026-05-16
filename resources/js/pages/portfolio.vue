@@ -4,24 +4,19 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import axios from 'axios'
 
-// --- IMPORT POUR LA DATE RELATIVE ---
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-// --- IMPORTS DES COMPOSANTS ---
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import Skeleton from 'primevue/skeleton'
 
-// --- CONFIGURATION SEO ---
 const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
-useHead({
-  title: 'Avis & Communiqués | Forces Armées Maliennes',
-  meta: [
-    { name: 'description', content: 'Fil d’actualité officiel des Forces Armées Maliennes (FAMa). Retrouvez tous les communiqués, avis et documents officiels.' },
+useHead({  meta: [
+    { name: 'description', content: 'Fil d\'actualité officiel des Forces Armées Maliennes (FAMa).' },
     { property: 'og:type', content: 'website' },
     { property: 'og:title', content: 'Avis & Communiqués Officiels | FAMa' },
     { property: 'og:description', content: 'Accédez aux derniers communiqués de presse et documents certifiés des FAMa.' },
@@ -46,6 +41,63 @@ const showScrollTop = ref(false)
 const sentinel = ref(null)
 let observer = null
 let searchTimeout = null
+
+// -------------------- STICKY SIDEBAR (JS robuste) --------------------
+// Refs pour le sticky sidebar
+const sidebarColumn = ref(null)
+const sidebarInner = ref(null)
+const mainLayout = ref(null)
+
+const STICKY_TOP_OFFSET = 20 // px depuis le haut du viewport
+
+const updateStickysidebar = () => {
+  const sidebar = sidebarColumn.value
+  const inner = sidebarInner.value
+  const layout = mainLayout.value
+  if (!sidebar || !inner || !layout || window.innerWidth <= 850) return
+
+  const layoutRect = layout.getBoundingClientRect()
+  const innerHeight = inner.offsetHeight
+  const layoutBottom = layoutRect.bottom
+  const viewportHeight = window.innerHeight
+
+  // Position naturelle du top de la colonne sidebar dans le document
+  const sidebarColTop = sidebar.getBoundingClientRect().top + window.scrollY
+  const scrollY = window.scrollY
+
+  // Calcul : jusqu'où peut descendre la sidebar (ne dépasse pas le bas du layout)
+  const maxTop = layout.offsetTop + layout.offsetHeight - innerHeight
+  const desiredTop = scrollY + STICKY_TOP_OFFSET
+
+  if (desiredTop <= layout.offsetTop) {
+    // Pas encore scrollé jusqu'au layout : position naturelle
+    inner.style.position = 'relative'
+    inner.style.top = '0'
+    inner.style.width = ''
+  } else if (desiredTop >= maxTop) {
+    // Bas du feed atteint : colle la sidebar au bas du layout
+    inner.style.position = 'absolute'
+    inner.style.top = `${layout.offsetHeight - innerHeight}px`
+    inner.style.width = `${sidebar.offsetWidth}px`
+  } else {
+    // En cours de scroll : fixed dans la colonne
+    inner.style.position = 'fixed'
+    inner.style.top = `${STICKY_TOP_OFFSET}px`
+    inner.style.width = `${sidebar.offsetWidth}px`
+  }
+}
+
+const resetStickyOnResize = () => {
+  const inner = sidebarInner.value
+  if (!inner) return
+  if (window.innerWidth <= 850) {
+    inner.style.position = ''
+    inner.style.top = ''
+    inner.style.width = ''
+  } else {
+    updateStickysidebar()
+  }
+}
 
 // -------------------- HELPERS --------------------
 const stripHtml = (html) => {
@@ -89,33 +141,24 @@ const getShareLink = (platform, post) => {
     : `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`
 }
 
-const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
 const handleScroll = () => {
   showScrollTop.value = window.scrollY > 500
+  updateStickysidebar()
 }
 
-// -------------------- API : charge une page --------------------
+// -------------------- API --------------------
 const fetchPage = async () => {
   if (!hasMore.value || loadingMore.value) return
-
   loadingMore.value = true
-
   try {
     const res = await axios.get('/api/posts', {
-      params: {
-        page: page.value,
-        per_page: perPage.value,
-        q: search.value.trim() || undefined,
-      },
+      params: { page: page.value, per_page: perPage.value, q: search.value.trim() || undefined },
       timeout: 10000,
     })
-
     const payload = res.data
     const items = payload?.data ?? payload ?? []
-
     if (Array.isArray(payload?.data)) {
       if (page.value === 1) posts.value = items
       else posts.value = [...posts.value, ...items]
@@ -125,17 +168,17 @@ const fetchPage = async () => {
       else posts.value = [...posts.value, ...items]
       hasMore.value = false
     }
-
     page.value += 1
   } catch (e) {
     console.error('Erreur API:', e)
   } finally {
     loading.value = false
     loadingMore.value = false
+    // Recalcule la sidebar après chargement (hauteur du feed change)
+    await nextTick()
+    updateStickysidebar()
   }
 }
-
-
 
 const resetAndReload = async () => {
   page.value = 1
@@ -148,25 +191,19 @@ const resetAndReload = async () => {
 // -------------------- INFINITE SCROLL --------------------
 const setupObserver = () => {
   if (!sentinel.value) return
-
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting && !loadingMore.value && hasMore.value) {
-        fetchPage()
-      }
+      if (entries[0].isIntersecting && !loadingMore.value && hasMore.value) fetchPage()
     },
     { root: null, threshold: 0.1, rootMargin: '100px' }
   )
-
   observer.observe(sentinel.value)
 }
 
 // -------------------- RECHERCHE --------------------
 watch(search, () => {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    resetAndReload()
-  }, 400)
+  searchTimeout = setTimeout(() => resetAndReload(), 400)
 })
 
 // -------------------- COMPUTED --------------------
@@ -176,27 +213,25 @@ const filteredPosts = computed(() =>
   )
 )
 const recentPdfs = ref([])
+
 const fetchRecentPdfs = async () => {
   try {
-    const res = await axios.get('/api/posts/latest-pdfs', {
-      params: { limit: 3 },
-      timeout: 10000,
-    })
-
+    const res = await axios.get('/api/posts/latest-pdfs', { params: { limit: 3 }, timeout: 10000 })
     recentPdfs.value = Array.isArray(res.data) ? res.data : []
   } catch (e) {
     console.error('Erreur chargement PDF récents:', e)
     recentPdfs.value = []
   }
-}// -------------------- LIFE CYCLE --------------------
+}
+
+// -------------------- LIFECYCLE --------------------
 onMounted(async () => {
-   await Promise.all([
-    fetchPage(),
-    fetchRecentPdfs(),
-  ])
+  await Promise.all([fetchPage(), fetchRecentPdfs()])
   await nextTick()
   setupObserver()
-  window.addEventListener('scroll', handleScroll)
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', resetStickyOnResize, { passive: true })
+  updateStickysidebar()
 })
 
 onBeforeUnmount(() => {
@@ -204,9 +239,9 @@ onBeforeUnmount(() => {
   if (observer) observer.disconnect()
   if (searchTimeout) clearTimeout(searchTimeout)
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', resetStickyOnResize)
 })
 
-// Gestion clavier
 const handleCardKeyPress = (event, post) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault()
@@ -217,23 +252,27 @@ const handleCardKeyPress = (event, post) => {
 
 <template>
   <div class="portfolio-container">
-    <div class="container main-layout">
+    <!--
+      ref="mainLayout" est CRUCIAL : il sert de référence de hauteur
+      pour calculer jusqu'où la sidebar peut descendre
+    -->
+    <div class="container main-layout" ref="mainLayout">
+
       <section class="feed-column">
         <header class="header-section">
           <h1 class="page-title">Communiqués & Avis Officiels</h1>
           <p class="header-subtitle">Fil d'actualité officiel des Forces Armées Maliennes</p>
           <div class="search-wrapper">
             <i class="pi pi-search" aria-hidden="true"></i>
-            <InputText 
-              v-model="search" 
-              placeholder="Rechercher un communiqué..." 
+            <InputText
+              v-model="search"
+              placeholder="Rechercher un communiqué..."
               class="search-input"
               aria-label="Rechercher des publications"
             />
           </div>
         </header>
 
-        <!-- État de chargement -->
         <div v-if="loading" class="loading-grid">
           <div v-for="i in 3" :key="i" class="news-card skeleton-card">
             <div class="skeleton-header">
@@ -246,7 +285,6 @@ const handleCardKeyPress = (event, post) => {
           </div>
         </div>
 
-        <!-- Liste des publications -->
         <div v-else>
           <div v-if="filteredPosts.length > 0">
             <div class="posts-list">
@@ -263,7 +301,7 @@ const handleCardKeyPress = (event, post) => {
                 <div class="card-header">
                   <div class="card-meta">
                     <Tag
-                      :value="post.type === 'video' ? 'VIDÉO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUÉ')"
+                      :value="post.type === 'video' ? 'VIDEO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'COMMUNIQUE')"
                       :severity="post.type === 'video' ? 'info' : (post.pdf_path ? 'danger' : 'success')"
                       class="card-tag"
                     />
@@ -275,35 +313,29 @@ const handleCardKeyPress = (event, post) => {
                   <h2 class="card-title">{{ post.title }}</h2>
                 </div>
 
-                <!-- Image pleine largeur sans coupure -->
+                <div class="card-media" v-if="getPostImage(post) || post.pdf_path">
                   <div
-  class="card-media"
-  v-if="getPostImage(post) || post.pdf_path"
->
-  <div
-    class="media-container"
-    :class="{ 'pdf-media-container': post.pdf_path && post.type !== 'video' }"
-  >
-    <img
-      v-if="getPostImage(post)"
-      :src="getPostImage(post)"
-      :alt="post.title"
-      class="featured-img"
-      :class="{ 'pdf-featured-img': post.pdf_path && post.type !== 'video' }"
-      loading="lazy"
-      decoding="async"
-    />
-
-    <div v-if="post.type === 'video'" class="video-overlay" aria-label="Contenu vidéo">
-      <i class="pi pi-play" aria-hidden="true"></i>
-    </div>
-
-    <div v-else-if="post.pdf_path" class="pdf-sticker" @click.stop>
-      <i class="pi pi-file-pdf" aria-hidden="true"></i>
-      <span>DOCUMENT OFFICIEL</span>
-    </div>
-  </div>
-</div>
+                    class="media-container"
+                    :class="{ 'pdf-media-container': post.pdf_path && post.type !== 'video' }"
+                  >
+                    <img
+                      v-if="getPostImage(post)"
+                      :src="getPostImage(post)"
+                      :alt="post.title"
+                      class="featured-img"
+                      :class="{ 'pdf-featured-img': post.pdf_path && post.type !== 'video' }"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div v-if="post.type === 'video'" class="video-overlay" aria-label="Contenu video">
+                      <i class="pi pi-play" aria-hidden="true"></i>
+                    </div>
+                    <div v-else-if="post.pdf_path" class="pdf-sticker" @click.stop>
+                      <i class="pi pi-file-pdf" aria-hidden="true"></i>
+                      <span>DOCUMENT OFFICIEL</span>
+                    </div>
+                  </div>
+                </div>
 
                 <p class="card-excerpt">{{ stripHtml(post.content).substring(0, 180) }}...</p>
 
@@ -325,47 +357,24 @@ const handleCardKeyPress = (event, post) => {
                       text
                       @click="downloadPDF(post.pdf_path, $event)"
                       label="PDF"
-                      aria-label="Télécharger le PDF"
+                      aria-label="Telecharger le PDF"
                     />
                   </div>
-
                   <div class="share-wrapper">
                     <div class="share-floating-menu">
-                      <a 
-                        :href="getShareLink('facebook', post)" 
-                        target="_blank" 
-                        class="s-btn fb"
-                        rel="noopener noreferrer"
-                        aria-label="Partager sur Facebook"
-                        @click.stop
-                      >
+                      <a :href="getShareLink('facebook', post)" target="_blank" class="s-btn fb" rel="noopener noreferrer" aria-label="Partager sur Facebook" @click.stop>
                         <i class="pi pi-facebook" aria-hidden="true"></i>
                       </a>
-                      <a 
-                        :href="getShareLink('whatsapp', post)" 
-                        target="_blank" 
-                        class="s-btn wa"
-                        rel="noopener noreferrer"
-                        aria-label="Partager sur WhatsApp"
-                        @click.stop
-                      >
+                      <a :href="getShareLink('whatsapp', post)" target="_blank" class="s-btn wa" rel="noopener noreferrer" aria-label="Partager sur WhatsApp" @click.stop>
                         <i class="pi pi-whatsapp" aria-hidden="true"></i>
                       </a>
                     </div>
-                    <Button 
-                      icon="pi pi-share-alt" 
-                      rounded 
-                      severity="secondary" 
-                      size="small" 
-                      class="share-trigger-btn"
-                      aria-label="Partager"
-                    />
+                    <Button icon="pi pi-share-alt" rounded severity="secondary" size="small" class="share-trigger-btn" aria-label="Partager" />
                   </div>
                 </div>
               </article>
             </div>
 
-            <!-- Loader bas de page -->
             <div v-if="loadingMore" class="loading-more">
               <div class="news-card skeleton-card">
                 <div class="skeleton-header">
@@ -377,37 +386,36 @@ const handleCardKeyPress = (event, post) => {
               </div>
             </div>
 
-            <!-- Sentinel -->
             <div ref="sentinel" class="sentinel"></div>
 
-            <!-- Fin du feed -->
             <div v-if="!loading && !loadingMore && !hasMore" class="end-feed">
               <i class="pi pi-check-circle" aria-hidden="true"></i>
-              <span>Vous avez consulté toutes les publications</span>
+              <span>Vous avez consulte toutes les publications</span>
             </div>
           </div>
 
-          <!-- État vide -->
           <div v-else class="empty-state">
             <i class="pi pi-info-circle" aria-hidden="true"></i>
-            <h3>Aucun résultat trouvé</h3>
-            <p>Aucune publication ne correspond à votre recherche "{{ search }}"</p>
-            <Button 
-              label="Effacer la recherche" 
-              icon="pi pi-times" 
-              class="empty-state-btn"
-              @click="search = ''"
-            />
+            <h3>Aucun resultat trouve</h3>
+            <p>Aucune publication ne correspond a votre recherche "{{ search }}"</p>
+            <Button label="Effacer la recherche" icon="pi pi-times" class="empty-state-btn" @click="search = ''" />
           </div>
         </div>
       </section>
 
-      <aside class="sidebar-column">
-        <SidebarOfficial :recentDocs="recentPdfs" :sticky="true"  />
+      <!--
+        STRUCTURE CLÉ DU STICKY JS :
+        - .sidebar-column  => colonne grille, position: relative, hauteur naturelle
+        - .sidebar-inner   => l'élément qu'on déplace via JS (position change dynamiquement)
+      -->
+      <aside class="sidebar-column" ref="sidebarColumn">
+        <div class="sidebar-inner" ref="sidebarInner">
+          <SidebarOfficial :recentDocs="recentPdfs" />
+        </div>
       </aside>
+
     </div>
 
-    <!-- Bouton retour en haut -->
     <Transition name="fade">
       <button
         v-if="showScrollTop"
@@ -442,19 +450,31 @@ const handleCardKeyPress = (event, post) => {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 30px;
+  align-items: start;       /* indispensable */
+  /* PAS de min-height ici : la hauteur doit être naturelle
+     pour que le calcul JS du bas du layout soit exact */
 }
 
-/* SIDEBAR */
+/* -------------------------------------------------------
+   SIDEBAR : position: relative sur la COLONNE
+   Le sticky est géré par .sidebar-inner via JS
+   ------------------------------------------------------- */
 .sidebar-column {
-  
-  height: fit-content;
-  align-self: start;
+  width: 320px;
+  position: relative;  /* ancre absolue pour le mode "bas du feed" */
+  align-self: stretch; /* la colonne s'étire sur toute la hauteur du feed */
+}
+
+.sidebar-inner {
+  /* JS va injecter : position fixed/absolute/relative + top + width */
+  /* Valeur par défaut (avant JS ou sur mobile) */
+  position: relative;
+  top: 0;
+  width: 100%;
 }
 
 /* HEADER */
-.header-section {
-  margin-bottom: 24px;
-}
+.header-section { margin-bottom: 24px; }
 
 .page-title {
   font-size: 1.95rem;
@@ -504,18 +524,14 @@ const handleCardKeyPress = (event, post) => {
   outline: none;
 }
 
-.search-input::placeholder {
-  color: #9ca3af;
-}
+.search-input::placeholder { color: #9ca3af; }
 
-/* POSTS LIST */
 .posts-list {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* NEWS CARDS */
 .news-card {
   background: white;
   border-radius: 16px;
@@ -524,7 +540,6 @@ const handleCardKeyPress = (event, post) => {
   border: 1px solid #dddfe2;
   transition: all 0.2s ease;
   cursor: pointer;
-  overflow: hidden;
 }
 
 .news-card:hover {
@@ -533,15 +548,8 @@ const handleCardKeyPress = (event, post) => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
-.skeleton-card {
-  cursor: default;
-  padding: 20px;
-}
-
-.skeleton-card:hover {
-  transform: none;
-  border-color: #dddfe2;
-}
+.skeleton-card { cursor: default; padding: 20px; }
+.skeleton-card:hover { transform: none; border-color: #dddfe2; }
 
 .skeleton-header {
   display: flex;
@@ -550,10 +558,7 @@ const handleCardKeyPress = (event, post) => {
   margin-bottom: 16px;
 }
 
-/* CARD HEADER */
-.card-header {
-  padding: 20px 20px 0 20px;
-}
+.card-header { padding: 20px 20px 0 20px; }
 
 .card-meta {
   display: flex;
@@ -587,12 +592,7 @@ const handleCardKeyPress = (event, post) => {
   margin: 0 0 16px;
 }
 
-/* CARD MEDIA - IMAGE PLEINE LARGEUR SANS COUPURE */
-.card-media {
-  margin: 0;
-  background: #f8fafc;
-  overflow: hidden;
-}
+.card-media { margin: 0; background: #f8fafc; overflow: hidden; }
 
 .media-container {
   position: relative;
@@ -603,7 +603,6 @@ const handleCardKeyPress = (event, post) => {
   justify-content: center;
 }
 
-/* comportement normal : inchangé pour les autres posts */
 .featured-img {
   display: block;
   width: 100%;
@@ -612,7 +611,6 @@ const handleCardKeyPress = (event, post) => {
   background: #f8fafc;
 }
 
-/* PDF uniquement : bloc fixe */
 .pdf-media-container {
   height: 320px;
   padding: 18px;
@@ -620,7 +618,6 @@ const handleCardKeyPress = (event, post) => {
   overflow: hidden;
 }
 
-/* PDF uniquement : image réduite mais visible entièrement */
 .pdf-featured-img {
   width: 100%;
   height: 100%;
@@ -632,7 +629,6 @@ const handleCardKeyPress = (event, post) => {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
-/* sticker PDF */
 .pdf-sticker {
   position: absolute;
   top: 14px;
@@ -652,9 +648,7 @@ const handleCardKeyPress = (event, post) => {
   backdrop-filter: blur(4px);
 }
 
-.pdf-sticker i {
-  font-size: 0.95rem;
-}
+.pdf-sticker i { font-size: 0.95rem; }
 
 .video-overlay {
   position: absolute;
@@ -674,7 +668,6 @@ const handleCardKeyPress = (event, post) => {
   padding: 14px 18px;
 }
 
-/* CARD EXCERPT */
 .card-excerpt {
   color: #1c1e21;
   font-size: 0.95rem;
@@ -683,7 +676,6 @@ const handleCardKeyPress = (event, post) => {
   padding: 0 20px;
 }
 
-/* CARD FOOTER */
 .card-footer {
   display: flex;
   justify-content: space-between;
@@ -694,28 +686,12 @@ const handleCardKeyPress = (event, post) => {
   margin-top: 16px;
 }
 
-.action-btns {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
+.action-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-.read-more-btn {
-  font-weight: 800 !important;
-  color: #14b82c !important;
-}
+.read-more-btn { font-weight: 800 !important; color: #14b82c !important; }
+.read-more-btn:hover { color: #0f9e24 !important; }
 
-.read-more-btn:hover {
-  color: #0f9e24 !important;
-}
-
-/* SHARE BUTTONS */
-.share-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
+.share-wrapper { position: relative; display: flex; align-items: center; }
 
 .share-floating-menu {
   display: flex;
@@ -745,17 +721,9 @@ const handleCardKeyPress = (event, post) => {
   transition: opacity 0.2s ease;
 }
 
-.s-btn:hover {
-  opacity: 0.9;
-}
-
-.fb {
-  background: #1877f2;
-}
-
-.wa {
-  background: #22c55e;
-}
+.s-btn:hover { opacity: 0.9; }
+.fb { background: #1877f2; }
+.wa { background: #22c55e; }
 
 .share-trigger-btn {
   background: #e4e6eb !important;
@@ -763,25 +731,11 @@ const handleCardKeyPress = (event, post) => {
   color: #1c1e21 !important;
 }
 
-/* LOADING STATES */
-.loading-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+.loading-grid { display: flex; flex-direction: column; gap: 24px; }
+.loading-more { margin-top: 8px; }
 
-.loading-more {
-  margin-top: 8px;
-}
+.sentinel { height: 1px; width: 100%; opacity: 0; }
 
-/* SENTINEL */
-.sentinel {
-  height: 1px;
-  width: 100%;
-  opacity: 0;
-}
-
-/* END FEED */
 .end-feed {
   text-align: center;
   padding: 32px 0 16px;
@@ -792,15 +746,9 @@ const handleCardKeyPress = (event, post) => {
   gap: 8px;
 }
 
-.end-feed i {
-  font-size: 1rem;
-}
+.end-feed i { font-size: 1rem; }
+.end-feed span { font-size: 0.85rem; }
 
-.end-feed span {
-  font-size: 0.85rem;
-}
-
-/* EMPTY STATE */
 .empty-state {
   background: white;
   border: 1px solid #dddfe2;
@@ -809,24 +757,9 @@ const handleCardKeyPress = (event, post) => {
   text-align: center;
 }
 
-.empty-state i {
-  font-size: 2.5rem;
-  color: #65676b;
-  margin-bottom: 16px;
-  display: block;
-}
-
-.empty-state h3 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1c1e21;
-  margin: 0 0 8px;
-}
-
-.empty-state p {
-  color: #65676b;
-  margin: 0 0 24px;
-}
+.empty-state i { font-size: 2.5rem; color: #65676b; margin-bottom: 16px; display: block; }
+.empty-state h3 { font-size: 1.2rem; font-weight: 700; color: #1c1e21; margin: 0 0 8px; }
+.empty-state p { color: #65676b; margin: 0 0 24px; }
 
 .empty-state-btn {
   background: #14b82c !important;
@@ -835,11 +768,8 @@ const handleCardKeyPress = (event, post) => {
   font-weight: 600 !important;
 }
 
-.empty-state-btn:hover {
-  background: #0f9e24 !important;
-}
+.empty-state-btn:hover { background: #0f9e24 !important; }
 
-/* SCROLL TOP BUTTON */
 .scroll-top-button {
   position: fixed;
   bottom: 2rem;
@@ -865,209 +795,67 @@ const handleCardKeyPress = (event, post) => {
   border-color: #14b82c;
 }
 
-.scroll-top-button i {
-  font-size: 1.1rem;
-}
+.scroll-top-button i { font-size: 1.1rem; }
 
-/* ANIMATIONS */
 .fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
+.fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+.fade-leave-to { opacity: 0; }
 
-/* REDUCED MOTION */
 @media (prefers-reduced-motion: reduce) {
   .news-card,
   .share-floating-menu,
-  .scroll-top-button {
-    transition: none !important;
-  }
-  
-  .news-card:hover {
-    transform: none;
-  }
+  .scroll-top-button { transition: none !important; }
+  .news-card:hover { transform: none; }
 }
 
 /* RESPONSIVE */
 @media (max-width: 850px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar-column {
-    display: none;
-  }
+  .main-layout { grid-template-columns: 1fr; }
+  .sidebar-column { display: none; }
 }
 
 @media (max-width: 768px) {
-  .portfolio-container {
-    padding: 24px 0 32px;
-  }
-
-  .container {
-    padding: 0 16px;
-  }
-
-  .page-title {
-    font-size: 1.6rem;
-  }
-
-  .search-input {
-    min-height: 48px;
-    font-size: 0.95rem !important;
-  }
-
-  .card-header {
-    padding: 16px 16px 0 16px;
-  }
-
-  .card-title {
-    font-size: 1.2rem;
-  }
-
-  .card-excerpt {
-    padding: 0 16px;
-    font-size: 0.9rem;
-  }
-
-  .card-footer {
-    padding: 12px 16px 16px 16px;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .action-btns {
-    width: 100%;
-  }
-
-  .action-btns :deep(.p-button) {
-    flex: 1;
-  }
-
-  .share-wrapper {
-    justify-content: flex-end;
-  }
-
-  .share-floating-menu {
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-  }
+  .portfolio-container { padding: 24px 0 32px; }
+  .container { padding: 0 16px; }
+  .page-title { font-size: 1.6rem; }
+  .search-input { min-height: 48px; font-size: 0.95rem !important; }
+  .card-header { padding: 16px 16px 0 16px; }
+  .card-title { font-size: 1.2rem; }
+  .card-excerpt { padding: 0 16px; font-size: 0.9rem; }
+  .card-footer { padding: 12px 16px 16px 16px; flex-direction: column; align-items: stretch; }
+  .action-btns { width: 100%; }
+  .action-btns :deep(.p-button) { flex: 1; }
+  .share-wrapper { justify-content: flex-end; }
+  .share-floating-menu { opacity: 1; transform: none; pointer-events: auto; }
 }
 
 @media (max-width: 576px) {
-  .portfolio-container {
-    padding: 20px 0 28px;
-  }
-
-  .container {
-    padding: 0 14px;
-  }
-
-  .page-title {
-    font-size: 1.4rem;
-  }
-
-  .header-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .card-header {
-    padding: 14px 14px 0 14px;
-  }
-
-  .card-meta {
-    margin-bottom: 10px;
-  }
-
-  .card-tag :deep(.p-tag-value) {
-    font-size: 0.65rem;
-  }
-
-  .date-text {
-    font-size: 0.75rem;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    margin-bottom: 12px;
-  }
-
-  .card-excerpt {
-    padding: 0 14px;
-    font-size: 0.85rem;
-  }
-
-  .card-footer {
-    padding: 12px 14px 14px 14px;
-  }
-
-  .video-overlay i {
-    font-size: 2rem;
-    padding: 10px 14px;
-  }
-
-  .pdf-strip {
-    padding: 40px 16px;
-  }
-
-  .pdf-strip i {
-    font-size: 2rem;
-  }
-
-  .action-btns {
-    flex-direction: column;
-  }
-
-  .action-btns :deep(.p-button) {
-    width: 100%;
-  }
-
-  .empty-state {
-    padding: 32px 20px;
-  }
-
-  .empty-state h3 {
-    font-size: 1rem;
-  }
-
-  .scroll-top-button {
-    bottom: 1rem;
-    right: 1rem;
-    width: 40px;
-    height: 40px;
-  }
+  .portfolio-container { padding: 20px 0 28px; }
+  .container { padding: 0 14px; }
+  .page-title { font-size: 1.4rem; }
+  .header-subtitle { font-size: 0.85rem; }
+  .card-header { padding: 14px 14px 0 14px; }
+  .card-meta { margin-bottom: 10px; }
+  .card-tag :deep(.p-tag-value) { font-size: 0.65rem; }
+  .date-text { font-size: 0.75rem; }
+  .card-title { font-size: 1rem; margin-bottom: 12px; }
+  .card-excerpt { padding: 0 14px; font-size: 0.85rem; }
+  .card-footer { padding: 12px 14px 14px 14px; }
+  .video-overlay i { font-size: 2rem; padding: 10px 14px; }
+  .action-btns { flex-direction: column; }
+  .action-btns :deep(.p-button) { width: 100%; }
+  .empty-state { padding: 32px 20px; }
+  .empty-state h3 { font-size: 1rem; }
+  .scroll-top-button { bottom: 1rem; right: 1rem; width: 40px; height: 40px; }
 }
 
 @media (max-width: 380px) {
-  .container {
-    padding: 0 12px;
-  }
-
-  .page-title {
-    font-size: 1.2rem;
-  }
-
-  .card-header {
-    padding: 12px 12px 0 12px;
-  }
-
-  .card-title {
-    font-size: 0.9rem;
-  }
-
-  .card-excerpt {
-    padding: 0 12px;
-    font-size: 0.8rem;
-  }
-
-  .card-footer {
-    padding: 10px 12px 12px 12px;
-  }
+  .container { padding: 0 12px; }
+  .page-title { font-size: 1.2rem; }
+  .card-header { padding: 12px 12px 0 12px; }
+  .card-title { font-size: 0.9rem; }
+  .card-excerpt { padding: 0 12px; font-size: 0.8rem; }
+  .card-footer { padding: 10px 12px 12px 12px; }
 }
 </style>

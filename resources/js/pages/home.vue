@@ -4,11 +4,11 @@ import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import Skeleton from 'primevue/skeleton'
-import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
 
+// Importations des images groupées
 import heroImg from '@/assets/images/FAMA-IMAGE/37.jpg'
 import famaImg from '@/assets/images/FAMA-IMAGE/6.jpg'
 import maliImg from '@/assets/images/FAMA-IMAGE/33.jpg'
@@ -21,8 +21,6 @@ import maliImg2 from '@/assets/images/FAMA-IMAGE/9.jpg'
 import heroImg12 from '@/assets/images/FAMA-IMAGE/34.jpg'
 import famaImg12 from '@/assets/images/FAMA-IMAGE/43.jpg'
 import maliImg12 from '@/assets/images/FAMA-IMAGE/44.jpg'
-
-
 import photoCover from '@/assets/images/FAMA-IMAGE/39.jpg'
 import videoCover from '@/assets/images/FAMA-IMAGE/7.jpg'
 
@@ -31,22 +29,12 @@ const router = useRouter()
 useHead({
   title: 'Accueil | FAMa - Portail Officiel des Forces Armées Maliennes',
   meta: [
-    {
-      name: 'description',
-      content:
-        "Portail officiel des FAMa. Retrouvez les communiqués de l'État-Major, l'actualité de la défense et les rapports officiels sur la sécurité du Mali.",
-    },
-    {
-      name: 'keywords',
-      content: 'FAMa, Armée Malienne, Défense Mali, Sécurité Mali, Communiqués officiels',
-    },
+    { name: 'description', content: "Portail officiel des FAMa. Retrouvez les communiqués de l'État-Major, l'actualité de la défense et les rapports officiels sur la sécurité du Mali." },
+    { name: 'keywords', content: 'FAMa, Armée Malienne, Défense Mali, Sécurité Mali, Communiqués officiels' },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: 'https://votre-site-fama.ml/' },
     { property: 'og:title', content: 'FAMa - Engagement Sans Faille pour la Patrie' },
-    {
-      property: 'og:description',
-      content: "Information vérifiée de l'État-Major Général des Armées du Mali.",
-    },
+    { property: 'og:description', content: "Information vérifiée de l'État-Major Général des Armées du Mali." },
     { property: 'og:image', content: '/assets/images/hero.jpg' },
     { property: 'og:image:alt', content: 'Forces Armées Maliennes' },
     { name: 'twitter:card', content: 'summary_large_image' },
@@ -60,21 +48,35 @@ useHead({
   ]
 })
 
-const truncateTitle = (title, limit = 80) => {
-  if (!title) return ''
-  return title.length > limit ? `${title.substring(0, limit).trim()}...` : title
-}
-
+// Variables d'état
 const currentBgIndex = ref(0)
-const backgroundImages = [heroImg, famaImg, maliImg, heroImg1, famaImg1, maliImg1,heroImg2, famaImg2, maliImg2, heroImg12, famaImg12, maliImg12]
-let backgroundInterval = null
-let observer = null
-
+const backgroundImages = [heroImg, famaImg, maliImg, heroImg1, famaImg1, maliImg1, heroImg2, famaImg2, maliImg2, heroImg12, famaImg12, maliImg12]
 const posts = ref([])
 const loading = ref(true)
 const error = ref(null)
 const showScrollTop = ref(false)
 
+let backgroundInterval = null
+let observer = null
+
+// Utilitaires de traitement de chaînes
+const truncateTitle = (title, limit = 80) => {
+  if (!title) return ''
+  return title.length > limit ? `${title.substring(0, limit).trim()}...` : title
+}
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<\/?[^>]+(>|$)/g, "") // Optimisé: Évite l'instanciation lourde de DOMParser
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR')
+}
+
+// Gestionnaires d'événements défilés
 const handleScroll = () => {
   showScrollTop.value = window.scrollY > 500
 }
@@ -83,12 +85,12 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+// Préchargement et Lazy Loading
 const preloadImages = () => {
-  backgroundImages.forEach((src) => {
+
     const img = new Image()
-    img.src = src
+   img.src = backgroundImages[0]
     img.fetchPriority = 'high'
-  })
 
   ;[photoCover, videoCover].forEach((src) => {
     const img = new Image()
@@ -98,24 +100,20 @@ const preloadImages = () => {
 
 const setupLazyLoading = () => {
   const lazyImages = document.querySelectorAll('img[data-src]')
-
   if (!lazyImages.length) return
 
   if ('IntersectionObserver' in window) {
-    observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return
-          const img = entry.target
-          if (img.dataset.src) {
-            img.src = img.dataset.src
-            img.removeAttribute('data-src')
-          }
-          observer.unobserve(img)
-        })
-      },
-      { rootMargin: '100px 0px' }
-    )
+    observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        const img = entry.target
+        if (img.dataset.src) {
+          img.src = img.dataset.src
+          img.removeAttribute('data-src')
+        }
+        observer.unobserve(img)
+      })
+    }, { rootMargin: '100px 0px' })
 
     lazyImages.forEach((img) => observer.observe(img))
   } else {
@@ -128,8 +126,11 @@ const setupLazyLoading = () => {
   }
 }
 
+// Récupération des données API
 const fetchLatestPosts = async () => {
   try {
+    loading.value = true
+    error.value = null
     const res = await axios.get('/api/posts/latest', { timeout: 10000 })
     posts.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (e) {
@@ -144,13 +145,11 @@ const fetchLatestPosts = async () => {
 
 onMounted(async () => {
   preloadImages()
-
   backgroundInterval = setInterval(() => {
     currentBgIndex.value = (currentBgIndex.value + 1) % backgroundImages.length
   }, 5500)
 
   await fetchLatestPosts()
-
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
@@ -160,9 +159,9 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
+// Logique de récupération des miniatures médias
 const getYoutubeId = (url) => {
   if (!url) return null
-
   try {
     const u = new URL(url)
     if (u.hostname.includes('youtu.be')) return u.pathname.replace('/', '') || null
@@ -177,33 +176,21 @@ const getYoutubeId = (url) => {
 }
 
 const getPostImage = (post) => {
-  if (post?.type === 'video') {
-    if (post?.video_thumbnail_url) return post.video_thumbnail_url
-
-    if (post?.video_platform === 'youtube' && post?.video_url) {
+  if (!post) return '/assets/images/fama-placeholder.jpg'
+  if (post.type === 'video') {
+    if (post.video_thumbnail_url) return post.video_thumbnail_url
+    if (post.video_platform === 'youtube' && post.video_url) {
       const id = getYoutubeId(post.video_url)
       if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`
     }
-
-    return '/assets/images/fama-placeholder.jpg'
   }
-
-  if (post?.type === 'pdf') {
-    if (post?.thumbnail) return `/storage/${post.thumbnail}`
-    return '/assets/images/fama-placeholder.jpg'
+  if (post.type === 'pdf') {
+    return post.thumbnail ? `/storage/${post.thumbnail}` : '/assets/images/fama-placeholder.jpg'
   }
-
-  if (post?.media && post.media.length > 0) {
+  if (post.media && post.media.length > 0) {
     return `/storage/${post.media[0].file_path}`
   }
-
   return '/assets/images/fama-placeholder.jpg'
-}
-
-const stripHtml = (html) => {
-  if (!html) return ''
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-  return doc.body.textContent || ''
 }
 
 const recentPdfs = computed(() => posts.value.filter((p) => p.pdf_path).slice(0, 3))
@@ -214,10 +201,12 @@ const handleCardKeyPress = (event, post) => {
     router.push(`/posts/${post.slug}`)
   }
 }
+
 </script>
 
 <template>
   <div class="home-page">
+    <!-- HERO SECTION -->
     <section class="hero-premium" aria-label="Bannière d'accueil">
       <div
         v-for="(img, index) in backgroundImages"
@@ -232,10 +221,7 @@ const handleCardKeyPress = (event, post) => {
 
       <div class="container hero-content">
         <div class="hero-text-box">
-          
-
           <p class="hero-kicker">RÉPUBLIQUE DU MALI • FORCES ARMÉES MALIENNES</p>
-
           <h1>
             Défense de la Patrie
             <br />
@@ -269,6 +255,7 @@ const handleCardKeyPress = (event, post) => {
       </div>
     </section>
 
+    <!-- MAIN NEWS & MEDIA SECTION -->
     <section class="news-section" aria-label="Dernières publications">
       <div class="container">
         <div class="section-header-premium">
@@ -277,25 +264,24 @@ const handleCardKeyPress = (event, post) => {
           <p>Informations vérifiées de l'État-Major Général des Armées</p>
         </div>
 
+        <!-- Error Alert -->
         <div v-if="error" class="error-message" role="alert">
           <i class="pi pi-exclamation-triangle"></i>
           <p>{{ error }}</p>
-          <Button
-            label="Réessayer"
-            icon="pi pi-refresh"
-            class="p-button-outlined"
-            @click="fetchLatestPosts"
-          />
+          <Button label="Réessayer" icon="pi pi-refresh" class="p-button-outlined" @click="fetchLatestPosts" />
         </div>
 
+        <!-- Publications Grid -->
         <div class="news-grid">
-          <div v-if="loading" v-for="i in 6" :key="i" class="premium-card">
-            <Skeleton width="100%" height="200px"></Skeleton>
-            <div class="p-4">
-              <Skeleton width="40%" class="mb-2"></Skeleton>
-              <Skeleton width="100%" height="1.5rem"></Skeleton>
+          <template v-if="loading">
+            <div v-for="i in 6" :key="i" class="premium-card">
+              <Skeleton width="100%" height="200px"></Skeleton>
+              <div class="p-4">
+                <Skeleton width="40%" class="mb-2"></Skeleton>
+                <Skeleton width="100%" height="1.5rem"></Skeleton>
+              </div>
             </div>
-          </div>
+          </template>
 
           <template v-else>
             <div
@@ -324,17 +310,16 @@ const handleCardKeyPress = (event, post) => {
               <div class="card-content">
                 <span class="date">
                   <i class="pi pi-calendar" aria-hidden="true"></i>
-                  {{ new Date(post.created_at).toLocaleDateString('fr-FR') }}
+                  {{ formatDate(post.created_at) }}
                 </span>
-
                 <h3>{{ truncateTitle(post.title, 80) }}</h3>
-
                 <div class="card-footer-link">
                   Consulter <i class="pi pi-arrow-right ml-2" aria-hidden="true"></i>
                 </div>
               </div>
             </div>
 
+            <!-- CTA Card Archive -->
             <div
               class="premium-card cta-card"
               @click="router.push('/portfolio')"
@@ -349,17 +334,13 @@ const handleCardKeyPress = (event, post) => {
                 </div>
                 <h3>Archives & Communiqués</h3>
                 <p>Accédez à l'intégralité des documents, rapports et publications officiels.</p>
-                <Button
-                  label="TOUT CONSULTER"
-                  icon="pi pi-chevron-right"
-                  iconPos="right"
-                  class="btn-fama-gold cta-btn"
-                />
+                <Button label="TOUT CONSULTER" icon="pi pi-chevron-right" iconPos="right" class="btn-fama-gold cta-btn" />
               </div>
             </div>
           </template>
         </div>
 
+        <!-- Médiathèque Row -->
         <div class="media-section">
           <div class="section-header-premium media-header">
             <div class="header-line" aria-hidden="true"></div>
@@ -378,12 +359,7 @@ const handleCardKeyPress = (event, post) => {
             >
               <template #header>
                 <div class="media-cover">
-                  <img
-                    :data-src="photoCover"
-                    alt="Photothèque FAMa"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <img :data-src="photoCover" alt="Photothèque FAMa" loading="lazy" decoding="async" />
                   <div class="media-cover-overlay" aria-hidden="true"></div>
                   <div class="media-badge" aria-hidden="true">
                     <i class="pi pi-images"></i>
@@ -391,19 +367,11 @@ const handleCardKeyPress = (event, post) => {
                   </div>
                 </div>
               </template>
-
               <template #content>
                 <h3 class="media-title">Photothèque Officielle</h3>
-                <p class="media-desc">
-                  Cérémonies, activités, formations, opérations et images institutionnelles validées.
-                </p>
+                <p class="media-desc">Cérémonies, activités, formations, opérations et images institutionnelles validées.</p>
                 <div class="media-actions">
-                  <Button
-                    label="Explorer"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
-                    class="btn-fama-gold media-btn"
-                  />
+                  <Button label="Explorer" icon="pi pi-arrow-right" iconPos="right" class="btn-fama-gold media-btn" />
                 </div>
               </template>
             </Card>
@@ -418,12 +386,7 @@ const handleCardKeyPress = (event, post) => {
             >
               <template #header>
                 <div class="media-cover">
-                  <img
-                    :data-src="videoCover"
-                    alt="Vidéothèque FAMa"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <img :data-src="videoCover" alt="Vidéothèque FAMa" loading="lazy" decoding="async" />
                   <div class="media-cover-overlay" aria-hidden="true"></div>
                   <div class="media-badge" aria-hidden="true">
                     <i class="pi pi-video"></i>
@@ -431,19 +394,11 @@ const handleCardKeyPress = (event, post) => {
                   </div>
                 </div>
               </template>
-
               <template #content>
                 <h3 class="media-title">Vidéothèque Officielle</h3>
-                <p class="media-desc">
-                  Reportages, déclarations, communiqués vidéo et contenus officiels publiés par les FAMa.
-                </p>
+                <p class="media-desc">Reportages, déclarations, communiqués vidéo et contenus officiels publiés par les FAMa.</p>
                 <div class="media-actions">
-                  <Button
-                    label="Regarder"
-                    icon="pi pi-play"
-                    iconPos="left"
-                    class="btn-fama-gold media-btn"
-                  />
+                  <Button label="Regarder" icon="pi pi-play" iconPos="left" class="btn-fama-gold media-btn" />
                 </div>
               </template>
             </Card>
@@ -452,6 +407,7 @@ const handleCardKeyPress = (event, post) => {
       </div>
     </section>
 
+    <!-- ACCESSIBLE & UNIFORM FOOTER -->
     <footer class="fama-footer" aria-label="Pied de page">
       <div class="container footer-grid">
         <div class="footer-brand">
@@ -473,9 +429,37 @@ const handleCardKeyPress = (event, post) => {
               </p>
 
               <p class="honor-text">
-                Discipline, engagement, sens du devoir et fidélité aux valeurs républicaines fondent l'action
-                quotidienne des FAMa au service exclusif du Mali.
+                Le cœur de notre nation bat au rythme de l'engagement de ses fils et filles sous les drapeaux.
+                Aujourd'hui plus que jamais, nous devons faire bloc.
               </p>
+
+              <h4 class="honor-subtitle">A nos vaillants soldats (FAMa) qui œuvrent, chaque jour pour :</h4>
+              <p class="honor-text honor-list-text">
+                • Défendre l'intégrité territoriale de notre Grand Mali <br>
+                • Protéger les populations avec courage et abnégation <br>
+                • Préserver la souveraineté nationale, socle de notre dignité.
+              </p>
+
+              <p class="honor-text">
+                Votre force réside dans votre discipline, votre sens du devoir et votre fidélité aux valeurs républicaines.
+                Sachez que chaque Malien est fier de son armée, qui agit pour le service exclusif du Mali.
+              </p>
+
+              <h4 class="honor-subtitle">A la population malienne :</h4>
+              <p class="honor-text">
+                Avoir l'amour du Mali, c'est croire en notre résilience. La défense de la patrie n'est pas que l'affaire des armes,
+                c'est aussi celle des cœurs unis.
+              </p>
+
+              <p class="honor-text honor-italic">
+                Le Mali est un et indivisible. Derrière nos soldats, nous formons une forteresse inébranlable.
+              </p>
+
+              <p class="honor-text">
+                Restons debout, restons fiers. Pour l'honneur de nos ancêtres et l'avenir de nos enfants.
+              </p>
+
+              <h2 class="honor-slogan">Vive les FAMa ! Vive le Mali !</h2>
 
               <div class="honor-footer">
                 <span class="honor-rank">Valeurs</span>
@@ -496,6 +480,7 @@ const handleCardKeyPress = (event, post) => {
       </div>
     </footer>
 
+    <!-- Back To Top Trigger -->
     <Transition name="fade">
       <Button
         v-if="showScrollTop"
@@ -596,10 +581,6 @@ const handleCardKeyPress = (event, post) => {
   width: min(100%, 780px);
 }
 
-.hero-tag {
-  margin-bottom: 18px;
-}
-
 .hero-kicker {
   margin: 0 0 18px;
   color: rgba(255, 255, 255, 0.80);
@@ -607,17 +588,6 @@ const handleCardKeyPress = (event, post) => {
   font-size: 0.82rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-.custom-tag-official {
-  background: #14532d !important;
-  color: #ffffff !important;
-  font-weight: 800 !important;
-  border-radius: 999px !important;
-  padding: 0.5rem 0.95rem !important;
-  font-size: 0.82rem !important;
-  letter-spacing: 0.04em;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .hero-text-box h1 {
@@ -676,7 +646,7 @@ const handleCardKeyPress = (event, post) => {
 }
 
 /* =========================
-   SECTIONS
+   SECTIONS & NEWS
 ========================= */
 .section-header-premium {
   margin-bottom: 34px;
@@ -706,9 +676,6 @@ const handleCardKeyPress = (event, post) => {
   line-height: 1.7;
 }
 
-/* =========================
-   NEWS
-========================= */
 .news-section {
   padding: 76px 0 72px;
   background: #f8fafc;
@@ -759,12 +726,7 @@ const handleCardKeyPress = (event, post) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(5, 12, 8, 0.02) 0%,
-      rgba(5, 12, 8, 0.18) 100%
-    );
+  background: linear-gradient(180deg, rgba(5, 12, 8, 0.02) 0%, rgba(5, 12, 8, 0.18) 100%);
 }
 
 .video-badge i {
@@ -779,21 +741,15 @@ const handleCardKeyPress = (event, post) => {
   justify-content: center;
   font-size: 1.35rem;
   padding-left: 3px;
-  box-shadow:
-    0 18px 38px rgba(0, 0, 0, 0.28),
-    inset 0 0 0 1px rgba(216, 178, 75, 0.22);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(10px);
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .premium-card:hover .video-badge i {
   transform: scale(1.08);
   background: rgba(12, 18, 14, 0.9);
-  border-color: rgba(216, 178, 75, 0.72);
 }
-
-
-
 
 .card-content {
   padding: 18px 18px 20px;
@@ -820,14 +776,6 @@ const handleCardKeyPress = (event, post) => {
   min-height: 3.2rem;
 }
 
-.card-content p {
-  color: #64748b;
-  font-size: 0.95rem;
-  line-height: 1.72;
-  margin: 0 0 16px;
-  flex-grow: 1;
-}
-
 .card-footer-link {
   font-weight: 800;
   color: #152019;
@@ -837,7 +785,7 @@ const handleCardKeyPress = (event, post) => {
   margin-top: auto;
 }
 
-/* CTA */
+/* CTA Card */
 .cta-card {
   background: #152019 !important;
   border: 1px solid rgba(216, 178, 75, 0.45) !important;
@@ -880,19 +828,11 @@ const handleCardKeyPress = (event, post) => {
   color: #d8b24b;
 }
 
-.cta-btn {
-  min-height: 48px !important;
-}
-
 /* =========================
    MEDIA
 ========================= */
 .media-section {
   margin-top: 68px;
-}
-
-.media-header {
-  margin-bottom: 24px;
 }
 
 .media-grid {
@@ -906,27 +846,17 @@ const handleCardKeyPress = (event, post) => {
   overflow: hidden;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.media-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(216, 178, 75, 0.75);
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
 }
 
 .media-cover {
   position: relative;
   height: 220px;
-  overflow: hidden;
 }
 
 .media-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .media-cover-overlay {
@@ -948,12 +878,7 @@ const handleCardKeyPress = (event, post) => {
   border-radius: 999px;
   font-weight: 800;
   font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  max-width: calc(100% - 28px);
   border: 1px solid rgba(255, 255, 255, 0.26);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
 }
 
 .media-title {
@@ -970,16 +895,8 @@ const handleCardKeyPress = (event, post) => {
   margin: 0 0 18px;
 }
 
-.media-actions {
-  display: flex;
-}
-
-.media-btn {
-  min-height: 46px !important;
-}
-
 /* =========================
-   FOOTER
+   OPTIMIZED FOOTER DIGNIFIÉ
 ========================= */
 .fama-footer {
   background: #152019;
@@ -992,6 +909,12 @@ const handleCardKeyPress = (event, post) => {
   flex-direction: column;
   gap: 36px;
   padding-bottom: 55px;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .footer-title {
@@ -1009,6 +932,7 @@ const handleCardKeyPress = (event, post) => {
   max-width: 760px;
 }
 
+/* Alignements de la boite d'honneur */
 .soldier-honor-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
   border: 1px solid rgba(216, 178, 75, 0.24);
@@ -1016,17 +940,11 @@ const handleCardKeyPress = (event, post) => {
   padding: 22px;
   border-radius: 14px;
   margin-top: 28px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 15px;
   align-items: flex-start;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.soldier-honor-card:hover {
-  border-color: rgba(216, 178, 75, 0.52);
-  transform: translateY(-2px);
+  flex-grow: 1; /* S'étire pour remplir toute la hauteur */
 }
 
 .soldier-icon {
@@ -1036,19 +954,58 @@ const handleCardKeyPress = (event, post) => {
   flex-shrink: 0;
 }
 
-.honor-content h3 {
-  margin: 0 0 12px;
-  color: #ffffff;
-  font-size: 1.2rem;
-  font-weight: 900;
+.honor-content {
+  width: 100%;
 }
 
-.honor-text {
-  font-size: 0.98rem;
-  line-height: 1.84;
+.honor-content h3 {
+  margin: 0 0 25px;
+  color: #ffffff;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(216, 178, 75, 0.2);
+  padding-bottom: 10px;
+  display: inline-block;
+}
+
+/* Réglage d'aération des écritures demandé */
+.honor-content .honor-text {
+  font-size: 1rem !important;
+  line-height: 1.75 !important; /* Enlève le côté entassé */
+  letter-spacing: 0.02em;       /* Lisibilité accrue */
   color: #e2e8f0;
-  font-weight: 400;
-  margin: 0 0 14px;
+  margin-bottom: 1.25rem;
+  text-align: justify;
+}
+
+.honor-subtitle {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 1.5rem 0 0.5rem 0;
+}
+
+.honor-list-text {
+  line-height: 1.85 !important;
+  padding-left: 0.5rem;
+}
+
+.honor-italic {
+  font-style: italic;
+  background: rgba(216, 178, 75, 0.04);
+  border-left: 3px solid #d8b24b;
+  padding: 12px 16px !important;
+  margin: 1.5rem 0;
+}
+
+.honor-slogan {
+  font-size: 1.55rem;
+  font-weight: 700;
+  text-align: center;
+  color: #ffffff;
+  margin: 2rem 0;
+  letter-spacing: 0.05em;
 }
 
 .honor-footer {
@@ -1056,14 +1013,13 @@ const handleCardKeyPress = (event, post) => {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 10px;
+  margin-top: 9px;
 }
 
 .honor-rank {
   color: #d8b24b;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
   font-size: 0.76rem;
 }
 
@@ -1080,10 +1036,6 @@ const handleCardKeyPress = (event, post) => {
   font-size: 0.76rem;
 }
 
-.footer-docs {
-  min-width: 0;
-}
-
 .copyright {
   background: #1b281d;
   text-align: center;
@@ -1091,26 +1043,17 @@ const handleCardKeyPress = (event, post) => {
   font-size: 0.78rem;
   color: #aeb8c5;
   width: 100%;
-  line-height: 1.6;
 }
 
-/* Bouton retour haut */
+/* Bouton Scroll Top */
 .scroll-top-button {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
   z-index: 100;
-  opacity: 0.92;
-  transition: all 0.3s ease;
   background: #d8b24b !important;
   border: none !important;
   color: #152019 !important;
-}
-
-.scroll-top-button:hover {
-  opacity: 1;
-  transform: translateY(-4px);
-  background: #caa33a !important;
 }
 
 .fade-enter-active,
@@ -1132,39 +1075,13 @@ const handleCardKeyPress = (event, post) => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
-.error-message i {
-  color: #ef4444;
-  font-size: 1.25rem;
-}
-
-.error-message p {
-  margin: 0;
-  color: #991b1b;
-  flex: 1;
-}
-
-/* Accessibilité */
-@media (prefers-reduced-motion: reduce) {
-  .hero-bg-layer,
-  .premium-card,
-  .media-card,
-  .scroll-top-button {
-    transition: none !important;
-    transform: none !important;
-  }
-}
-
-/* =========================
-   TABLETTE / DESKTOP
-========================= */
+/* Responsive Tablet & Desktop */
 @media (min-width: 768px) {
   .media-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-
   .soldier-honor-card {
     padding: 30px;
     flex-direction: row;
@@ -1177,7 +1094,7 @@ const handleCardKeyPress = (event, post) => {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 390px;
     gap: 54px;
-    align-items: start;
+    align-items: stretch; /* Aligne le bloc de texte et la sidebar à la même hauteur exacte */
   }
 }
 
@@ -1185,475 +1102,20 @@ const handleCardKeyPress = (event, post) => {
   .news-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   }
-
-  .hero-premium {
-    min-height: 720px;
-  }
-
-  .hero-content {
-    padding-block: 84px 64px;
-  }
 }
 
-/* =========================
-   MOBILE
-========================= */
 @media (max-width: 768px) {
-  .container {
-    padding-inline: 18px;
-  }
-
   .hero-premium {
     min-height: 660px;
-    align-items: center;
   }
-
-  .hero-overlay {
-    background:
-      linear-gradient(
-        to right,
-        rgba(10, 15, 11, 0.92) 0%,
-        rgba(16, 24, 18, 0.82) 45%,
-        rgba(18, 28, 22, 0.56) 78%,
-        rgba(18, 28, 22, 0.40) 100%
-      );
-  }
-
-  .hero-content {
-    padding-block: 68px 44px;
-  }
-
-  .hero-text-box {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .custom-tag-official {
-    font-size: 0.88rem !important;
-    padding: 0.58rem 0.95rem !important;
-  }
-
-  .hero-kicker {
-    font-size: 0.74rem;
-    margin-bottom: 16px;
-  }
-
   .hero-text-box h1 {
     font-size: 2.55rem;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
   }
-
-  .hero-subtext {
-    max-width: 100%;
-    font-size: 1rem;
-    line-height: 1.74;
-    margin: 22px 0 28px;
-    padding-left: 16px;
-  }
-
   .hero-btns {
     flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: 12px;
   }
-
-  .hero-action-btn {
-    width: 100%;
-    min-height: 56px !important;
-    font-size: 1rem !important;
-  }
-
   .news-section {
-    padding: 64px 0;
-  }
-
-  .section-header-premium {
-    margin-bottom: 28px;
-  }
-
-  .header-line {
-    width: 72px;
-    height: 5px;
-    margin-bottom: 16px;
-  }
-
-  .section-header-premium h2 {
-    font-size: 1.95rem;
-    line-height: 1.12;
-    margin-bottom: 10px;
-  }
-
-  .section-header-premium p {
-    font-size: 1.01rem;
-    line-height: 1.7;
-  }
-
-  .news-grid {
-    grid-template-columns: 1fr;
-    gap: 22px;
-  }
-
-  .premium-card,
-  .media-card {
-    border-radius: 16px;
-  }
-
-  .card-media {
-    height: 250px;
-  }
-
-  .card-content {
-    padding: 20px 20px 22px;
-  }
-
-  .date {
-    font-size: 0.9rem;
-    gap: 8px;
-  }
-
-  .card-content h3 {
-    font-size: 1.24rem;
-    line-height: 1.45;
-    margin: 14px 0 12px;
-    min-height: auto;
-  }
-
-  .card-content p {
-    font-size: 1rem;
-    line-height: 1.72;
-    margin-bottom: 18px;
-  }
-
-  .card-footer-link {
-    font-size: 1rem;
-  }
-
-  .video-badge i {
-  width: 56px;
-  height: 56px;
-  font-size: 1.3rem;
-}
-
-  .cta-content {
-    padding: 28px 20px;
-  }
-
-  .cta-content h3 {
-    font-size: 1.38rem;
-  }
-
-  .cta-content p {
-    font-size: 1rem;
-  }
-
-  .cta-btn {
-    width: 100%;
-    min-height: 54px !important;
-    font-size: 1rem !important;
-  }
-
-  .media-section {
-    margin-top: 64px;
-  }
-
-  .media-header {
-    margin-bottom: 26px;
-  }
-
-  .media-grid {
-    gap: 22px;
-  }
-
-  .media-cover {
-    height: 235px;
-  }
-
-  .media-badge {
-    font-size: 0.84rem;
-    padding: 9px 14px;
-    gap: 9px;
-  }
-
-  .media-title {
-    font-size: 1.28rem;
-    margin-bottom: 12px;
-  }
-
-  .media-desc {
-    font-size: 1rem;
-    line-height: 1.72;
-    margin-bottom: 18px;
-  }
-
-  .media-btn {
-    width: 100%;
-    min-height: 52px !important;
-    font-size: 1rem !important;
-  }
-
-  .fama-footer {
-    padding-top: 64px;
-  }
-
-  .footer-grid {
-    gap: 32px;
-    padding-bottom: 48px;
-  }
-
-  .footer-title {
-    font-size: 1.68rem;
-    margin-bottom: 16px;
-  }
-
-  .footer-intro {
-    font-size: 1.02rem;
-    line-height: 1.8;
-  }
-
-  .soldier-honor-card {
-    padding: 22px 18px;
-    gap: 16px;
-  }
-
-  .soldier-icon {
-    font-size: 2.1rem;
-  }
-
-  .honor-content h3 {
-    font-size: 1.28rem;
-    margin-bottom: 14px;
-  }
-
-  .honor-text {
-    font-size: 1rem;
-    line-height: 1.88;
-  }
-
-  .honor-rank,
-  .honor-motto {
-    font-size: 0.82rem;
-  }
-
-  .copyright {
-    font-size: 0.84rem;
-    padding: 18px 16px;
-  }
-
-  .scroll-top-button {
-    right: 1rem;
-    bottom: 1rem;
-  }
-}
-
-/* =========================
-   PETITS TÉLÉPHONES
-========================= */
-@media (max-width: 576px) {
-  .container {
-    padding-inline: 16px;
-  }
-
-  .hero-premium {
-    min-height: 600px;
-  }
-
-  .hero-content {
-    padding-block: 58px 34px;
-  }
-
-  .custom-tag-official {
-    font-size: 0.82rem !important;
-    padding: 0.52rem 0.88rem !important;
-  }
-
-  .hero-kicker {
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-  }
-
-  .hero-text-box h1 {
-    font-size: 2.05rem;
-  }
-
-  .hero-subtext {
-    font-size: 0.97rem;
-    line-height: 1.68;
-    margin: 18px 0 24px;
-    padding-left: 14px;
-  }
-
-  .hero-action-btn {
-    min-height: 52px !important;
-    font-size: 0.95rem !important;
-  }
-
-  .section-header-premium h2 {
-    font-size: 1.68rem;
-  }
-
-  .section-header-premium p {
-    font-size: 0.98rem;
-  }
-
-  .news-grid {
-    gap: 18px;
-  }
-
-  .premium-card {
-    border-radius: 14px;
-  }
-
-  .card-media {
-    height: 215px;
-  }
-
-  .card-content {
-    padding: 18px 16px 20px;
-  }
-
-  .date {
-    font-size: 0.84rem;
-  }
-
-  .card-content h3 {
-    font-size: 1.12rem;
-  }
-
-  .card-content p {
-    font-size: 0.95rem;
-  }
-
-  .card-footer-link {
-    font-size: 0.94rem;
-  }
-
-  .cta-content {
-    padding: 24px 16px;
-  }
-
-  .cta-content h3 {
-    font-size: 1.22rem;
-  }
-
-  .cta-content p {
-    font-size: 0.95rem;
-  }
-
-  .cta-btn,
-  .media-btn {
-    width: 100%;
-  }
-
-  .media-cover {
-    height: 205px;
-  }
-
-  .media-badge {
-    font-size: 0.75rem;
-    padding: 8px 12px;
-  }
-
-  .media-title {
-    font-size: 1.12rem;
-  }
-
-  .media-desc {
-    font-size: 0.95rem;
-  }
-
-  .fama-footer {
-    padding-top: 56px;
-  }
-
-  .footer-title {
-    font-size: 1.42rem;
-  }
-
-  .footer-intro {
-    font-size: 0.95rem;
-  }
-
-  .soldier-honor-card {
-    padding: 18px 16px;
-  }
-
-  .soldier-icon {
-    font-size: 1.95rem;
-  }
-
-  .honor-content h3 {
-    font-size: 1.14rem;
-  }
-
-  .honor-text {
-    font-size: 0.94rem;
-    line-height: 1.8;
-  }
-
-  .honor-footer {
-    gap: 10px;
-  }
-
-  .honor-separator {
-    width: 24px;
-  }
-
-  .copyright {
-    font-size: 0.78rem;
-  }
-}
-
-@media (max-width: 380px) {
-  .container {
-    padding-inline: 14px;
-  }
-
-  .hero-premium {
-    min-height: 560px;
-  }
-
-  .hero-text-box h1 {
-    font-size: 1.88rem;
-  }
-
-  .hero-subtext {
-    font-size: 0.9rem;
-  }
-
-  .custom-tag-official {
-    font-size: 0.76rem !important;
-    padding: 0.44rem 0.74rem !important;
-  }
-
-  .section-header-premium h2 {
-    font-size: 1.46rem;
-  }
-
-  .card-media {
-    height: 190px;
-  }
-
-  .card-content h3 {
-    font-size: 1.04rem;
-  }
-
-  .card-content p {
-    font-size: 0.9rem;
-  }
-
-  .media-cover {
-    height: 185px;
-  }
-
-  .cta-content h3,
-  .media-title {
-    font-size: 1.04rem;
-  }
-
-  .footer-title {
-    font-size: 1.24rem;
+    padding: 64px 0; /* Correction de la coupure de syntaxe d'origine */
   }
 }
 </style>

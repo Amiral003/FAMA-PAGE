@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { RouterLink } from 'vue-router'
 import SidebarOfficial from '@/components/SidebarOfficial.vue'
@@ -48,6 +48,45 @@ useHead({
 const staffs = ref([])
 const isLoading = ref(false)
 const loadError = ref('')
+
+// États de gestion de positionnement dynamique
+const isFixed = ref(false)
+const isBottomed = ref(false)
+
+const mainLayout = ref(null)
+const contentColumn = ref(null)
+const sidebarContainer = ref(null)
+
+const handleScroll = () => {
+  if (!mainLayout.value || !contentColumn.value || !sidebarContainer.value) return
+  if (window.innerWidth <= 1024) {
+    isFixed.value = false
+    isBottomed.value = false
+    return
+  }
+
+  const layoutRect = mainLayout.value.getBoundingClientRect()
+  const contentRect = contentColumn.value.getBoundingClientRect()
+  const sidebarHeight = sidebarContainer.value.offsetHeight
+
+  const topSpacing = 24
+
+  // 1. Gestion du déclenchement du mode fixe (Haut de l'écran)
+  if (layoutRect.top <= topSpacing) {
+    isFixed.value = true
+  } else {
+    isFixed.value = false
+  }
+
+  // 2. Alignement et blocage au bas de la colonne de contenu (Empêche le dépassement)
+  const maxTopAllowed = contentRect.bottom - sidebarHeight
+  if (topSpacing >= maxTopAllowed) {
+    isFixed.value = false
+    isBottomed.value = true
+  } else {
+    isBottomed.value = false
+  }
+}
 
 const sortedStaffs = computed(() =>
   [...staffs.value].sort((a, b) => {
@@ -107,13 +146,22 @@ const fetchStaffs = async () => {
   }
 }
 
-onMounted(fetchStaffs)
+onMounted(() => {
+  fetchStaffs()
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleScroll)
+})
 </script>
 
 <template>
   <div class="about-page">
-    <div class="main-layout container">
-      <section class="content-column">
+    <div ref="mainLayout" class="main-layout container">
+      <section ref="contentColumn" class="content-column">
         <section class="hero-premium">
           <div class="hero-content">
             <div class="hero-text-block">
@@ -331,7 +379,7 @@ onMounted(fetchStaffs)
                       <div class="staff-meta">
                         <span class="meta-k">Grade / Fonction :</span>
 
-                        
+
                       </div>
                     </div>
                   </div>
@@ -342,8 +390,17 @@ onMounted(fetchStaffs)
         </section>
       </section>
 
-      <aside class="sidebar-column">
-        <SidebarOfficial />
+      <!-- Colonne réservoir latérale équilibrée -->
+      <aside class="sidebar-wrapper-column">
+        <div
+          ref="sidebarContainer"
+          :class="[
+            'js-dynamic-sidebar',
+            { 'is-fixed': isFixed, 'is-bottomed': isBottomed }
+          ]"
+        >
+          <SidebarOfficial />
+        </div>
       </aside>
     </div>
   </div>
@@ -366,6 +423,8 @@ onMounted(fetchStaffs)
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 28px;
+  align-items: start;
+  position: relative; /* Point de repère absolu pour le blocage au bas */
 }
 
 .content-column {
@@ -374,6 +433,34 @@ onMounted(fetchStaffs)
   padding: 28px;
   border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+/* Base de la colonne de droite */
+.sidebar-wrapper-column {
+  width: 320px;
+  height: 100%;
+}
+
+/* Comportement initial standard */
+.js-dynamic-sidebar {
+  width: 320px;
+  height: fit-content;
+}
+
+/* Étape 1 : Mode fixe au scroll global */
+.js-dynamic-sidebar.is-fixed {
+  position: fixed;
+  top: 24px;
+  width: 320px;
+  z-index: 90;
+}
+
+/* Étape 2 : Fige l'alignement tout en bas pour ne jamais dépasser le conteneur principal */
+.js-dynamic-sidebar.is-bottomed {
+  position: absolute;
+  bottom: 0;
+  top: auto;
+  width: 320px;
 }
 
 .hero-premium {
@@ -665,11 +752,6 @@ onMounted(fetchStaffs)
   font-weight: 700;
 }
 
-.sidebar-column {
-  align-self: stretch;
-  min-height: 100%;
-}
-
 /* ================= DARK MODE ================= */
 
 :global(html.dark) .about-page {
@@ -787,6 +869,11 @@ onMounted(fetchStaffs)
     grid-template-columns: 1fr;
   }
 
+  .sidebar-wrapper-column,
+  .js-dynamic-sidebar {
+    width: 100% !important;
+  }
+
   .hero-content,
   .intro-grid {
     grid-template-columns: 1fr;
@@ -794,6 +881,12 @@ onMounted(fetchStaffs)
 
   .hero-image-card {
     height: 240px;
+  }
+
+  .js-dynamic-sidebar.is-fixed,
+  .js-dynamic-sidebar.is-bottomed {
+    position: static !important;
+    width: 100% !important;
   }
 }
 

@@ -451,6 +451,7 @@ useHead(() => {
 
 .side-column {
   display: flex;
+  position: sticky;
   flex-direction: column;
   gap: 24px;
 }

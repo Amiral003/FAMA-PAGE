@@ -140,7 +140,7 @@ const handleSubmit = async () => {
                 id="contact-name"
                 v-model="form.name"
                 type="text"
-                placeholder="Ex: Moussa Diallo"
+                placeholder="Ex: Ibrahima DIALLO"
                 autocomplete="name"
                 maxlength="255"
                 required
