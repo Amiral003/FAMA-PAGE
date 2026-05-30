@@ -79,8 +79,11 @@ onBeforeUnmount(() => {
           </li>
 
           <li class="dropdown">
-            <button class="dropdown-btn" @click.stop="isCommuniqueOpen = !isCommuniqueOpen">
-              <span>Communiqués</span>
+<button
+  class="dropdown-btn"
+  :class="{ 'is-active': isCommuniqueOpen }"
+  @click.stop="isCommuniqueOpen = !isCommuniqueOpen"
+>              <span>Communiqués</span>
               <i :class="isCommuniqueOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
             </button>
 
@@ -305,7 +308,7 @@ onBeforeUnmount(() => {
 }
 
 .nav-links a,
-.dropdown-btn {
+.nav-links .dropdown-btn {
   min-height: 42px;
   display: inline-flex;
   align-items: center;
@@ -321,9 +324,15 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+.nav-links .dropdown-btn span,
+.nav-links .dropdown-btn i {
+  color: inherit;
+}
+
 .nav-links a:hover,
 .nav-links a.router-link-exact-active,
-.dropdown-btn:hover {
+.nav-links .dropdown-btn:hover,
+.nav-links .dropdown-btn.is-active {
   color: #ffd700;
 }
 
@@ -691,5 +700,21 @@ onBeforeUnmount(() => {
     width: 40px;
     height: 40px;
   }
+}
+
+/* FIX Communiqués dark mode */
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn span,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn i {
+  color: #cbd5e1 !important;
+}
+
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn:hover,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn:hover span,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn:hover i,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn.is-active,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn.is-active span,
+:global(html.dark) .navbar-tactical .nav-links .dropdown-btn.is-active i {
+  color: #ffd700 !important;
 }
 </style>

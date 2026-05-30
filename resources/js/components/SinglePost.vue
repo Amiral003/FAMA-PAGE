@@ -288,7 +288,12 @@ const share = (platform) => {
 
   const rawTitle = post.value?.title || 'Communiqué'
   const shortTitle = rawTitle.length > 70 ? `${rawTitle.substring(0, 70)}...` : rawTitle
-  const message = `${shortTitle}\n\n${fullUrl}`
+  const message =
+`${shortTitle}
+
+Publié par les Forces Armées Maliennes
+
+${fullUrl}`
 
   let shareUrl = ''
 
@@ -458,7 +463,7 @@ const share = (platform) => {
         <footer class="post-footer">
           <div class="signature-box">
             <div class="fama-divider"></div>
-            <p class="signature-name">{{ post.user?.name || 'LA RÉDACTION' }}</p>
+            <p class="signature-name">{{ 'LA RÉDACTION' }}</p>
             <p class="signature-rank">
               Direction de l'Information et des Relations Publiques des Armées
             </p>

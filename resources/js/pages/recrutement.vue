@@ -167,117 +167,99 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <!-- LOADING -->
-    <section v-if="loading" class="docs-list">
-      <article v-for="i in 5" :key="i" class="doc-card skeleton-card">
-        <div class="doc-preview skeleton-preview">
-          <Skeleton width="140px" height="190px" borderRadius="10px" />
+   
+<!-- LOADING -->
+<section v-if="loading" class="docs-list">
+  <article v-for="i in 5" :key="i" class="doc-card skeleton-card">
+    <div class="doc-preview skeleton-preview">
+      <Skeleton width="150px" height="210px" borderRadius="12px" />
+    </div>
+
+    <div class="doc-body">
+      <Skeleton width="120px" height="24px" />
+      <Skeleton width="90%" height="26px" class="mt" />
+      <Skeleton width="70%" height="18px" class="mt-sm" />
+      <Skeleton width="100%" height="18px" class="mt" />
+      <Skeleton width="95%" height="18px" class="mt-sm" />
+      <div class="doc-actions mt">
+        <Skeleton width="170px" height="42px" borderRadius="12px" />
+        <Skeleton width="110px" height="42px" borderRadius="12px" />
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ERROR -->
+<section v-else-if="errorMsg" class="empty-state error-state">
+  <i class="pi pi-exclamation-triangle"></i>
+  <h2>Chargement impossible</h2>
+  <p>{{ errorMsg }}</p>
+  <Button label="Réessayer" icon="pi pi-refresh" @click="fetchRecruitments" />
+</section>
+
+<!-- EMPTY -->
+<section v-else-if="!hasResults" class="empty-state">
+  <i class="pi pi-file-pdf"></i>
+  <h2>Aucun document trouvé</h2>
+  <p>Aucun avis de recrutement ou concours ne correspond à votre recherche.</p>
+</section>
+
+<!-- RESULTS -->
+<section v-else class="docs-list">
+  <article v-for="post in posts" :key="post.id" class="doc-card">
+    <div class="doc-preview">
+      <div class="doc-sheet">
+        <img
+          v-if="post.thumbnail"
+          :src="normalizeFileUrl(post.thumbnail)"
+          :alt="`Couverture du document : ${post.title}`"
+          loading="lazy"
+          decoding="async"
+        />
+
+        <div v-else class="pdf-fallback">
+          <i class="pi pi-file-pdf"></i>
+          <span>PDF</span>
         </div>
+      </div>
+    </div>
 
-        <div class="doc-body">
-          <Skeleton width="120px" height="24px" />
-          <Skeleton width="90%" height="26px" class="mt" />
-          <Skeleton width="70%" height="18px" class="mt-sm" />
-          <Skeleton width="100%" height="18px" class="mt" />
-          <Skeleton width="95%" height="18px" class="mt-sm" />
-          <div class="doc-actions mt">
-            <Skeleton width="160px" height="42px" borderRadius="12px" />
-            <Skeleton width="110px" height="42px" borderRadius="12px" />
-          </div>
-        </div>
-      </article>
-    </section>
+    <div class="doc-body">
+      <div class="doc-meta">
+        <Tag value="Recrutement" severity="warning" />
+        <span>{{ formatDate(post.published_at || post.created_at) }}</span>
+      </div>
 
-    <!-- ERROR -->
-    <section v-else-if="errorMsg" class="empty-state error-state">
-      <i class="pi pi-exclamation-triangle"></i>
-      <h2>Chargement impossible</h2>
-      <p>{{ errorMsg }}</p>
-      <Button label="Réessayer" icon="pi pi-refresh" @click="fetchRecruitments" />
-    </section>
+      <h2>{{ post.title }}</h2>
 
-    <!-- EMPTY -->
-    <section v-else-if="!hasResults" class="empty-state">
-      <i class="pi pi-file-pdf"></i>
-      <h2>Aucun document trouvé</h2>
-      <p>Aucun avis de recrutement ou concours ne correspond à votre recherche.</p>
-    </section>
+      <p v-if="post.content" class="excerpt">
+        {{ stripHtml(post.content).slice(0, 220) }}{{ stripHtml(post.content).length > 220 ? '...' : '' }}
+      </p>
 
-    <!-- RESULTS -->
-    <section v-else class="docs-list">
-      <article v-for="post in posts" :key="post.id" class="doc-card">
-        <div class="doc-preview">
-          <div class="doc-sheet">
-            <img
-              v-if="post.thumbnail"
-              :src="normalizeFileUrl(post.thumbnail)"
-              :alt="post.title"
-              loading="lazy"
-              decoding="async"
-            />
+      <div class="doc-notice">
+        <i class="pi pi-info-circle"></i>
+        <span>Pour économiser la connexion, le PDF n’est chargé qu’après clic.</span>
+      </div>
 
-            <div v-else class="pdf-fallback">
-              <i class="pi pi-file-pdf"></i>
-              <span>PDF</span>
-            </div>
-          </div>
-        </div>
+      <div class="doc-actions">
+        <a
+          v-if="post.pdf_path"
+          :href="normalizeFileUrl(post.pdf_path)"
+          class="pdf-btn"
+          download
+        >
+          <i class="pi pi-download"></i>
+          Télécharger le PDF
+        </a>
 
-        <div class="doc-body">
-          <div class="doc-meta">
-            <Tag value="Recrutement" severity="warning" />
-            <span>{{ formatDate(post.published_at || post.created_at) }}</span>
-          </div>
-
-          <h2>{{ post.title }}</h2>
-
-          <p v-if="post.content" class="excerpt">
-            {{ post.content.replace(/<[^>]*>/g, '').slice(0, 220) }}...
-          </p>
-
-          <div class="doc-actions">
-            <a
-              v-if="post.pdf_path"
-              :href="normalizeFileUrl(post.pdf_path)"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="pdf-btn"
-            >
-              <i class="pi pi-eye"></i>
-              Consulter le PDF
-            </a>
-
-            <router-link :to="`/posts/${post.slug}`" class="details-btn">
-              Détails
-              <i class="pi pi-arrow-right"></i>
-            </router-link>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <section v-if="!loading && meta.last_page > 1" class="pagination">
-      <Button
-        label="Précédent"
-        icon="pi pi-chevron-left"
-        severity="secondary"
-        outlined
-        :disabled="meta.current_page <= 1"
-        @click="goPage(meta.current_page - 1)"
-      />
-
-      <span>Page {{ meta.current_page }} / {{ meta.last_page }}</span>
-
-      <Button
-        label="Suivant"
-        icon="pi pi-chevron-right"
-        iconPos="right"
-        severity="secondary"
-        outlined
-        :disabled="meta.current_page >= meta.last_page"
-        @click="goPage(meta.current_page + 1)"
-      />
-    </section>
+        <router-link :to="`/posts/${post.slug}`" class="details-btn">
+          Détails
+          <i class="pi pi-arrow-right"></i>
+        </router-link>
+      </div>
+    </div>
+  </article>
+</section>
   </main>
 </template>
 
@@ -362,6 +344,35 @@ onBeforeUnmount(() => {
   font-size: 2.8rem;
 }
 
+.hero-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.official-recruitment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #ffd700;
+  color: #172216;
+  font-weight: 950;
+  text-decoration: none;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.official-recruitment-btn:hover {
+  background: #ffca28;
+  color: #11170f;
+  transform: translateY(-1px);
+}
+
 .toolbar {
   display: flex;
   justify-content: space-between;
@@ -406,7 +417,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-/* LISTE DOCUMENTAIRE */
 .docs-list {
   display: flex;
   flex-direction: column;
@@ -415,8 +425,8 @@ onBeforeUnmount(() => {
 
 .doc-card {
   display: grid;
-  grid-template-columns: 210px 1fr;
-  gap: 20px;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 22px;
   align-items: stretch;
   padding: 18px;
   border-radius: 24px;
@@ -436,32 +446,32 @@ onBeforeUnmount(() => {
 }
 
 .doc-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #eef2f7, #dbe4ec);
-  min-height: 250px;
+  display: block;
+  padding: 0;
+  border-radius: 20px;
+  background: transparent;
+  min-height: auto;
 }
 
 .doc-sheet {
-  width: 150px;
-  max-width: 100%;
-  aspect-ratio: 1 / 1.414;
-  background: white;
-  border-radius: 10px;
+  width: 100%;
+  height: 390px;
+  background: #ffffff;
+  border-radius: 18px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow:
-    0 12px 30px rgba(15, 23, 42, 0.14),
-    0 0 0 1px rgba(15, 23, 42, 0.05);
+    0 12px 30px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
 .doc-sheet img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  background: white;
+  object-fit: contain;
+  background: #ffffff;
   display: block;
 }
 
@@ -517,6 +527,24 @@ onBeforeUnmount(() => {
   max-width: 900px;
 }
 
+.doc-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.doc-notice i {
+  color: #14b82c;
+}
+
 .doc-actions {
   display: flex;
   gap: 12px;
@@ -550,6 +578,10 @@ onBeforeUnmount(() => {
 .pdf-btn {
   background: #152015;
   color: #ffd700;
+}
+
+.pdf-btn i {
+  font-size: 1rem;
 }
 
 .details-btn {
@@ -662,7 +694,7 @@ onBeforeUnmount(() => {
 }
 
 :global(html.dark) .doc-preview {
-  background: linear-gradient(135deg, #182119, #243125);
+  background: transparent;
 }
 
 :global(html.dark) .doc-sheet {
@@ -670,6 +702,16 @@ onBeforeUnmount(() => {
   box-shadow:
     0 12px 30px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 202, 40, 0.08);
+}
+
+:global(html.dark) .doc-notice {
+  background: #182119;
+  color: #a1a89c;
+  border: 1px solid rgba(255, 202, 40, 0.12);
+}
+
+:global(html.dark) .doc-notice i {
+  color: #ffca28;
 }
 
 :global(html.dark) .doc-meta {
@@ -711,35 +753,6 @@ onBeforeUnmount(() => {
   color: #d9dfd4;
 }
 
-.hero-actions {
-  margin-top: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.official-recruitment-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 46px;
-  padding: 12px 18px;
-  border-radius: 999px;
-  background: #ffd700;
-  color: #172216;
-  font-weight: 950;
-  text-decoration: none;
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
-}
-
-.official-recruitment-btn:hover {
-  background: #ffca28;
-  color: #11170f;
-  transform: translateY(-1px);
-}
-
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .toolbar {
@@ -756,15 +769,11 @@ onBeforeUnmount(() => {
   }
 
   .doc-card {
-    grid-template-columns: 170px 1fr;
-  }
-
-  .doc-preview {
-    min-height: 220px;
+    grid-template-columns: minmax(240px, 320px) 1fr;
   }
 
   .doc-sheet {
-    width: 128px;
+    height: 340px;
   }
 }
 
@@ -788,20 +797,21 @@ onBeforeUnmount(() => {
   .doc-card {
     grid-template-columns: 1fr;
     gap: 16px;
-    padding: 16px;
-  }
-
-  .doc-preview {
-    min-height: auto;
-    padding: 16px;
+    padding: 14px;
   }
 
   .doc-sheet {
-    width: 150px;
+    width: 100%;
+    height: min(76vh, 540px);
   }
 
   .doc-meta {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doc-notice {
+    border-radius: 14px;
     align-items: flex-start;
   }
 

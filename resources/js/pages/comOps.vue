@@ -242,7 +242,7 @@ const items = computed(() => flashes.value)
   </div>
 </template>
 
-<style scoped>
+<style>
 .comops-page {
   background:
     radial-gradient(circle at top left, rgba(153, 27, 27, 0.05), transparent 18%),
@@ -251,13 +251,13 @@ const items = computed(() => flashes.value)
   padding: 30px 0 50px;
 }
 
-.container {
+.comops-page .container {
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 15px;
 }
 
-.hero-header {
+.comops-page .hero-header {
   display: grid;
   grid-template-columns: 1fr 420px;
   gap: 18px;
@@ -270,11 +270,11 @@ const items = computed(() => flashes.value)
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
 }
 
-.title-wrap {
+.comops-page .title-wrap {
   min-width: 0;
 }
 
-.hero-pill {
+.comops-page .hero-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -287,7 +287,7 @@ const items = computed(() => flashes.value)
   font-weight: 900;
 }
 
-.title {
+.comops-page .title {
   font-size: 1.95rem;
   font-weight: 900;
   color: #0f172a;
@@ -295,30 +295,29 @@ const items = computed(() => flashes.value)
   line-height: 1.1;
 }
 
-.subtitle {
+.comops-page .subtitle {
   margin: 8px 0 0;
   color: #64748b;
   font-weight: 700;
   line-height: 1.5;
 }
 
-.search-wrapper {
+.comops-page .search-wrapper {
   position: relative;
   width: 100%;
-  max-width: 100%;
 }
 
-.search-input {
+.comops-page .search-input {
   width: 100%;
   height: 46px;
   border-radius: 999px !important;
   padding-left: 45px !important;
   border: 1px solid #dbe4ee !important;
   box-shadow: none !important;
-  background: #fff !important;
+  background: #ffffff !important;
 }
 
-.search-wrapper i {
+.comops-page .search-wrapper i {
   position: absolute;
   left: 16px;
   top: 50%;
@@ -326,14 +325,15 @@ const items = computed(() => flashes.value)
   color: #64748b;
 }
 
-.grid {
+.comops-page .grid,
+.comops-page .loading-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
 }
 
-.flash-card {
-  background: white;
+.comops-page .flash-card {
+  background: #ffffff;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
@@ -343,30 +343,15 @@ const items = computed(() => flashes.value)
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   opacity: 0;
   transform: translateY(18px);
-  animation: fadeCardUp 0.5s ease forwards;
+  animation: comopsFadeCardUp 0.5s ease forwards;
 }
 
-.flash-card:hover {
+.comops-page .flash-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 14px 28px rgba(0,0,0,0.09);
 }
 
-.badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: #991b1b;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  font-size: 0.75rem;
-  z-index: 2;
-  box-shadow: 0 4px 10px rgba(153, 27, 27, 0.25);
-}
-
-.media {
+.comops-page .media {
   background: #f8fafc;
   display: flex;
   align-items: center;
@@ -375,7 +360,7 @@ const items = computed(() => flashes.value)
   border-bottom: 1px solid #eef2f7;
 }
 
-.flash-img {
+.comops-page .flash-img {
   display: block;
   width: 100%;
   height: auto;
@@ -383,11 +368,11 @@ const items = computed(() => flashes.value)
   object-fit: contain;
 }
 
-.body {
+.comops-page .body {
   padding: 16px;
 }
 
-.meta {
+.comops-page .meta {
   display: inline-flex;
   gap: 8px;
   align-items: center;
@@ -396,7 +381,7 @@ const items = computed(() => flashes.value)
   font-size: 0.85rem;
 }
 
-.card-title {
+.comops-page .card-title {
   margin: 10px 0 8px;
   font-weight: 900;
   color: #0f172a;
@@ -404,59 +389,105 @@ const items = computed(() => flashes.value)
   font-size: 1.1rem;
 }
 
-.excerpt {
-  margin: 0 0 8px;
-  color: #334155;
-  line-height: 1.5;
-}
-
-.cta {
+.comops-page .cta {
   display: flex;
   justify-content: flex-end;
 }
 
-.open-btn {
+.comops-page .open-btn {
   font-weight: 900 !important;
   color: #14b82c !important;
 }
 
-.loading-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-}
-
-.sentinel {
+.comops-page .sentinel {
   height: 1px;
   width: 100%;
   grid-column: 1 / -1;
 }
 
-.loading-more {
+.comops-page .loading-more {
   margin-top: 10px;
 }
 
-.end {
+.comops-page .end,
+.comops-page .empty {
   text-align: center;
   color: #64748b;
-  padding: 18px 0;
   font-weight: 900;
 }
 
-.empty {
-  text-align: center;
+.comops-page .end {
+  padding: 18px 0;
+}
+
+.comops-page .empty {
   padding: 40px 0;
-  color: #64748b;
-  font-weight: 800;
 }
 
-.empty i {
-  font-size: 1.6rem;
-  margin-bottom: 10px;
-  display: inline-block;
+/* DARK MODE */
+html.dark .comops-page {
+  background:
+    radial-gradient(circle at top left, rgba(255, 202, 40, 0.08), transparent 20%),
+    linear-gradient(180deg, #243125 0%, #1a241b 100%) !important;
+  color: #ebede9 !important;
 }
 
-@keyframes fadeCardUp {
+html.dark .comops-page .hero-header,
+html.dark .comops-page .flash-card,
+html.dark .comops-page .empty {
+  background: #1f261b !important;
+  color: #ebede9 !important;
+  border-color: rgba(255, 202, 40, 0.16) !important;
+  box-shadow: none !important;
+}
+
+html.dark .comops-page .media {
+  background: #151c14 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .comops-page .hero-pill {
+  background: rgba(255, 202, 40, 0.12) !important;
+  color: #ffca28 !important;
+}
+
+html.dark .comops-page .title,
+html.dark .comops-page .card-title {
+  color: #ffffff !important;
+}
+
+html.dark .comops-page .subtitle,
+html.dark .comops-page .meta,
+html.dark .comops-page .meta span,
+html.dark .comops-page .end,
+html.dark .comops-page .empty,
+html.dark .comops-page .empty p {
+  color: #dbe4dc !important;
+}
+
+html.dark .comops-page .search-input {
+  background: #151c14 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .comops-page .search-input::placeholder {
+  color: #9ca89c !important;
+}
+
+html.dark .comops-page .search-wrapper i {
+  color: #a8b5aa !important;
+}
+
+html.dark .comops-page .open-btn {
+  color: #ffca28 !important;
+}
+
+html.dark .comops-page .p-skeleton {
+  background: #2f3a2b !important;
+}
+
+@keyframes comopsFadeCardUp {
   from {
     opacity: 0;
     transform: translateY(18px);
@@ -479,27 +510,27 @@ const items = computed(() => flashes.value)
 }
 
 @media (max-width: 900px) {
-  .grid,
-  .loading-grid {
+  .comops-page .grid,
+  .comops-page .loading-grid {
     grid-template-columns: 1fr;
   }
 
-  .hero-header {
+  .comops-page .hero-header {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 480px) {
-  .title {
+  .comops-page .title {
     font-size: 1.55rem;
   }
 
-  .hero-header {
+  .comops-page .hero-header {
     padding: 18px;
     border-radius: 18px;
   }
 
-  .body {
+  .comops-page .body {
     padding: 14px;
   }
 }

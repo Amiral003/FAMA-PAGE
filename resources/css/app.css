@@ -5,8 +5,10 @@
 @plugin "@tailwindcss/typography";
 @plugin "tailwindcss-primeui";
 
-/* -------------------- BASE & SYSTEM -------------------- */
-[x-cloak] { display: none !important; }
+/* -------------------- BASE -------------------- */
+[x-cloak] {
+    display: none !important;
+}
 
 html {
     color-scheme: light;
@@ -16,13 +18,6 @@ html {
 html.dark {
     color-scheme: dark;
 }
-
-/* body {
-    background: #f8fafc;
-    color: #0f172a;
-    transition: background-color 0.25s ease, color 0.25s ease;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-} */
 
 body {
     background: #f8fafc;
@@ -36,13 +31,8 @@ html.dark body {
     color: #ebede9 !important;
 }
 
-/* -------------------- NAVBAR -------------------- */
-html.dark .navbar-tactical {
-    background: rgba(26, 36, 27, 0.95) !important;
-    border-color: rgba(255, 215, 0, 0.2) !important;
-}
-
-/* -------------------- SECTIONS / PAGES -------------------- */
+/* -------------------- DARK MODE GLOBAL BACKGROUNDS -------------------- */
+html.dark main,
 html.dark .news-section,
 html.dark .photo-page,
 html.dark .portfolio-container,
@@ -53,12 +43,67 @@ html.dark .article-container,
 html.dark .contact-page,
 html.dark .contact-container,
 html.dark .about-page,
-html.dark .about-container,
-html.dark main {
+html.dark .about-container {
     background: #243125 !important;
 }
 
-/* -------------------- FIX IMAGES -------------------- */
+/* -------------------- NAVBAR DARK FIX -------------------- */
+html.dark .navbar-tactical {
+    background: rgba(26, 36, 27, 0.95) !important;
+    border-color: rgba(255, 215, 0, 0.2) !important;
+}
+
+/* Important : protège la navbar contre les règles globales span/li */
+html.dark .navbar-tactical .nav-links a,
+html.dark .navbar-tactical .nav-links a span,
+html.dark .navbar-tactical .nav-links a i,
+html.dark .navbar-tactical .dropdown-btn,
+html.dark .navbar-tactical .dropdown-btn span,
+html.dark .navbar-tactical .dropdown-btn i {
+    color: #cbd5e1 !important;
+}
+
+html.dark .navbar-tactical .nav-links a:hover,
+html.dark .navbar-tactical .nav-links a:hover span,
+html.dark .navbar-tactical .nav-links a.router-link-exact-active,
+html.dark .navbar-tactical .nav-links a.router-link-exact-active span,
+html.dark .navbar-tactical .dropdown-btn:hover,
+html.dark .navbar-tactical .dropdown-btn:hover span,
+html.dark .navbar-tactical .dropdown-btn:hover i,
+html.dark .navbar-tactical .dropdown-btn.is-active,
+html.dark .navbar-tactical .dropdown-btn.is-active span,
+html.dark .navbar-tactical .dropdown-btn.is-active i {
+    color: #ffd700 !important;
+}
+
+html.dark .navbar-tactical .dropdown-menu {
+    background: #243125 !important;
+    border-color: rgba(255, 215, 0, 0.18) !important;
+}
+
+html.dark .navbar-tactical .dropdown-item {
+    color: #e2e8f0 !important;
+}
+
+html.dark .navbar-tactical .dropdown-item:hover,
+html.dark .navbar-tactical .dropdown-item.router-link-exact-active {
+    background: rgba(255, 215, 0, 0.09) !important;
+    color: #ffd700 !important;
+}
+
+html.dark .navbar-tactical .sub {
+    color: #cbd5e1 !important;
+}
+
+html.dark .navbar-tactical .fama,
+html.dark .navbar-tactical .gold,
+html.dark .navbar-tactical .theme-btn,
+html.dark .navbar-tactical .menu-mobile-btn,
+html.dark .navbar-tactical .close-btn {
+    color: #ffd700 !important;
+}
+
+/* -------------------- IMAGES -------------------- */
 html.dark img,
 html.dark .p-carousel,
 html.dark .p-carousel *,
@@ -67,7 +112,7 @@ html.dark [style*="background-image"] {
     background-color: transparent !important;
 }
 
-/* -------------------- CARTES ET CADRES -------------------- */
+/* -------------------- CARDS / BLOCS GLOBAUX -------------------- */
 html.dark .premium-card,
 html.dark .news-card,
 html.dark .flash-card,
@@ -88,7 +133,7 @@ html.dark div[class*="form-container"] {
     border: 1px solid rgba(255, 202, 40, 0.15) !important;
 }
 
-/* -------------------- TITRES ET TEXTES -------------------- */
+/* -------------------- TEXTES GLOBAUX DARK -------------------- */
 html.dark h1,
 html.dark h2,
 html.dark h3,
@@ -99,9 +144,10 @@ html.dark [class*="text-amber"] {
     color: #ffca28 !important;
 }
 
-html.dark p,
-html.dark span:not(.p-button-label),
-html.dark li,
+/* Attention : on exclut la navbar pour ne pas casser Communiqués */
+html.dark p:not(.navbar-tactical p):not(.menu-footer p),
+html.dark span:not(.navbar-tactical span):not(.p-button-label),
+html.dark li:not(.navbar-tactical li),
 html.dark .text-slate-600,
 html.dark .text-gray-600 {
     color: #a1a89c !important;
@@ -125,7 +171,7 @@ html.dark select {
 
 html.dark input:-webkit-autofill {
     -webkit-text-fill-color: #ebede9 !important;
-    -webkit-box-shadow: 0 0 0px 1000px #1a241b inset !important;
+    -webkit-box-shadow: 0 0 0 1000px #1a241b inset !important;
 }
 
 html.dark input:focus,
@@ -136,7 +182,7 @@ html.dark .p-select:focus {
     outline: none;
 }
 
-/* -------------------- ICÔNES & DÉTAILS -------------------- */
+/* -------------------- ICONES / DETAILS -------------------- */
 html.dark .icon-wrapper,
 html.dark .info-icon-bg,
 html.dark .badge,
@@ -149,13 +195,37 @@ html.dark hr {
     border-color: rgba(255, 202, 40, 0.1) !important;
 }
 
-/* -------------------- SÉCURITÉ STYLE INLINE -------------------- */
+html.dark .p-skeleton {
+    background: #2f3a2b !important;
+}
+
+/* -------------------- FIX STYLE INLINE -------------------- */
 html.dark div[style*="background-color: white"],
 html.dark div[style*="background: white"] {
     background-color: #1f261b !important;
 }
 
-/* -------------------- COMPOSANT ÉTAT-MAJOR & FICHES -------------------- */
+/* -------------------- CONTAINER INSTITUTIONNEL -------------------- */
+.container-institutional {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+    .container-institutional {
+        padding-inline: 1.25rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container-institutional {
+        padding-inline: 1.5rem;
+    }
+}
+
+/* -------------------- STAFF PAGE -------------------- */
 .staff-page-container {
     min-height: 100vh;
     transition: color 0.3s ease, background-color 0.3s ease;
@@ -189,32 +259,18 @@ html.dark .staff-info-block span {
     color: #a1a89c !important;
 }
 
-/* -------------------- CONTAINER INSTITUTIONNEL -------------------- */
-.container-institutional {
-    width: 100%;
-    max-width: 1280px;
-    margin-inline: auto;
-    padding-inline: 1rem;
-}
-
-@media (min-width: 640px) {
-    .container-institutional {
-        padding-inline: 1.25rem;
-    }
-}
-
-@media (min-width: 1024px) {
-    .container-institutional {
-        padding-inline: 1.5rem;
-    }
-}
-
-/* -------------------- FIX VIDÉOTHÈQUE DARK MODE -------------------- */
-
+/* -------------------- VIDEOTHEQUE DARK MODE -------------------- */
 html.dark .video-library-page,
 html.dark .video-library-page .video-container {
     background: #243125 !important;
     color: #ebede9 !important;
+}
+
+html.dark .video-library-page *,
+html.dark .video-library-page *::before,
+html.dark .video-library-page *::after {
+    outline: none !important;
+    box-shadow: none;
 }
 
 html.dark .video-library-page .video-header,
@@ -224,7 +280,6 @@ html.dark .video-library-page .video-skeleton-card {
     background: #1f261b !important;
     color: #ebede9 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: none !important;
 }
 
 html.dark .video-library-page .video-page-title,
@@ -244,7 +299,6 @@ html.dark .video-library-page .video-search-input {
     background: #151c14 !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: none !important;
 }
 
 html.dark .video-library-page .video-search-input::placeholder {
@@ -269,11 +323,11 @@ html.dark .video-library-page .video-play-button {
 }
 
 html.dark .video-library-page .video-platform-tag,
-html.dark .video-library-page .p-tag {
+html.dark .video-library-page .p-tag,
+html.dark .video-library-page .video-eyebrow {
     background: rgba(34, 197, 94, 0.14) !important;
     color: #bbf7d0 !important;
     border: 1px solid rgba(34, 197, 94, 0.25) !important;
-    box-shadow: none !important;
 }
 
 html.dark .video-library-page .video-watch-button {
@@ -286,83 +340,15 @@ html.dark .video-library-page .video-watch-button:hover {
     background: #166534 !important;
 }
 
-html.dark .video-library-page .p-skeleton {
-    background: #2f3a2b !important;
+/* -------------------- ABOUT PAGE DARK MODE -------------------- */
+html.dark .about-page {
+    background: #243125 !important;
 }
-
-html.dark .video-library-page .video-eyebrow {
-    background: rgba(34, 197, 94, 0.13) !important;
-    color: #bbf7d0 !important;
-    border: 1px solid rgba(34, 197, 94, 0.22) !important;
-}
-
-html.dark .video-library-page * {
-    box-shadow: none;
-}
-
-
-/* FIX périmètre pointillé vidéothèque dark mode */
-html.dark .video-library-page *,
-html.dark .video-library-page *::before,
-html.dark .video-library-page *::after {
-    outline: none !important;
-}
-
-html.dark .video-library-page,
-html.dark .video-library-page .video-container,
-html.dark .video-library-page .video-header,
-html.dark .video-library-page .video-grid,
-html.dark .video-library-page .video-loading-grid,
-html.dark .video-library-page .video-item-card,
-html.dark .video-library-page .video-empty,
-html.dark .video-library-page .video-sentinel,
-html.dark .video-library-page .video-end-feed {
-    border-style: solid !important;
-    outline: none !important;
-}
-
-html.dark .video-library-page .video-empty {
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-.hero-actions {
-  margin-top: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.official-recruitment-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 46px;
-  padding: 12px 18px;
-  border-radius: 999px;
-  background: #ffd700;
-  color: #172216;
-  font-weight: 950;
-  text-decoration: none;
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
-}
-
-.official-recruitment-btn:hover {
-  background: #ffca28;
-  color: #11170f;
-  transform: translateY(-1px);
-}
-
-/* -------------------- FIX ABOUT PAGE DARK MODE -------------------- */
 
 html.dark .about-page *,
 html.dark .about-page *::before,
 html.dark .about-page *::after {
     box-shadow: none;
-}
-
-html.dark .about-page {
-    background: #243125 !important;
 }
 
 html.dark .about-page .content-column,
@@ -431,11 +417,9 @@ html.dark .about-page .p-tag {
     background: rgba(34, 197, 94, 0.13) !important;
     color: #bbf7d0 !important;
     border: 1px solid rgba(34, 197, 94, 0.25) !important;
-    box-shadow: none !important;
 }
 
-/* -------------------- FIX RECRUTEMENT DARK MODE -------------------- */
-
+/* -------------------- RECRUTEMENT DARK MODE -------------------- */
 html.dark .recruitment-page {
     background: #243125 !important;
     color: #ebede9 !important;
@@ -470,11 +454,7 @@ html.dark .recruitment-page .doc-preview {
     border: none !important;
 }
 
-html.dark .recruitment-page .doc-sheet {
-    background: #f8fafc !important;
-    border: none !important;
-}
-
+html.dark .recruitment-page .doc-sheet,
 html.dark .recruitment-page .doc-sheet img {
     background: #ffffff !important;
     border: none !important;
@@ -533,7 +513,6 @@ html.dark .recruitment-page .p-tag {
     background: rgba(34, 197, 94, 0.14) !important;
     color: #bbf7d0 !important;
     border: 1px solid rgba(34, 197, 94, 0.25) !important;
-    box-shadow: none !important;
 }
 
 html.dark .recruitment-page .details-btn {
@@ -554,6 +533,74 @@ html.dark .recruitment-page .official-recruitment-btn {
     border: none !important;
 }
 
-html.dark .recruitment-page .p-skeleton {
-    background: #2f3a2b !important;
+/* -------------------- BOUTON RECRUTEMENT GLOBAL -------------------- */
+.hero-actions {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.official-recruitment-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: #ffd700;
+    color: #172216;
+    font-weight: 950;
+    text-decoration: none;
+    border: 1px solid rgba(255, 215, 0, 0.35);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.official-recruitment-btn:hover {
+    background: #ffca28;
+    color: #11170f;
+    transform: translateY(-1px);
+}
+
+/* -------------------- HARD FIX NAVBAR TEXT DARK MODE -------------------- */
+html.dark .navbar-tactical,
+html.dark .navbar-tactical *,
+html.dark .navbar-tactical span,
+html.dark .navbar-tactical li,
+html.dark .navbar-tactical button,
+html.dark .navbar-tactical a {
+    color: inherit;
+}
+
+html.dark .navbar-tactical .nav-links a,
+html.dark .navbar-tactical .dropdown-btn,
+html.dark .navbar-tactical .dropdown-btn span,
+html.dark .navbar-tactical .dropdown-btn i {
+    color: #cbd5e1 !important;
+}
+
+html.dark .navbar-tactical .nav-links a:hover,
+html.dark .navbar-tactical .nav-links a.router-link-exact-active,
+html.dark .navbar-tactical .dropdown-btn:hover,
+html.dark .navbar-tactical .dropdown-btn:hover span,
+html.dark .navbar-tactical .dropdown-btn:hover i,
+html.dark .navbar-tactical .dropdown-btn.is-active,
+html.dark .navbar-tactical .dropdown-btn.is-active span,
+html.dark .navbar-tactical .dropdown-btn.is-active i {
+    color: #ffd700 !important;
+}
+
+html.dark .navbar-tactical .fama,
+html.dark .navbar-tactical .gold,
+html.dark .navbar-tactical .theme-btn,
+html.dark .navbar-tactical .menu-mobile-btn,
+html.dark .navbar-tactical .close-btn {
+    color: #ffd700 !important;
+}
+
+html.dark .navbar-tactical .sub,
+html.dark .navbar-tactical .mobile-link,
+html.dark .navbar-tactical .sub-link {
+    color: #cbd5e1 !important;
 }

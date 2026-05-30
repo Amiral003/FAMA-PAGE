@@ -377,7 +377,9 @@ onUnmounted(() => {
                       </div>
 
                       <div class="staff-meta">
-                        <span class="meta-k">Grade / Fonction :</span>
+                        <span class="meta-k">Grade / Fonction :   <span class="meta-v">
+                          {{ s.leader_rank || 'Non renseigné' }}
+                        </span></span>
 
 
                       </div>

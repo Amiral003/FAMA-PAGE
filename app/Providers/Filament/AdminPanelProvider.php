@@ -22,7 +22,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Filament\Pages\Auth\Login;
-
+use App\Http\Middleware\EnsureTwoFactorIsConfigured;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -72,6 +72,7 @@ class AdminPanelProvider extends PanelProvider
     'verified',
     EnsureUserIsActive::class,
     EnsurePasswordIsChanged::class,
+     EnsureTwoFactorIsConfigured::class,
 ]);
     }
 }

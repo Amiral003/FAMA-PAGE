@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // -------------------- PAGES / COMPONENTS --------------------
-import Home from '../pages/home.vue'
-import About from '../pages/about.vue'
-import Contact from '../pages/contact.vue'
-import Portfolio from '../pages/portfolio.vue'
-import Recrutement from '../pages/recrutement.vue'
+const Home = () => import('../pages/home.vue')
+const About = () => import('../pages/about.vue')
+const Contact = () => import('../pages/contact.vue')
+const Portfolio = () => import('../pages/portfolio.vue')
+const Recrutement = () => import('../pages/recrutement.vue')
 
-import SinglePost from '../components/SinglePost.vue' // ou le chemin vers ton composant
-import EtatMajor from '../pages/etatmajor.vue'
+const SinglePost = () => import('../components/SinglePost.vue')
+const EtatMajor = () => import('../pages/etatmajor.vue')
 
-import EtatmajorAT from '../components/EtatmajorAT.vue'
-import EtatmajorAA from '../components/EtatmajorAA.vue'
-import Dttia from '../components/Dttia.vue'
-import Gendarmerie from '../components/Gendarmerie.vue'
-import Dgm from '../components/Dgm.vue'
-import EtatmajorGarde from '../components/EtatmajorGarde.vue'
-import Police from '../components/police.vue'
-import Dmhta from '../components/Dmhta.vue'
-import Dcssa from '../components/Dcssa.vue'
-import ComOps from '../pages/comOps.vue'
+const EtatmajorAT = () => import('../components/EtatmajorAT.vue')
+const EtatmajorAA = () => import('../components/EtatmajorAA.vue')
+const Dttia = () => import('../components/Dttia.vue')
+const Gendarmerie = () => import('../components/Gendarmerie.vue')
+const Dgm = () => import('../components/Dgm.vue')
+const EtatmajorGarde = () => import('../components/EtatmajorGarde.vue')
+const Police = () => import('../components/police.vue')
+const Dmhta = () => import('../components/Dmhta.vue')
+const Dcssa = () => import('../components/Dcssa.vue')
+const ComOps = () => import('../pages/comOps.vue')
 
 // -------------------- ROUTES --------------------
 const routes = [

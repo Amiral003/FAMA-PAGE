@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
+use App\Http\Controllers\Auth\TwoFactorSetupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/force-change-password', [ForcePasswordChangeController::class, 'update'])
         ->name('password.force.update');
+    Route::get('/setup-2fa', [TwoFactorSetupController::class, 'show'])
+    ->name('two-factor.setup');
 });
 
 // 4. Route d'accueil
@@ -40,5 +43,6 @@ Route::get('/', function () {
 });
 
 // 5. Capture du Front-end SPA
+
 Route::view('/{any}', 'front')
-    ->where('any', '^(?!admin|livewire|force-change-password).*$');
+    ->where('any', '^(?!admin|livewire|force-change-password|setup-2fa|user).*$');

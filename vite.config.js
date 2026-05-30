@@ -1,3 +1,4 @@
+import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig } from 'vite'
 import laravel from 'laravel-vite-plugin'
 import vue from '@vitejs/plugin-vue'
@@ -7,6 +8,7 @@ import { PrimeVueResolver } from '@primevue/auto-import-resolver'
 
 export default defineConfig({
     plugins: [
+        
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
@@ -16,6 +18,12 @@ export default defineConfig({
         Components({
             resolvers: [PrimeVueResolver()],
         }),
+        visualizer({
+    filename: 'bundle-report.html',
+    open: true,
+    gzipSize: true,
+    brotliSize: true,
+})
     ],
     server: {
         host: 'fama-page.test',

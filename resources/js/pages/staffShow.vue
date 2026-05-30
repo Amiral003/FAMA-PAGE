@@ -16,6 +16,19 @@ const cleanText = (value, fallback = '') => {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
 }
 
+const stripHtml = (value, fallback = '') => {
+  if (typeof value !== 'string' || !value.trim()) return fallback
+
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 const storageUrl = (path) => {
   if (!path || typeof path !== 'string') return ''
   return `/storage/${encodeURI(path.replace(/^\/+/, ''))}`
@@ -31,9 +44,13 @@ const pageTitle = computed(() => {
 const pageDescription = computed(() => {
   if (!staff.value) return 'Découvrez les informations officielles des états-majors des FAMa.'
 
-  const description = cleanText(staff.value.description)
-  const missions = cleanText(staff.value.missions)
-  const text = description || missions || `Présentation officielle de ${cleanText(staff.value.name, 'cet état-major')}.`
+  const description = stripHtml(staff.value.description)
+  const missions = stripHtml(staff.value.missions)
+
+  const text =
+    description ||
+    missions ||
+    `Présentation officielle de ${cleanText(staff.value.name, 'cet état-major')}.`
 
   return text.length > 160 ? `${text.slice(0, 157)}...` : text
 })
@@ -192,20 +209,18 @@ useHead(() => {
           <main class="content-column">
             <section class="section-block">
               <h2 class="section-title">Présentation</h2>
-              <div class="prose-content">
-                <p>
-                  {{ staff.description || 'Aucune présentation n’est disponible pour le moment.' }}
-                </p>
-              </div>
+              <div
+  class="prose-content"
+  v-html="staff.description || '<p>Aucune présentation n’est disponible pour le moment.</p>'"
+></div>
             </section>
 
             <section class="section-block">
               <h2 class="section-title">Missions et attributions</h2>
-              <div class="prose-content">
-                <p>
-                  {{ staff.missions || 'Les missions et attributions ne sont pas encore renseignées.' }}
-                </p>
-              </div>
+              <div
+  class="prose-content"
+  v-html="staff.missions || '<p>Les missions et attributions ne sont pas encore renseignées.</p>'"
+></div>
             </section>
           </main>
 
@@ -446,7 +461,34 @@ useHead(() => {
 .prose-content {
   font-size: 16px;
   line-height: 1.9;
-  white-space: pre-line;
+}
+
+.prose-content :deep(p) {
+  margin: 0 0 14px;
+}
+
+.prose-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.prose-content :deep(ul),
+.prose-content :deep(ol) {
+  margin: 12px 0 16px;
+  padding-left: 22px;
+}
+
+.prose-content :deep(li) {
+  margin-bottom: 8px;
+}
+
+.prose-content :deep(a) {
+  color: #14b82c;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.prose-content :deep(a:hover) {
+  text-decoration: underline;
 }
 
 .side-column {

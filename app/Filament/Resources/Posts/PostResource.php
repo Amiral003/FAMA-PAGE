@@ -152,10 +152,7 @@ class PostResource extends Resource
                     'strike',
                     'underline',
                     'undo',
-                ])
-                ->fileAttachmentsDisk('public')
-                ->fileAttachmentsDirectory('posts/content-attachments')
-                ->fileAttachmentsVisibility('public'),
+                ]),
 
                 Section::make('Vidéo')
     ->schema([
@@ -214,14 +211,15 @@ class PostResource extends Resource
              * ✅ PDF (PDF uniquement)
              */
             FileUpload::make('pdf_path')
-                ->label('Fichier PDF Officiel')
-                ->disk('public')
-                ->directory('documents')
-                ->acceptedFileTypes(['application/pdf'])
-                ->maxSize(20480) // 20 Mo
-                ->visible(fn ($get) => $get('type') === Post::TYPE_PDF)
-                ->required(fn ($get) => $get('type') === Post::TYPE_PDF)
-                ->columnSpanFull(),
+    ->label('Fichier PDF Officiel')
+    ->disk('public')
+    ->directory('documents')
+    ->acceptedFileTypes(['application/pdf'])
+    ->maxSize(51200) // 50 Mo
+    ->helperText('PDF uniquement. Taille recommandée : moins de 20 Mo. Taille maximale : 50 Mo. Pour les scans, utilisez noir et blanc ou niveaux de gris, 300 DPI maximum, puis compressez le PDF avec PDF24 ou Adobe Acrobat avant l’envoi.')
+    ->visible(fn ($get) => $get('type') === Post::TYPE_PDF)
+    ->required(fn ($get) => $get('type') === Post::TYPE_PDF)
+    ->columnSpanFull(),
 
             /**
              * ✅ Galerie médias (article uniquement)

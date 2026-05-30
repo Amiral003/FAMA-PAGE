@@ -27,6 +27,13 @@ class ForcePasswordChangeController extends Controller
             'password_changed_at' => now(),
         ]);
 
-        return redirect('/admin')->with('success', 'Mot de passe modifié avec succès.');
-    }
+if (! $user->two_factor_confirmed_at) {
+    return redirect()->route('two-factor.setup')
+        ->with('warning', 'Configurez l’authentification à deux facteurs.');
+}
+
+return redirect('/admin')->with(
+    'success',
+    'Mot de passe modifié avec succès.'
+);    }
 }

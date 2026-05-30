@@ -5,6 +5,9 @@ use App\Http\Middleware\RequestPerformanceLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsurePasswordIsChanged;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureTwoFactorIsConfigured;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(CachePublicAssets::class);
         $middleware->append(RequestPerformanceLogger::class);
+        $middleware->append(EnsureUserIsActive::class);
+        $middleware->append(EnsurePasswordIsChanged::class);
+        $middleware->append(EnsureTwoFactorIsConfigured::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
