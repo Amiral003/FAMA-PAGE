@@ -10,6 +10,7 @@ class PostMedia extends Model
         'post_id',
         'file_path',
         'order',
+        'caption',
     ];
 
     public function post()

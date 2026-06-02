@@ -236,10 +236,7 @@ onBeforeUnmount(() => {
         {{ stripHtml(post.content).slice(0, 220) }}{{ stripHtml(post.content).length > 220 ? '...' : '' }}
       </p>
 
-      <div class="doc-notice">
-        <i class="pi pi-info-circle"></i>
-        <span>Pour économiser la connexion, le PDF n’est chargé qu’après clic.</span>
-      </div>
+  
 
       <div class="doc-actions">
         <a

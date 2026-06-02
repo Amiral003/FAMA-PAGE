@@ -16,6 +16,7 @@ class Post extends Model
     public const STATUS_BROUILLON = 'brouillon'; // À traiter / à valider
     public const STATUS_REVISION  = 'revision';  // Rejeté, à corriger par le rédacteur
     public const STATUS_PUBLIE    = 'publie';    // Visible publiquement
+    public const STATUS_PROGRAMME = 'programme'; // Validé, en attente de publication automatique
 
     // -------------------------------------------------
     // ✅ TYPES (alignés avec ton CHECK constraint)
@@ -46,6 +47,7 @@ class Post extends Model
         'video_thumbnail_url',
         'total_views',
         'unique_views',
+        'scheduled_at',
     ];
 
 
@@ -53,6 +55,7 @@ class Post extends Model
     protected $casts = [
         'validated_at' => 'datetime',
         'published_at' => 'datetime',
+        'scheduled_at' => 'datetime',
     ];
 
 
@@ -205,6 +208,22 @@ if (!empty($post->slug)) {
         ]);
     }
 
+
+    public function schedulePublication(int $validatorId, $scheduledAt): void
+{
+    if ($this->status !== self::STATUS_BROUILLON) {
+        throw new LogicException('Seuls les brouillons peuvent être programmés.');
+    }
+
+    $this->update([
+        'status'          => self::STATUS_PROGRAMME,
+        'validated_by'    => $validatorId,
+        'validated_at'    => now(),
+        'scheduled_at'    => $scheduledAt,
+        'published_at'    => null,
+        'rejection_notes' => null,
+    ]);
+}
     /**
      * Rejeter pour correction (Validateur)
      * Règle: Le validateur rejette UNIQUEMENT les brouillons.

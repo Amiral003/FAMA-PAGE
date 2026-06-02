@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Schedule;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 
+
+Schedule::command('posts:publish-scheduled')->everyMinute();
+
 Schedule::command('backup:run --only-db')->dailyAt('02:00');
 Schedule::command('backup:clean')->dailyAt('03:00');
 

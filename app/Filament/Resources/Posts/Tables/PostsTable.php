@@ -41,6 +41,10 @@ class PostsTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                    TextColumn::make('scheduled_at')
+    ->label('Publication prévue')
+    ->dateTime('d/m/Y H:i')
+    ->sortable(),
             ])
             ->filters([
                 //

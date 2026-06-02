@@ -407,21 +407,30 @@ ${fullUrl}`
             >
               <template #item="slotProps">
                 <figure class="image-slide">
-                  <Image
-                    :src="`/storage/${slotProps.data.file_path}`"
-                    preview
-                    imageClass="main-post-img"
-                    :alt="slotProps.index === 0
-                      ? `${post.title} - Illustration principale`
-                      : `${post.title} - Image ${slotProps.index + 1}`"
-                    :pt="{
-                      image: {
-                        loading: slotProps.index === 0 ? 'eager' : 'lazy',
-                        decoding: 'async'
-                      }
-                    }"
-                  />
-                </figure>
+  <Image
+    :src="`/storage/${slotProps.data.file_path}`"
+    preview
+    imageClass="main-post-img"
+    :alt="slotProps.data.caption || (
+      slotProps.index === 0
+        ? `${post.title} - Illustration principale`
+        : `${post.title} - Image ${slotProps.index + 1}`
+    )"
+    :pt="{
+      image: {
+        loading: slotProps.index === 0 ? 'eager' : 'lazy',
+        decoding: 'async'
+      }
+    }"
+  />
+
+  <figcaption
+    v-if="slotProps.data.caption"
+    class="image-caption"
+  >
+    {{ slotProps.data.caption }}
+  </figcaption>
+</figure>
               </template>
             </Carousel>
           </div>
@@ -637,8 +646,9 @@ ${fullUrl}`
 
 .image-slide {
   min-height: 520px;
-  max-height: 680px;
+  max-height: 720px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #ffffff;
@@ -829,6 +839,18 @@ ${fullUrl}`
   text-decoration: none;
 }
 
+.image-caption {
+  width: 100%;
+  margin-top: 12px;
+  padding: 0 12px;
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #64748b;
+  font-style: italic;
+  font-weight: 600;
+}
+
 @media (max-width: 1150px) {
   .main-layout {
     grid-template-columns: 1fr;
@@ -896,8 +918,9 @@ ${fullUrl}`
 
   .image-slide {
   min-height: 430px;
-  max-height: 620px;
+  max-height: 660px;
   padding: 6px;
+  flex-direction: column;
 }
 
 :deep(.main-post-img) {
@@ -950,9 +973,15 @@ ${fullUrl}`
   }
 
   .image-slide {
-    min-height: 240px;
-    max-height: 360px;
-  }
+  min-height: 240px;
+  max-height: 420px;
+  flex-direction: column;
+}
+.image-caption {
+  font-size: 0.82rem;
+  padding: 0 6px;
+  margin-top: 8px;
+}
 
   :deep(.main-post-img) {
     max-height: 340px;

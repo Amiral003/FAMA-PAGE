@@ -138,20 +138,17 @@ class PostResource extends Resource
                 ->columnSpanFull()
                 ->visible(fn ($get) => $get('type') !== Post::TYPE_VIDEO)
                 ->toolbarButtons([
-                    
-                    'blockquote',
                     'bold',
-                    'bulletList',
-                    'codeBlock',
-                    'h2',
-                    'h3',
-                    'italic',
-                    'link',
-                    'orderedList',
-                    'redo',
-                    'strike',
-                    'underline',
-                    'undo',
+'italic',
+'underline',
+'bulletList',
+'orderedList',
+'link',
+'h2',
+'h3',
+'undo',
+'redo',
+                    
                 ]),
 
                 Section::make('Vidéo')
@@ -225,26 +222,35 @@ class PostResource extends Resource
              * ✅ Galerie médias (article uniquement)
              * PDF => caché
              */
-            Repeater::make('media')
-                ->label('Médias additionnels (Images)')
-                ->relationship('media')
-                ->schema([
-                    FileUpload::make('file_path')
-                        ->label('Fichier')
-->acceptedFileTypes([
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-])                        ->maxSize(30720)
-                        ->disk('public')
-                        ->directory('posts')
-                        ->required(),
-                ])
-                ->collapsible()
-                ->grid(3)
-                ->columnSpanFull()
-                
-                 ->hidden(fn ($get) => in_array($get('type'), [Post::TYPE_PDF, Post::TYPE_VIDEO], true)),
+Repeater::make('media')
+    ->label('Médias additionnels (Images)')
+    ->relationship('media')
+    ->schema([
+        FileUpload::make('file_path')
+            ->label('Photo')
+            ->acceptedFileTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ])
+            ->image()
+            ->imageEditor()
+            ->maxSize(30720)
+            ->disk('public')
+            ->directory('posts')
+            ->required(),
+
+        TextInput::make('caption')
+            ->label('Légende de la photo')
+            ->placeholder('Ex : Le Chef d’État-Major lors de la cérémonie...')
+            ->maxLength(255)
+            ->columnSpanFull(),
+    ])
+    ->collapsible()
+    ->reorderable('order')
+    ->grid(2)
+    ->columnSpanFull()
+    ->hidden(fn ($get) => in_array($get('type'), [Post::TYPE_PDF, Post::TYPE_VIDEO], true)),
 
             /**
              * ✅ Auteur automatique
@@ -315,6 +321,11 @@ class PostResource extends Resource
                 TextColumn::make('user.name')
                     ->label('Auteur')
                     ->sortable(),
+                TextColumn::make('scheduled_at')
+    ->label('Publication prévue')
+    ->dateTime('d/m/Y H:i')
+    ->sortable()
+    ->placeholder('—'),
 
                 TextColumn::make('created_at')
                     ->label('Date')
