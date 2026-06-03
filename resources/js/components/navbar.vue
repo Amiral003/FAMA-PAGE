@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import logoFama from '@/assets/images/1.png'
 
 const router = useRouter()
 
@@ -16,11 +17,11 @@ const handleClickOutside = (e) => {
 }
 
 const navItems = [
-  { label: 'Com-Ops', to: '/com-ops' },
-  { label: 'FAMa FM', href: 'https://stream.zeno.fm/wb3sj5pqu55tv' },
+  { label: 'RECRUTEMENT', to: '/recrutement' },
+  { label: 'FAMa FM', href: 'https://stream.zeno.fm/5m0f0pe2zbruv' },
   { label: 'FAMa TV', href: 'https://www.youtube.com/@DIRPAFAMa' },
-  { label: 'Contact', to: '/contact' },
-  { label: 'À propos', to: '/about' },
+  { label: 'CONTACT', to: '/contact' },
+  { label: 'À PROPOS', to: '/about' },
 ]
 
 const theme = ref('light')
@@ -69,13 +70,22 @@ onBeforeUnmount(() => {
     <div class="nav-container">
       <div class="nav-content">
         <div class="logo-box" @click="router.push('/')">
-          <span class="fama">FAM<span class="gold">a</span></span>
-          <span class="sub">Forces Armées Maliennes</span>
-        </div>
+  <div class="crest-container">
+    <img :src="logoFama" alt="Logo FAMa" class="logo-img" />
+    <div class="motto-box">
+      <p class="motto-text">SÉCURITÉ - UNITÉ - SOUVERAINETÉ</p>
+      <div class="flag-stripe-mini">
+        <span class="flag-green"></span>
+        <span class="flag-yellow"></span>
+        <span class="flag-red"></span>
+      </div>
+    </div>
+  </div>
+</div>
 
         <ul class="nav-links">
           <li>
-            <router-link to="/">Accueil</router-link>
+            <router-link to="/">ACCUEIL</router-link>
           </li>
 
           <li class="dropdown">
@@ -83,18 +93,18 @@ onBeforeUnmount(() => {
   class="dropdown-btn"
   :class="{ 'is-active': isCommuniqueOpen }"
   @click.stop="isCommuniqueOpen = !isCommuniqueOpen"
->              <span>Communiqués</span>
+>              <span>ACTUALITES</span>
               <i :class="isCommuniqueOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
             </button>
 
             <transition name="fade-slide">
               <div v-if="isCommuniqueOpen" class="dropdown-menu" @click.stop>
                 <router-link to="/portfolio" class="dropdown-item" @click="isCommuniqueOpen = false">
-                  Actualité
+                  ARTICLES
                 </router-link>
 
-                <router-link to="/recrutement" class="dropdown-item" @click="isCommuniqueOpen = false">
-                  Recrutement
+                <router-link to="/com-ops" class="dropdown-item" @click="isCommuniqueOpen = false">
+                  COM-OPS
                 </router-link>
               </div>
             </transition>
@@ -138,10 +148,19 @@ onBeforeUnmount(() => {
     <div class="mobile-wrapper" :class="{ 'is-active': isMenuOpen }" @click="isMenuOpen = false">
       <div class="side-menu" @click.stop>
         <div class="menu-header">
-          <div class="logo-box mobile-logo" @click="router.push('/'); isMenuOpen = false">
-            <span class="fama">FAM<span class="gold">a</span></span>
-            <span class="sub">Forces Armées Maliennes</span>
-          </div>
+          <div class="logo-box" @click="router.push('/')">
+  <div class="crest-container">
+    <img :src="logoFama" alt="Logo FAMa" class="logo-img" />
+    <div class="motto-box">
+      <p class="motto-text">SÉCURITÉ - UNITÉ - SOUVERAINETÉ</p>
+      <div class="flag-stripe-mini">
+        <span class="flag-green"></span>
+        <span class="flag-yellow"></span>
+        <span class="flag-red"></span>
+      </div>
+    </div>
+  </div>
+</div>
 
           <Button icon="pi pi-times" class="close-btn" text @click="isMenuOpen = false" />
         </div>
@@ -157,22 +176,22 @@ onBeforeUnmount(() => {
 
         <div class="menu-items">
           <router-link to="/" class="mobile-link" @click="isMenuOpen = false">
-            Accueil
+            ACCUEIL
           </router-link>
 
           <div class="mobile-link mobile-dropdown-trigger" @click="isDropdownOpen = !isDropdownOpen">
-            <span>Communiqués</span>
+            <span>Actualités</span>
             <i :class="isDropdownOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
           </div>
 
           <transition name="fade-slide">
             <div v-if="isDropdownOpen" class="mobile-sub-menu">
               <router-link to="/portfolio" class="sub-link" @click="isMenuOpen = false">
-                Actualité
+                ARTICLES
               </router-link>
 
-              <router-link to="/recrutement" class="sub-link" @click="isMenuOpen = false">
-                Recrutement
+              <router-link to="/com-ops" class="sub-link" @click="isMenuOpen = false">
+                COM-OPS
               </router-link>
             </div>
           </transition>
@@ -214,7 +233,80 @@ onBeforeUnmount(() => {
 * {
   box-sizing: border-box;
 }
+.crest-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.logo-img {
+  height: 65px; /* Évite un débordement tout en restant très lisible */
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
 
+.motto-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.motto-text {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #ffd700; /* Or tactique de la maquette */
+  letter-spacing: 1.5px;
+  margin: 0;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Le drapeau miniature sous la devise */
+.flag-stripe-mini {
+  display: flex;
+  width: 60px;
+  height: 3px;
+  border-radius: 1px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.flag-green { background: #14b82c; flex: 1; }
+.flag-yellow { background: #ffd700; flex: 1; }
+.flag-red { background: #ce1126; flex: 1; }
+
+/* --- ADAPTATIONS RESPONSIVE (MOBILE) --- */
+.logo-img-mobile {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
+.motto-text-mobile {
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: #ffd700;
+  letter-spacing: 1px;
+  margin: 0;
+  line-height: 1;
+}
+
+/* Ajustement pour laisser de la place verticalement si nécessaire */
+@media (max-width: 992px) {
+  .nav-content {
+    min-height: 85px; /* Un poil plus haut sur mobile pour aérer le blason complet */
+  }
+
+  /* Masque la devise en haut sur mobile pour éviter de surcharger la barre */
+  .nav-content .motto-box {
+    display: none;
+  }
+}
 .navbar-tactical {
   width: 100%;
   position: sticky;
@@ -231,7 +323,7 @@ onBeforeUnmount(() => {
 
 .mali-stripe {
   display: flex;
-  height: 4px;
+  height: 6px;
 }
 
 .s-green {
@@ -317,7 +409,7 @@ onBeforeUnmount(() => {
   font-family: inherit;
   font-weight: 600;
   font-size: 0.74rem;
-  text-transform: uppercase;
+  /*text-transform: uppercase;*/
   transition: color 0.25s ease;
   letter-spacing: 0.055em;
   line-height: 1;
@@ -515,7 +607,7 @@ onBeforeUnmount(() => {
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+
   display: flex;
   justify-content: space-between;
   align-items: center;

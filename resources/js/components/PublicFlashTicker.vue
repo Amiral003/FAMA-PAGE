@@ -152,7 +152,7 @@ watchEffect(() => {
 }
 
 .flash-title {
-  color: #ffca28;
+  color: #ffd700;
   font-size: 0.9rem;
   text-transform: uppercase;
 }
