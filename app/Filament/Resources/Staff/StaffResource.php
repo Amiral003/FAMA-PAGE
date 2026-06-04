@@ -9,6 +9,7 @@ use App\Models\Staff;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -20,6 +21,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Filament\Actions\EditAction;
 
 class StaffResource extends Resource
 {
@@ -36,20 +38,23 @@ class StaffResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Identification de la structure')
-                ->description('Ministère, état-major, direction, service ou structure spécialisée.')
-                ->schema([
-                    Grid::make(3)->schema([
-                        TextInput::make('name')
-                            ->label('Nom complet')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
+            Section::make('Identification')
+                ->description('Informations principales de la structure.')
+                ->columnSpanFull()
+                ->schema([
+                    TextInput::make('name')
+                        ->label('Nom complet')
+                        ->required()
+                        ->maxLength(255)
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state)))
+                        ->columnSpanFull(),
+
+                    Grid::make(2)->schema([
                         TextInput::make('initials')
                             ->label('Sigle / Initiales')
-                            ->placeholder('Ex : EMGA, EMAT, DTTIA')
+                            ->placeholder('Ex : PR, MDAC, EMGA, DTTIA')
                             ->required()
                             ->maxLength(255),
 
@@ -57,18 +62,50 @@ class StaffResource extends Resource
                             ->label('Ordre d’affichage')
                             ->numeric()
                             ->nullable()
-                            ->placeholder('Ex : 1')
-                            ->helperText('Plus le chiffre est petit, plus la structure apparaît en haut. Laissez vide si non défini.'),
+                            ->placeholder('Ex : 1'),
                     ]),
 
-                    TextInput::make('slug')
-                        ->label('Lien URL')
-                        ->disabled()
-                        ->dehydrated()
-                        ->required()
-                        ->unique(ignoreRecord: true),
+                    Grid::make(2)->schema([
+                        Select::make('parent_staff_id')
+                            ->label('Structure parente')
+                            ->options(function (?Staff $record) {
+                                return Staff::query()
+                                    ->whereIn('initials', ['PR', 'MDAC', 'EMGA'])
+                                    ->when($record, fn ($query) => $query->whereKeyNot($record->id))
+                                    ->orderByRaw("
+                                        CASE initials
+                                            WHEN 'PR' THEN 1
+                                            WHEN 'MDAC' THEN 2
+                                            WHEN 'EMGA' THEN 3
+                                            ELSE 4
+                                        END
+                                    ")
+                                    ->get()
+                                    ->mapWithKeys(fn (Staff $staff) => [
+                                        $staff->id => $staff->initials . ' — ' . $staff->name,
+                                    ])
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->nullable()
+                            ->placeholder('Aucune structure parente')
+                            ->helperText('Choisir uniquement entre PR, MDAC ou EMGA.'),
+
+                        TextInput::make('slug')
+                            ->label('Lien URL')
+                            ->disabled()
+                            ->dehydrated()
+                            ->required()
+                            ->unique(ignoreRecord: true),
+                    ]),
 
                     Grid::make(2)->schema([
+                        TextInput::make('motto')
+                            ->label('Devise')
+                            ->placeholder("Ex : S'instruire pour mieux servir")
+                            ->maxLength(255),
+
                         FileUpload::make('logo')
                             ->label('Logo / Emblème')
                             ->image()
@@ -76,43 +113,12 @@ class StaffResource extends Resource
                             ->directory('staff-logos')
                             ->imageEditor()
                             ->maxSize(2048),
-
-                        TextInput::make('motto')
-                            ->label('Devise')
-                            ->placeholder("Ex : S'instruire pour mieux servir")
-                            ->maxLength(255),
                     ]),
                 ]),
 
-            Section::make('Commandement / Responsable')
-                ->description('Informations sur le responsable actuel de la structure.')
-                ->schema([
-                    Grid::make(2)->schema([
-                        TextInput::make('leader_rank')
-                            ->label('Grade / Fonction')
-                            ->maxLength(255),
-
-                        TextInput::make('leader_name')
-                            ->label('Nom complet')
-                            ->maxLength(255),
-                    ]),
-
-                    FileUpload::make('leader_photo')
-                        ->label('Photo du responsable')
-                        ->image()
-                        ->disk('public')
-                        ->directory('leaders')
-                        ->imageEditor()
-                        ->maxSize(2048),
-
-                    Textarea::make('leader_word')
-                        ->label('Mot du responsable')
-                        ->rows(5)
-                        ->columnSpanFull(),
-                ]),
-
-            Section::make('Présentation, détails et missions')
-                ->description('Mise en forme simple autorisée : gras, italique, listes et liens.')
+            Section::make('Présentation et missions')
+                ->description('Description officielle et attributions de la structure.')
+                ->columnSpanFull()
                 ->schema([
                     RichEditor::make('description')
                         ->label('Description générale')
@@ -143,8 +149,62 @@ class StaffResource extends Resource
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('Contact')
-                ->description('Coordonnées publiques de la structure.')
+            Grid::make(2)
+                ->columnSpanFull()
+                ->schema([
+
+                    Section::make('Chef principal')
+                        ->description('Responsable principal de la structure.')
+                        ->schema([
+                            TextInput::make('leader_rank')
+                                ->label('Grade / Fonction')
+                                ->maxLength(255),
+
+                            TextInput::make('leader_name')
+                                ->label('Nom complet')
+                                ->maxLength(255),
+
+                            FileUpload::make('leader_photo')
+                                ->label('Photo du chef principal')
+                                ->image()
+                                ->disk('public')
+                                ->directory('leaders')
+                                ->imageEditor()
+                                ->maxSize(2048),
+
+                            Textarea::make('leader_word')
+                                ->label('Mot du chef principal')
+                                ->rows(5),
+                        ]),
+
+                    Section::make('Second chef / Chef adjoint')
+                        ->description('Optionnel : remplir seulement si la structure a un second responsable.')
+                        ->schema([
+                            TextInput::make('second_leader_rank')
+                                ->label('Grade / Fonction')
+                                ->maxLength(255),
+
+                            TextInput::make('second_leader_name')
+                                ->label('Nom complet')
+                                ->maxLength(255),
+
+                            FileUpload::make('second_leader_photo')
+                                ->label('Photo du second chef')
+                                ->image()
+                                ->disk('public')
+                                ->directory('leaders')
+                                ->imageEditor()
+                                ->maxSize(2048),
+
+                            Textarea::make('second_leader_word')
+                                ->label('Mot du second chef')
+                                ->rows(5),
+                        ]),
+                ]),
+
+            Section::make('Contact public')
+                ->description('Coordonnées visibles sur le site public.')
+                ->columnSpanFull()
                 ->schema([
                     Grid::make(2)->schema([
                         TextInput::make('contact_email')
@@ -214,10 +274,21 @@ class StaffResource extends Resource
                     ->badge()
                     ->searchable(),
 
+                TextColumn::make('parent.initials')
+                    ->label('Parent')
+                    ->placeholder('Aucun')
+                    ->badge()
+                    ->sortable(),
+
                 TextColumn::make('leader_name')
-                    ->label('Responsable')
+                    ->label('Chef principal')
                     ->placeholder('Non renseigné')
                     ->description(fn (Staff $record): string => $record->leader_rank ?? ''),
+
+                TextColumn::make('second_leader_name')
+                    ->label('Second chef')
+                    ->placeholder('Optionnel')
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Créé le')
@@ -226,7 +297,7 @@ class StaffResource extends Resource
             ])
             ->filters([])
             ->actions([
-                // \Filament\Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([]);
     }
