@@ -1,75 +1,70 @@
 <script setup>
 import { useHead } from '@unhead/vue'
 import { useRouter } from 'vue-router'
-import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import axios from 'axios'
 
 import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
-import Tag from 'primevue/tag'
-import Image from 'primevue/image'
-import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
 
 const router = useRouter()
 const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
 useHead({
-  title: 'Photothèque Officielle | FAMa',
+  title: 'Galerie Photo | FAMa',
   meta: [
-    { name: 'description', content: "Photothèque officielle des Forces Armées Maliennes (FAMa) : cérémonies, opérations, formations, actions civilo-militaires." },
+    { name: 'description', content: "Galerie photo officielle des Forces Armées Maliennes (FAMa)" },
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'Photothèque Officielle | FAMa' },
-    { property: 'og:description', content: "Accédez aux images officielles validées par l'État-Major." },
-    { property: 'og:image', content: `${baseUrl}/assets/images/hero.jpg` },
+    { property: 'og:title', content: 'Galerie Photo | FAMa' },
+    { property: 'og:description', content: "Découvrez les images officielles des FAMa" },
     { name: 'twitter:card', content: 'summary_large_image' },
   ],
 })
 
-const posts = ref([])
+const photos = ref([])
 const search = ref('')
-
 const loading = ref(true)
 const loadingMore = ref(false)
 const page = ref(1)
-const perPage = ref(12)
+const perPage = ref(24)
 const hasMore = ref(true)
+const totalPhotosCount = ref(0)
+
+const showModal = ref(false)
+const currentPhoto = ref(null)
 
 const sentinel = ref(null)
 let observer = null
 
-const albums = computed(() => {
-  return posts.value
-    .map((p, index) => {
-      const media = Array.isArray(p.media) ? p.media : []
+const downloadPhoto = async (photo) => {
+  try {
+    const response = await fetch(photo.src)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = photo.filename || `fama_photo_${photo.id}.jpg`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    window.open(photo.src, '_blank')
+  }
+}
 
-      const photos = media
-        .filter((m) => m?.file_path)
-        .map((m, idx) => ({
-          id: `${p.id || p.slug || p.title}-${idx}`,
-          src: `/storage/${m.file_path}`,
-          alt: p.title,
-          postSlug: p.slug,
-          postTitle: p.title,
-        }))
+const openPhoto = (photo) => {
+  currentPhoto.value = photo
+  showModal.value = true
+}
 
-      return {
-        id: p.id || p.slug || p.title,
-        title: p.title,
-        slug: p.slug,
-        count: photos.length,
-        photos,
-        order: index + 1,
-      }
-    })
-    .filter((album) => album.photos.length > 0)
-})
+const goToPost = (slug) => {
+  router.push(`/posts/${slug}`)
+}
 
-const totalPhotos = computed(() =>
-  albums.value.reduce((sum, album) => sum + album.count, 0)
-)
-
-const fetchPage = async () => {
+const fetchPhotos = async () => {
   if (!hasMore.value || loadingMore.value) return
 
   loadingMore.value = true
@@ -84,19 +79,44 @@ const fetchPage = async () => {
     })
 
     const payload = res.data
-    const items = payload?.data ?? payload ?? []
+    const posts = payload?.data ?? payload ?? []
 
-    if (Array.isArray(payload?.data)) {
-      posts.value = page.value === 1 ? items : [...posts.value, ...items]
-      hasMore.value = !!payload.next_page_url
-    } else {
-      posts.value = page.value === 1 ? items : [...posts.value, ...items]
-      hasMore.value = false
+    const newPhotos = []
+
+    for (const post of posts) {
+      const media = Array.isArray(post.media) ? post.media : []
+
+      const postPhotos = media
+        .filter((m) => m?.file_path)
+        .map((m, idx) => {
+          const filePath = m.file_path
+          const fileName = filePath.split('/').pop()
+          return {
+            id: `${post.id}-${idx}`,
+            src: `/storage/${filePath}`,
+            alt: post.title,
+            postSlug: post.slug,
+            postTitle: post.title,
+            caption: m.caption || post.excerpt || null,
+            date: post.published_at || post.created_at,
+            filename: fileName,
+          }
+        })
+
+      newPhotos.push(...postPhotos)
+      totalPhotosCount.value += postPhotos.length
     }
 
+    if (page.value === 1) {
+      photos.value = newPhotos
+    } else {
+      photos.value = [...photos.value, ...newPhotos]
+    }
+
+    hasMore.value = !!payload.next_page_url
     page.value += 1
   } catch (e) {
-    console.error('Erreur API photos:', e)
+    console.error('Erreur chargement photos:', e)
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -107,8 +127,9 @@ const resetAndReload = async () => {
   page.value = 1
   hasMore.value = true
   loading.value = true
-  posts.value = []
-  await fetchPage()
+  photos.value = []
+  totalPhotosCount.value = 0
+  await fetchPhotos()
 }
 
 const setupObserver = () => {
@@ -116,7 +137,7 @@ const setupObserver = () => {
 
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting) fetchPage()
+      if (entries[0].isIntersecting) fetchPhotos()
     },
     { root: null, threshold: 0.1 }
   )
@@ -125,7 +146,7 @@ const setupObserver = () => {
 }
 
 onMounted(async () => {
-  await fetchPage()
+  await fetchPhotos()
   await nextTick()
   setupObserver()
 })
@@ -142,12 +163,10 @@ watch(search, () => {
     resetAndReload()
   }, 350)
 })
-
-const goToPost = (slug) => router.push(`/posts/${slug}`)
 </script>
 
 <template>
-  <div class="photo-page">
+  <div class="gallery-page">
     <div class="container">
       <header class="hero-banner">
         <div class="hero-content">
@@ -155,31 +174,23 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
             <i class="pi pi-images"></i>
             <span>Galerie officielle FAMa</span>
           </div>
-
-          <h1 class="page-title">Photothèque Officielle</h1>
+          <h1 class="page-title">Galerie Photo</h1>
           <p class="page-subtitle">
-            Une présentation plus fluide et moderne des publications visuelles :
-            cérémonies, opérations, formations et actions civilo-militaires.
+            Explorez les moments forts des Forces Armées Maliennes
           </p>
-
           <div class="stats-row">
             <div class="stat-box">
-              <strong>{{ albums.length }}</strong>
-              <span>Albums</span>
-            </div>
-            <div class="stat-box">
-              <strong>{{ totalPhotos }}</strong>
+              <strong>{{ totalPhotosCount }}</strong>
               <span>Photos</span>
             </div>
           </div>
         </div>
-
         <div class="hero-tools">
           <div class="search-wrapper">
             <i class="pi pi-search"></i>
             <InputText
               v-model="search"
-              placeholder="Rechercher une publication..."
+              placeholder="Rechercher..."
               class="search-input"
             />
           </div>
@@ -187,140 +198,140 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
       </header>
 
       <!-- Loading -->
-      <div v-if="loading" class="album-grid loading-grid">
-        <Card v-for="i in 6" :key="i" class="album-card skeleton-card">
-          <template #content>
-            <div class="skeleton-top">
-              <div class="skeleton-meta">
-                <Skeleton width="70%" height="18px" class="mb-2" />
-                <Skeleton width="110px" height="14px" />
-              </div>
-              <Skeleton width="90px" height="34px" />
-            </div>
-
-            <div class="masonry-skeleton">
-              <Skeleton v-for="j in 6" :key="j" width="100%" height="180px" class="skeleton-tile" />
-            </div>
-          </template>
-        </Card>
+      <div v-if="loading" class="photo-grid">
+        <div v-for="i in 12" :key="i" class="photo-skeleton">
+          <Skeleton width="100%" height="100%" class="skeleton-img" />
+        </div>
       </div>
 
-      <!-- Content -->
+      <!-- Galerie - Masonry style (adapté à chaque photo) -->
       <div v-else>
-        <transition-group name="album-fade" tag="div" class="album-grid">
-          <Card
-            v-for="album in albums"
-            :key="album.id"
-            class="album-card"
-            :style="{ animationDelay: `${album.order * 40}ms` }"
+        <div class="photo-grid-masonry">
+          <div
+            v-for="photo in photos"
+            :key="photo.id"
+            class="photo-item"
           >
-            <template #content>
-              <div class="album-head">
-                <div class="album-head-left" @click="goToPost(album.slug)">
-                  <h2 class="album-title">{{ album.title }}</h2>
-                  <div class="album-meta">
-                    <Tag
-                      :value="`${album.count} photo${album.count > 1 ? 's' : ''}`"
-                      severity="success"
-                      rounded
-                    />
-                  </div>
+            <div class="photo-container">
+              <img
+                :src="photo.src"
+                :alt="photo.alt"
+                class="photo-img"
+                loading="lazy"
+                @click="openPhoto(photo)"
+              />
+
+              <div class="photo-overlay">
+                <div class="overlay-buttons">
+                  <button
+                    class="overlay-btn download-btn"
+                    @click.stop="downloadPhoto(photo)"
+                    title="Télécharger"
+                  >
+                    <i class="pi pi-download"></i>
+                  </button>
+                  <button
+                    class="overlay-btn view-btn"
+                    @click.stop="openPhoto(photo)"
+                    title="Agrandir"
+                  >
+                    <i class="pi pi-search-plus"></i>
+                  </button>
                 </div>
-
-                <Button
-                  icon="pi pi-arrow-right"
-                  label="Voir"
-                  rounded
-                  outlined
-                  class="album-btn"
-                  @click="goToPost(album.slug)"
-                />
-              </div>
-
-              <!-- TRUE MASONRY -->
-              <div class="album-masonry">
-                <div
-                  v-for="photo in album.photos"
-                  :key="photo.id"
-                  class="masonry-item"
-                >
-                  <div class="image-shell">
-                    <Image
-                      :src="photo.src"
-                      :alt="photo.alt"
-                      preview
-                      imageClass="masonry-img"
-                      :pt="{ image: { loading: 'lazy' } }"
-                    />
-                  </div>
+                <div class="overlay-caption" v-if="photo.caption">
+                  <span>{{ photo.caption }}</span>
                 </div>
               </div>
-            </template>
-          </Card>
-        </transition-group>
+            </div>
+          </div>
+        </div>
 
         <div v-if="loadingMore" class="loading-more">
-          <Card class="album-card skeleton-card">
-            <template #content>
-              <div class="skeleton-top">
-                <div class="skeleton-meta">
-                  <Skeleton width="70%" height="18px" class="mb-2" />
-                  <Skeleton width="110px" height="14px" />
-                </div>
-                <Skeleton width="90px" height="34px" />
-              </div>
-
-              <div class="masonry-skeleton">
-                <Skeleton v-for="j in 6" :key="j" width="100%" height="180px" class="skeleton-tile" />
-              </div>
-            </template>
-          </Card>
+          <div class="spinner">
+            <i class="pi pi-spin pi-spinner"></i>
+            <span>Chargement...</span>
+          </div>
         </div>
 
         <div ref="sentinel" class="sentinel"></div>
 
-        <div v-if="!loading && !loadingMore && !albums.length" class="empty-state">
+        <div v-if="!loading && !loadingMore && !photos.length" class="empty-state">
           <i class="pi pi-images"></i>
           <h3>Aucune photo trouvée</h3>
           <p>Essayez une autre recherche.</p>
         </div>
 
-        <div v-if="!loading && !loadingMore && hasMore === false && albums.length" class="end-feed">
+        <div v-if="!loading && !loadingMore && !hasMore && photos.length" class="end-feed">
           <i class="pi pi-check-circle"></i>
-          <span>Vous avez tout vu</span>
+          <span>Fin de la galerie — {{ totalPhotosCount }} photos</span>
         </div>
       </div>
     </div>
+
+    <!-- Modal -->
+    <Dialog
+      v-model:visible="showModal"
+      :modal="true"
+      :closable="true"
+      :closeOnEscape="true"
+      class="photo-modal"
+      :style="{ width: '90vw', maxWidth: '1200px' }"
+      :header="currentPhoto?.postTitle"
+    >
+      <div v-if="currentPhoto" class="modal-content">
+        <div class="modal-image">
+          <img :src="currentPhoto.src" :alt="currentPhoto.alt" />
+        </div>
+        <div class="modal-info">
+          <div v-if="currentPhoto.caption" class="modal-caption">
+            <i class="pi pi-comment"></i>
+            <p>{{ currentPhoto.caption }}</p>
+          </div>
+          <div class="modal-actions">
+            <Button
+              label="Voir l'article"
+              icon="pi pi-arrow-right"
+              class="p-button-success"
+              @click="goToPost(currentPhoto.postSlug)"
+            />
+            <Button
+              label="Télécharger"
+              icon="pi pi-download"
+              class="p-button-outlined"
+              @click="downloadPhoto(currentPhoto)"
+            />
+          </div>
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
 <style scoped>
-.photo-page {
+.gallery-page {
   min-height: 100vh;
   padding: 32px 0 60px;
-  background:
-    radial-gradient(circle at top left, rgba(20, 184, 44, 0.08), transparent 18%),
-    radial-gradient(circle at top right, rgba(15, 23, 42, 0.05), transparent 20%),
-    linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
 }
 
 .container {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 16px;
 }
 
+/* En-tête */
 .hero-banner {
-  display: grid;
-  grid-template-columns: 1fr 340px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
   gap: 20px;
-  align-items: end;
-  margin-bottom: 28px;
-  padding: 24px;
+  margin-bottom: 32px;
+  padding: 28px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(12px);
 }
 
@@ -329,9 +340,9 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  padding: 8px 14px;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(20, 184, 44, 0.10);
+  background: rgba(20, 184, 44, 0.12);
   color: #15803d;
   font-size: 0.85rem;
   font-weight: 900;
@@ -339,206 +350,184 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
 
 .page-title {
   margin: 0 0 10px;
-  font-size: 2.15rem;
-  line-height: 1.1;
+  font-size: 2.3rem;
   color: #0f172a;
   font-weight: 950;
 }
 
 .page-subtitle {
   margin: 0;
-  max-width: 760px;
   color: #475569;
-  line-height: 1.65;
-}
-
-.stats-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 18px;
-  flex-wrap: wrap;
 }
 
 .stat-box {
-  min-width: 110px;
-  padding: 12px 14px;
+  display: inline-flex;
+  flex-direction: column;
+  padding: 8px 16px;
   border-radius: 18px;
   background: rgba(248, 250, 252, 0.95);
   border: 1px solid #e2e8f0;
 }
 
 .stat-box strong {
-  display: block;
-  color: #0f172a;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 900;
+  color: #0f172a;
 }
 
 .stat-box span {
+  font-size: 0.8rem;
   color: #64748b;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.hero-tools {
-  display: flex;
-  align-items: end;
 }
 
 .search-wrapper {
   position: relative;
-  width: 100%;
+  width: 280px;
 }
 
 .search-wrapper i {
   position: absolute;
-  left: 16px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #64748b;
-  z-index: 2;
 }
 
 .search-input {
   width: 100%;
-  height: 48px;
-  padding-left: 42px !important;
+  height: 44px;
+  padding-left: 38px !important;
   border-radius: 999px !important;
   border: 1px solid #dbe4ee !important;
-  box-shadow: none !important;
   background: #fff !important;
 }
 
-.album-grid,
-.loading-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+/* MASONRY STYLE - Chaque photo garde sa proportion naturelle */
+.photo-grid-masonry {
+  column-count: 4;
+  column-gap: 20px;
 }
 
-.album-card {
-  border-radius: 24px;
-  border: 1px solid #e2e8f0;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+.photo-item {
+  break-inside: avoid;
+  margin-bottom: 20px;
+  position: relative;
+  border-radius: 16px;
   overflow: hidden;
-  opacity: 0;
-  transform: translateY(18px);
-  animation: albumAppear 0.55s ease forwards;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.album-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-}
-
-:deep(.album-card .p-card-body) {
-  padding: 1rem;
-}
-
-.album-head,
-.skeleton-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.album-head-left {
-  min-width: 0;
+  background: #f1f5f9;
   cursor: pointer;
 }
 
-.album-title {
-  margin: 0 0 8px;
+.photo-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.photo-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.photo-item:hover .photo-img {
+  transform: scale(1.02);
+}
+
+/* Overlay au survol */
+.photo-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.2));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.photo-item:hover .photo-overlay {
+  opacity: 1;
+}
+
+.overlay-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.overlay-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
   color: #0f172a;
-  font-size: 1.02rem;
-  font-weight: 900;
-  line-height: 1.35;
+}
+
+.overlay-btn:hover {
+  background: #14b82c;
+  color: white;
+  transform: scale(1.05);
+}
+
+.overlay-caption {
+  background: rgba(0,0,0,0.7);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  backdrop-filter: blur(4px);
+}
+
+.overlay-caption span {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.album-meta {
+/* Skeleton */
+.photo-skeleton {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #e2e8f0;
+  aspect-ratio: 4 / 3;
+}
+
+.skeleton-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading more */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.spinner {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.album-btn {
-  flex-shrink: 0;
-  font-weight: 800;
-}
-
-/* VRAIE MASONRY CONTINUE */
-.album-masonry,
-.masonry-skeleton {
-  column-count: 3;
-  column-gap: 10px;
-}
-
-.masonry-item,
-.skeleton-tile {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  margin-bottom: 10px;
-}
-
-.image-shell {
-  position: relative;
-  overflow: hidden;
-  border-radius: 18px;
-  border: 1px solid #edf2f7;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-}
-
-.image-shell:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.08);
-}
-
-:deep(.masonry-img) {
-  width: 100%;
-  height: auto !important;
-  display: block;
-  object-fit: contain;
-  background: #fff;
-}
-
-/* animation globale */
-@keyframes albumAppear {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.album-fade-enter-active,
-.album-fade-leave-active {
-  transition: all 0.35s ease;
-}
-
-.album-fade-enter-from,
-.album-fade-leave-to {
-  opacity: 0;
-  transform: translateY(12px);
-}
-
-.loading-more,
-.sentinel,
-.end-feed,
-.empty-state {
-  margin-top: 18px;
+  gap: 12px;
+  padding: 12px 24px;
+  background: white;
+  border-radius: 40px;
+  color: #14b82c;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .sentinel {
@@ -546,97 +535,155 @@ const goToPost = (slug) => router.push(`/posts/${slug}`)
 }
 
 .end-feed {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 0 0;
+  text-align: center;
+  padding: 40px 0 20px;
   color: #64748b;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  border-radius: 24px;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 28px;
   border: 1px dashed #cbd5e1;
-  background: rgba(255, 255, 255, 0.95);
 }
 
 .empty-state i {
-  font-size: 2.4rem;
-  color: #64748b;
-  margin-bottom: 14px;
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 16px;
 }
 
-.empty-state h3 {
-  margin: 0 0 8px;
-  color: #0f172a;
+/* Modal */
+.photo-modal :deep(.p-dialog-header) {
+  background: #0f172a;
+  color: white;
+  border-bottom: 1px solid #1e293b;
 }
 
-.empty-state p {
+.photo-modal :deep(.p-dialog-content) {
+  background: #0f172a;
+  padding: 0;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-image {
+  background: #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-image img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.modal-info {
+  padding: 20px;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modal-caption {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border-left: 3px solid #14b82c;
+}
+
+.modal-caption i {
+  color: #14b82c;
+  font-size: 1.1rem;
+  margin-top: 2px;
+}
+
+.modal-caption p {
   margin: 0;
-  color: #64748b;
+  line-height: 1.5;
+  color: #334155;
 }
 
-@media (max-width: 1100px) {
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Responsive - Masonry columns */
+@media (max-width: 1200px) {
+  .photo-grid-masonry {
+    column-count: 3;
+    column-gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .photo-grid-masonry {
+    column-count: 2;
+    column-gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
   .hero-banner {
-    grid-template-columns: 1fr;
-  }
-
-  .album-grid,
-  .loading-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .page-title {
-    font-size: 1.7rem;
-  }
-
-  .album-head {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .album-btn {
+  .search-wrapper {
     width: 100%;
   }
 
-  .album-masonry,
-  .masonry-skeleton {
-    column-count: 2;
+  .overlay-caption {
+    font-size: 0.7rem;
+    padding: 6px 10px;
+  }
+
+  .overlay-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-title {
+    font-size: 1.7rem;
+  }
+
+  .hero-banner {
+    padding: 20px;
   }
 }
 
 @media (max-width: 480px) {
-  .container {
-    padding: 0 12px;
+  .photo-grid-masonry {
+    column-count: 1;
+    column-gap: 12px;
   }
 
-  .hero-banner {
-    padding: 18px;
-    border-radius: 22px;
-  }
-
-  .page-title {
-    font-size: 1.45rem;
-  }
-
-  .album-masonry,
-  .masonry-skeleton {
-    column-count: 2;
-    column-gap: 8px;
-  }
-
-  .masonry-item,
-  .skeleton-tile {
-    margin-bottom: 8px;
-  }
-
-  :deep(.album-card .p-card-body) {
-    padding: 0.85rem;
+  .photo-item {
+    margin-bottom: 12px;
   }
 }
 </style>

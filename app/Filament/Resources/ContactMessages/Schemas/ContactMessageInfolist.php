@@ -21,6 +21,11 @@ class ContactMessageInfolist
                         ->url(fn ($record) => $record->email ? "mailto:{$record->email}" : null)
                         ->openUrlInNewTab(),
 
+                     TextEntry::make('telephone')
+                        ->label('Téléphone')
+                        ->url(fn ($record) => $record->telephone ? "tel:{$record->telephone }" : null)
+                        ->openUrlInNewTab(),
+
                     TextEntry::make('recipient')
                         ->label('Destinataire')
                         ->default('DRIPA'),

@@ -16,6 +16,7 @@ useHead({
 const website = ref('') // honeypot
 const form = ref({
   name: '',
+  telephone: '',
   email: '',
   subject: '',
   message: ''
@@ -39,21 +40,23 @@ const handleSubmit = async () => {
       },
       body: JSON.stringify({
         name: form.value.name,
+        telephone: form.value.telephone,
         email: form.value.email,
         subject: form.value.subject,
         message: form.value.message,
-        website: website.value,
+        website: website.value, // champ honeypot - doit être vide
       }),
     })
 
     if (res.status === 422) {
-      const data = await res.json().catch(() => null)
+      const data = await res.json()
+      console.log('Erreurs backend:', data.errors) // ← Affiche les erreurs dans la console
 
-      const firstError = data?.errors
-        ? Object.values(data.errors)?.[0]?.[0]
-        : null
+      // Prendre la première erreur
+      const firstErrorKey = Object.keys(data.errors)[0]
+      const firstErrorMessage = data.errors[firstErrorKey][0]
 
-      errorMsg.value = firstError || 'Certains champs sont invalides. Vérifie le formulaire.'
+      errorMsg.value = firstErrorMessage || 'Certains champs sont invalides.'
       return
     }
 
@@ -70,12 +73,14 @@ const handleSubmit = async () => {
     sent.value = true
     form.value = {
       name: '',
+      telephone: '',
       email: '',
       subject: '',
       message: '',
     }
     website.value = ''
-  } catch {
+  } catch (err) {
+    console.error('Erreur:', err)
     errorMsg.value = 'Impossible de contacter le serveur. Vérifie ta connexion.'
   } finally {
     isSending.value = false
@@ -148,6 +153,19 @@ const handleSubmit = async () => {
             </div>
 
             <div class="form-group">
+              <label for="contact-phone">Numéro de téléphone</label>
+              <input
+                id="contact-phone"
+                v-model="form.telephone"
+                type="tel"
+                placeholder="Ex: 71 24 49 23"
+                autocomplete="tel"
+                maxlength="50"
+                required
+              />
+            </div>
+
+            <div class="form-group">
               <label for="contact-email">Email</label>
               <input
                 id="contact-email"
@@ -161,18 +179,20 @@ const handleSubmit = async () => {
               />
             </div>
 
-            <div aria-hidden="true">
-              <input type="hidden" name="website" />
+            <!-- HONEYPOT - Champ caché pour les robots -->
+            <div class="hp-wrapper">
+              <label for="website" style="display: none;">Site web</label>
+              <input
+                id="website"
+                v-model="website"
+                type="text"
+                name="website"
+                class="hp"
+                autocomplete="off"
+                tabindex="-1"
+                placeholder="Laissez ce champ vide"
+              />
             </div>
-
-            <input
-              v-model="website"
-              type="text"
-              name="website"
-              class="hp"
-              autocomplete="off"
-              tabindex="-1"
-            />
 
             <div class="form-group">
               <label for="contact-subject">Sujet</label>
@@ -375,6 +395,17 @@ textarea {
   font-weight: 700;
 }
 
+/* HONEYPOT - caché visuellement mais pas avec display:none (les robots peuvent ignorer display:none) */
+.hp-wrapper {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  opacity: 0;
+  height: 0;
+  width: 0;
+  overflow: hidden;
+}
+
 .hp {
   position: absolute;
   left: -9999px;
@@ -410,6 +441,7 @@ textarea {
     padding: 24px;
   }
 }
+
 input:focus,
 select:focus,
 textarea:focus {

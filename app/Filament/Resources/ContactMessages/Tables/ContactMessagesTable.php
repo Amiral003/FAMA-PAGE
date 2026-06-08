@@ -47,6 +47,14 @@ class ContactMessagesTable
                     ->copyMessage('Email copié')
                     ->copyMessageDuration(1500),
 
+                    TextColumn::make('telephone')
+                    ->label('Téléphone')
+                    ->searchable()
+                    ->copyable()
+                    ->copyMessage('Téléphone')
+                    ->icon('heroicon-o-phone')
+                    ->copyMessageDuration(1500),
+
                 TextColumn::make('subject')
                     ->label('Sujet')
                     ->searchable()

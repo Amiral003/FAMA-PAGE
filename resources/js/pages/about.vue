@@ -71,14 +71,12 @@ const handleScroll = () => {
 
   const topSpacing = 24
 
-  // 1. Gestion du déclenchement du mode fixe (Haut de l'écran)
   if (layoutRect.top <= topSpacing) {
     isFixed.value = true
   } else {
     isFixed.value = false
   }
 
-  // 2. Alignement et blocage au bas de la colonne de contenu (Empêche le dépassement)
   const maxTopAllowed = contentRect.bottom - sidebarHeight
   if (topSpacing >= maxTopAllowed) {
     isFixed.value = false
@@ -87,17 +85,6 @@ const handleScroll = () => {
     isBottomed.value = false
   }
 }
-
-const sortedStaffs = computed(() =>
-  [...staffs.value].sort((a, b) => {
-    const orderA = a.order ?? 999999
-    const orderB = b.order ?? 999999
-
-    if (orderA !== orderB) return orderA - orderB
-
-    return (a.name || '').localeCompare(b.name || '', 'fr')
-  })
-)
 
 const getStaffTypeLabel = (s) => {
   const name = `${s.name || ''} ${s.initials || ''}`.toLowerCase()
@@ -156,6 +143,66 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('resize', handleScroll)
 })
+
+// ================= LOGIQUE DE TRI HIERARCHIQUE SÉCURISÉE =================
+
+// 1. La Présidence (PR)
+const presidencyStaff = computed(() => {
+  if (!Array.isArray(staffs.value)) return []
+  return staffs.value.filter(s => s && s.initials === 'PR')
+})
+
+// 2. Le Ministère (MDAC) seul
+const mdacParent = computed(() => {
+  if (!Array.isArray(staffs.value)) return null
+  return staffs.value.find(s => s && s.initials === 'MDAC') || null
+})
+
+// 3. Les ENFANTS du Ministère (MDAC)
+const mdacChildren = computed(() => {
+  if (!Array.isArray(staffs.value)) return []
+  const mdac = mdacParent.value
+  if (!mdac || !mdac.id) return []
+
+  return staffs.value
+    .filter(s => s && Number(s.parent_staff_id) === Number(mdac.id) && s.initials !== 'EMGA')
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+})
+
+// 4. L'État-Major Général des Armées (EMGA) seul
+const emgaParent = computed(() => {
+  if (!Array.isArray(staffs.value)) return null
+  return staffs.value.find(s => s && s.initials === 'EMGA') || null
+})
+
+// 5. Les ENFANTS de l'État-Major (EMGA)
+const emgaChildren = computed(() => {
+  if (!Array.isArray(staffs.value)) return []
+  const emga = emgaParent.value
+  if (!emga || !emga.id) return []
+
+  return staffs.value
+    .filter(s => s && Number(s.parent_staff_id) === Number(emga.id))
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+})
+
+// 6. Les Autres organismes autonomes
+const otherStaffs = computed(() => {
+  if (!Array.isArray(staffs.value)) return []
+  const mdacId = mdacParent.value?.id
+  const emgaId = emgaParent.value?.id
+
+  return staffs.value
+    .filter(s =>
+      s &&
+      s.initials !== 'PR' &&
+      s.initials !== 'MDAC' &&
+      s.initials !== 'EMGA' &&
+      s.parent_staff_id !== mdacId &&
+      s.parent_staff_id !== emgaId
+    )
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+})
 </script>
 
 <template>
@@ -206,14 +253,14 @@ onUnmounted(() => {
               <p>
                 Les Forces Armées Maliennes regroupent des structures de
                 commandement, des directions, des services, des organismes
-                spécialisés et des entités d’appui chargés de la planification,
-                de la coordination, de l’administration, du soutien et de la
+                spécialisés et des entités d'appui chargés de la planification,
+                de la coordination, de l'administration, du soutien et de la
                 conduite des opérations.
               </p>
 
               <p>
                 Leur organisation repose sur la discipline, la continuité du
-                commandement, l’efficacité opérationnelle et le respect des
+                commandement, l'efficacité opérationnelle et le respect des
                 principes républicains.
               </p>
             </div>
@@ -241,8 +288,8 @@ onUnmounted(() => {
                 <h3>Défense du territoire</h3>
 
                 <p>
-                  Assurer l’intégrité du territoire national et contribuer à la
-                  protection de la souveraineté de l’État.
+                  Assurer l'intégrité du territoire national et contribuer à la
+                  protection de la souveraineté de l'État.
                 </p>
               </div>
             </div>
@@ -282,9 +329,9 @@ onUnmounted(() => {
           </div>
 
           <p class="org-text">
-            L’organisation institutionnelle de la défense comprend plusieurs
+            L'organisation institutionnelle de la défense comprend plusieurs
             niveaux : ministère, état-major général, états-majors, directions,
-            services techniques, structures d’appui et organismes spécialisés.
+            services techniques, structures d'appui et organismes spécialisés.
           </p>
 
           <div class="org-tags">
@@ -296,16 +343,15 @@ onUnmounted(() => {
           </div>
         </section>
 
+        <!-- SECTION DES STRUCTURES -->
         <section class="section-box structures-box">
           <div class="section-head">
             <h2>Structures institutionnelles</h2>
             <div class="section-line"></div>
           </div>
 
-          <p class="staff-intro">
-            Cette section présente les structures institutionnelles de la
-            défense : ministère, état-major général, états-majors, directions,
-            services et structures spécialisées.
+          <p class="staff-intro mt-2">
+            Organisation hiérarchique de la Défense Nationale et des Forces Armées.
           </p>
 
           <div v-if="loadError" class="error-box">
@@ -313,86 +359,174 @@ onUnmounted(() => {
           </div>
 
           <div v-else-if="isLoading" class="staff-grid compact-grid">
-            <Card
-              v-for="i in 12"
-              :key="i"
-              class="staff-card compact-card"
-            >
+            <Card v-for="i in 4" :key="i" class="staff-card compact-card">
               <template #content>
                 <div class="staff-row">
                   <Skeleton shape="circle" size="3rem" />
-
                   <div class="staff-col">
                     <Skeleton width="85%" height="0.9rem" class="mb-2" />
-                    <Skeleton width="50%" height="0.8rem" class="mb-2" />
-                    <Skeleton width="60%" height="0.8rem" />
+                    <Skeleton width="50%" height="0.8rem" />
                   </div>
                 </div>
               </template>
             </Card>
           </div>
 
-          <div v-else class="staff-grid compact-grid">
-            <RouterLink
-              v-for="s in sortedStaffs"
-              :key="s.id"
-              :to="`/etat-major/${s.slug}`"
-              class="staff-link"
-            >
-              <Card class="staff-card compact-card premium-card">
-                <template #content>
-                  <div class="staff-row">
-                    <div class="staff-thumb" v-if="s.logo">
-                      <img :src="`/storage/${s.logo}`" :alt="s.name" />
-                    </div>
+          <div v-else class="hierarchy-container space-y-8 mt-6">
 
-                    <div class="staff-thumb fallback" v-else>
-                      {{ (s.initials || 'FAMa').slice(0, 4) }}
-                    </div>
-
-                    <div class="staff-col">
-                      <div class="staff-top">
-                        <Tag
-                          :value="getStaffTypeLabel(s)"
-                          severity="success"
-                          rounded
-                          class="mini-tag"
-                        />
+            <!-- BLOC HAUTE AUTORITÉ : PRÉSIDENCE -->
+            <div v-if="presidencyStaff.length" class="hierarchy-group mb-6">
+              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Haute Autorité</div>
+              <div class="staff-grid compact-grid">
+                <RouterLink v-for="s in presidencyStaff" :key="s.id" :to="`/etat-major/${s.slug}`" class="staff-link">
+                  <Card class="staff-card compact-card premium-card border-l-4 border-amber-500">
+                    <template #content>
+                      <div class="staff-row">
+                        <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
+                        <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                        <div class="staff-col">
+                          <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <h3 class="staff-name">{{ s.name }}</h3>
+                          <div class="staff-meta" v-if="s.leader_name">
+                            <span class="meta-k">Chef suprême des Armées </span>
+                            <span class="meta-v">{{ s.leader_name }}
+                              <span class="text-xs text-slate-400 font-normal">({{ s.leader_rank }})</span>
+                            </span>
+                          </div>
+                        </div>
                       </div>
+                    </template>
+                  </Card>
+                </RouterLink>
+              </div>
+            </div>
 
-                      <h3 class="staff-name" :title="s.name">
-                        {{ s.name }}
-                      </h3>
+            <!-- BLOC MINISTÈRE (MDAC) & SES ENFANTS -->
+            <div v-if="mdacParent" class="org-tree-container mb-8">
+              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Tutelle / Administration</div>
 
-                      <div class="staff-subline">
-                        {{ s.initials || 'Structure institutionnelle' }}
+              <!-- Carte Parente : MDAC -->
+              <div class="parent-node">
+                <RouterLink :to="`/etat-major/${mdacParent.slug}`" class="staff-link block">
+                  <Card class="staff-card compact-card premium-card parent-card">
+                    <template #content>
+                      <div class="staff-row">
+                        <div class="staff-thumb" v-if="mdacParent.logo"><img :src="`/storage/${mdacParent.logo}`" :alt="mdacParent.name" /></div>
+                        <div class="staff-thumb fallback" v-else>{{ mdacParent.initials }}</div>
+                        <div class="staff-col">
+                          <Tag :value="mdacParent.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <h3 class="staff-name">{{ mdacParent.name }}</h3>
+                          <div class="staff-meta" v-if="mdacParent.leader_name">
+                            <span class="meta-k">Ministre </span>
+                            <span class="meta-v">{{ mdacParent.leader_name }}
+                              <span v-if="mdacParent.leader_rank" class="text-xs text-slate-400 font-normal">({{ mdacParent.leader_rank }})</span>
+                            </span>
+                          </div>
+                        </div>
                       </div>
+                    </template>
+                  </Card>
+                </RouterLink>
+              </div>
 
-                      <div class="staff-meta">
-                        <span class="meta-k">Responsable :</span>
+              <!-- Enfants du MDAC -->
+              <div v-if="mdacChildren.length" class="children-tree">
+                <div v-for="s in mdacChildren" :key="s.id" class="child-node">
+                  <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
+                    <Card class="staff-card compact-card premium-card child-card">
+                      <template #content>
+                        <div class="staff-row">
+                          <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
+                          <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                          <div class="staff-col">
+                            <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                            <h3 class="staff-name">{{ s.name }}</h3>
 
-                        <span class="meta-v">
-                          {{ s.leader_name || 'Non renseigné' }}
-                        </span>
+                          </div>
+                        </div>
+                      </template>
+                    </Card>
+                  </RouterLink>
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOC ÉTAT-MAJOR (EMGA) & SES ENFANTS -->
+            <div v-if="emgaParent" class="org-tree-container mb-8">
+              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Commandement Opérationnel</div>
+
+              <!-- Carte Parente : EMGA -->
+              <div class="parent-node">
+                <RouterLink :to="`/etat-major/${emgaParent.slug}`" class="staff-link block">
+                  <Card class="staff-card compact-card premium-card parent-card">
+                    <template #content>
+                      <div class="staff-row">
+                        <div class="staff-thumb" v-if="emgaParent.logo"><img :src="`/storage/${emgaParent.logo}`" :alt="emgaParent.name" /></div>
+                        <div class="staff-thumb fallback" v-else>{{ emgaParent.initials }}</div>
+                        <div class="staff-col">
+                          <Tag :value="emgaParent.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <h3 class="staff-name">{{ emgaParent.name }}</h3>
+                          <div class="staff-meta" v-if="emgaParent.leader_name">
+                            <span class="meta-k">Chef d'État-Major </span>
+                            <span class="meta-v">{{ emgaParent.leader_name }}
+                              <span v-if="emgaParent.leader_rank" class="text-xs text-slate-400 font-normal">({{ emgaParent.leader_rank }})</span>
+                            </span>
+                          </div>
+                        </div>
                       </div>
+                    </template>
+                  </Card>
+                </RouterLink>
+              </div>
 
-                      <div class="staff-meta">
-                        <span class="meta-k">Grade / Fonction :   <span class="meta-v">
-                          {{ s.leader_rank || 'Non renseigné' }}
-                        </span></span>
+              <!-- Enfants de l'EMGA -->
+              <div v-if="emgaChildren.length" class="children-tree">
+                <div v-for="s in emgaChildren" :key="s.id" class="child-node">
+                  <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
+                    <Card class="staff-card compact-card premium-card child-card">
+                      <template #content>
+                        <div class="staff-row">
+                          <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
+                          <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                          <div class="staff-col">
+                            <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                            <h3 class="staff-name">{{ s.name }}</h3>
 
+                          </div>
+                        </div>
+                      </template>
+                    </Card>
+                  </RouterLink>
+                </div>
+              </div>
+            </div>
 
+            <!-- AUTRES ORGANISMES AUTONOMES -->
+            <div v-if="otherStaffs.length" class="hierarchy-group mt-6">
+              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Autres organismes</div>
+              <div class="staff-grid compact-grid">
+                <RouterLink v-for="s in otherStaffs" :key="s.id" :to="`/etat-major/${s.slug}`" class="staff-link">
+                  <Card class="staff-card compact-card premium-card">
+                    <template #content>
+                      <div class="staff-row">
+                        <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
+                        <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                        <div class="staff-col">
+                          <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <h3 class="staff-name">{{ s.name }}</h3>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </template>
-              </Card>
-            </RouterLink>
+                    </template>
+                  </Card>
+                </RouterLink>
+              </div>
+            </div>
+
           </div>
         </section>
       </section>
 
-      <!-- Colonne réservoir latérale équilibrée -->
+      <!-- Sidebar -->
       <aside class="sidebar-wrapper-column">
         <div
           ref="sidebarContainer"
@@ -409,6 +543,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Styles globaux */
 .about-page {
   min-height: 100vh;
   padding: 36px 0 50px;
@@ -426,7 +561,7 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 28px;
   align-items: start;
-  position: relative; /* Point de repère absolu pour le blocage au bas */
+  position: relative;
 }
 
 .content-column {
@@ -437,19 +572,16 @@ onUnmounted(() => {
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
-/* Base de la colonne de droite */
 .sidebar-wrapper-column {
   width: 320px;
   height: 100%;
 }
 
-/* Comportement initial standard */
 .js-dynamic-sidebar {
   width: 320px;
   height: fit-content;
 }
 
-/* Étape 1 : Mode fixe au scroll global */
 .js-dynamic-sidebar.is-fixed {
   position: fixed;
   top: 24px;
@@ -457,7 +589,6 @@ onUnmounted(() => {
   z-index: 90;
 }
 
-/* Étape 2 : Fige l'alignement tout en bas pour ne jamais dépasser le conteneur principal */
 .js-dynamic-sidebar.is-bottomed {
   position: absolute;
   bottom: 0;
@@ -465,17 +596,13 @@ onUnmounted(() => {
   width: 320px;
 }
 
+/* Hero */
 .hero-premium {
   position: relative;
   border-radius: 22px;
   overflow: hidden;
   margin-bottom: 26px;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(18, 43, 25, 0.98),
-      rgba(15, 23, 42, 0.96)
-    );
+  background: linear-gradient(135deg, rgba(31, 78, 44, 0.98), rgba(57, 27, 64, 0.96));
 }
 
 .hero-content {
@@ -542,6 +669,7 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
+/* Sections */
 .section-box {
   margin-top: 24px;
   padding: 24px;
@@ -574,9 +702,7 @@ onUnmounted(() => {
   margin-top: 18px;
 }
 
-.intro-content p,
-.org-text,
-.staff-intro {
+.intro-content p, .org-text, .staff-intro {
   color: #334155;
   line-height: 1.85;
   margin: 0 0 14px;
@@ -643,89 +769,52 @@ onUnmounted(() => {
   margin-top: 16px;
 }
 
-.compact-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.staff-link {
-  display: block;
-  text-decoration: none;
-  width: 100%;
-}
-
-.premium-card {
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #ffffff;
-  transition: all 0.22s ease;
-  padding: 12px 20px;
-  border-radius: 16px;
-}
-
-.premium-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(20, 184, 44, 0.28);
-  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
-}
-
+/* Structure des cartes - Alignement horizontal parfait */
 .staff-row {
-  display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 12px;
-  align-items: start;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
 }
 
 .staff-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: #f1f5f9;
-  border: 1px solid rgba(20, 184, 44, 0.18);
+ width: 90px;
+  height: 90px;
   flex-shrink: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: transparent;
+  border: 1px solid rgba(20, 184, 44, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
 }
 
 .staff-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  padding: 0;
 }
 
 .staff-thumb.fallback {
-  display: grid;
-  place-items: center;
-  font-size: 0.78rem;
-  font-weight: 950;
+  font-size: 0.9rem;
+  font-weight: 900;
   color: #14b82c;
-  background: #f0fdf4;
 }
 
-.staff-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
+.staff-col {
+  flex: 1;
+  min-width: 0;
 }
 
 .staff-name {
   margin: 0 0 4px;
   font-size: 0.9rem;
   font-weight: 950;
-  color: #0f172a;
+  color: #ebedf2;
   text-transform: uppercase;
   line-height: 1.35;
-}
-
-.staff-subline {
-  margin-bottom: 7px;
-  color: #64748b;
-  font-size: 0.76rem;
-  font-weight: 850;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
 .staff-meta {
@@ -735,14 +824,101 @@ onUnmounted(() => {
 }
 
 .meta-k {
-  color: #64748b;
+ color: #e3c6a9 !important;
   font-weight: 850;
   margin-right: 4px;
 }
 
 .meta-v {
-  color: #1e293b;
+  color: #e8eaed;
   font-weight: 750;
+}
+
+/* Style des tags - Affiche les initiales */
+.mini-tag {
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  padding: 4px 10px !important;
+  background: rgba(20, 184, 44, 0.15) !important;
+  color: #14b82c !important;
+  border: none !important;
+  display: inline-block !important;
+  width: auto !important;
+}
+
+/* Cartes premium */
+.premium-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(135deg, #40a15e, #1a4629);
+  transition: all 0.22s ease;
+  padding: 14px 20px;
+  border-radius: 16px;
+}
+
+.premium-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(20, 184, 44, 0.28);
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
+}
+
+/* Cartes parentes (MDAC/EMGA) */
+.parent-card {
+  background: linear-gradient(135deg, #40a15e, #1a4629);
+  border-left: 4px solid #14b82c !important;
+  margin-bottom: 14px;
+
+}
+
+.parent-card .staff-name {
+  color: #ffffff !important;
+}
+
+.parent-card .meta-k {
+ color: #e3c6a9 !important;
+}
+
+.parent-card .meta-v {
+  color: #ffffff !important;
+}
+
+.parent-card .mini-tag {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+/* Cartes enfants */
+.child-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.child-card .staff-name {
+  color: #0f172a !important;
+}
+
+/* Grid pour les enfants */
+.compact-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.children-tree {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 20px;
+  margin-top: 12px;
+  padding-left: 20px;
+}
+
+.child-node {
+  width: 100%;
+}
+
+.staff-link {
+  display: block;
+  text-decoration: none;
+  width: 100%;
 }
 
 .error-box {
@@ -754,137 +930,68 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-/* ================= DARK MODE ================= */
-
-:global(html.dark) .about-page {
-  background: #263827;
+/* Traits d'arborescence */
+.org-tree-container {
+  position: relative;
 }
 
-:global(html.dark) .content-column {
-  background: #2d392e;
-  border-color: rgba(255, 215, 0, 0.08);
-  box-shadow: none;
+.children-tree {
+  position: relative;
+  margin-top: 8px;
+  padding-left: 28px;
 }
 
-:global(html.dark) .section-box {
-  background: #243125;
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: none;
-}
-
-:global(html.dark) .section-head h2 {
-  color: #f8fafc;
-}
-
-:global(html.dark) .section-line {
+.children-tree::before {
+  content: "";
+  position: absolute;
+  top: -26px;
+  left: 1px;
+  width: 3px;
+  height: calc(100% + 20px);
   background: #14b82c;
+  border-radius: 3px;
+}
+.child-node::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  width: 12px;
+  height: 1.5px;
+  background: #14b82c;
+  border-radius: 1px;
+}
+.child-node {
+  position: relative;
 }
 
-:global(html.dark) .intro-content p,
-:global(html.dark) .org-text,
-:global(html.dark) .staff-intro,
-:global(html.dark) .mission-body p {
-  color: #dbe4dc;
+.child-node::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -21px;
+  width: 21px;
+  height: 3px;
+  background: #14b82c;
+  border-radius: 3px;
 }
 
-:global(html.dark) .mission-item {
-  background: #2d392e;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-:global(html.dark) .mission-body h3 {
-  color: #ffffff;
-}
-
-:global(html.dark) .mission-number {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
-}
-
-:global(html.dark) .premium-card {
-  background: #2d392e !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: none !important;
-}
-
-:global(html.dark) .premium-card:hover {
-  border-color: rgba(34, 197, 94, 0.35) !important;
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18) !important;
-}
-
-:global(html.dark) .premium-card :deep(.p-card) {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-:global(html.dark) .premium-card :deep(.p-card-body),
-:global(html.dark) .premium-card :deep(.p-card-content) {
-  background: transparent !important;
-  padding: 0 !important;
-}
-
-:global(html.dark) .staff-name {
-  color: #ffffff;
-}
-
-:global(html.dark) .staff-subline {
-  color: #cbd5e1;
-}
-
-:global(html.dark) .meta-k {
-  color: #a8b5aa;
-}
-
-:global(html.dark) .meta-v {
-  color: #f8fafc;
-}
-
-:global(html.dark) .staff-thumb {
-  background: #1f2c21;
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-:global(html.dark) .staff-thumb.fallback {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
-}
-
-:global(html.dark) .mini-tag,
-:global(html.dark) .org-tags :deep(.p-tag) {
-  background: rgba(34, 197, 94, 0.14) !important;
-  color: #bbf7d0 !important;
-  border: 1px solid rgba(34, 197, 94, 0.22) !important;
-  box-shadow: none !important;
-}
-
-:global(html.dark) :deep(.p-tag) {
-  box-shadow: none !important;
-}
-
-:global(html.dark) :deep(.p-card) {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
+/* Responsive */
 @media (max-width: 1024px) {
   .main-layout {
     grid-template-columns: 1fr;
   }
-
   .sidebar-wrapper-column,
   .js-dynamic-sidebar {
     width: 100% !important;
   }
-
   .hero-content,
   .intro-grid {
     grid-template-columns: 1fr;
   }
-
   .hero-image-card {
     height: 240px;
   }
-
   .js-dynamic-sidebar.is-fixed,
   .js-dynamic-sidebar.is-bottomed {
     position: static !important;
@@ -892,63 +999,181 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 700px) {
-  .about-page {
-    padding: 0;
+@media (max-width: 900px) {
+  /* Arborescence sur tablette */
+  .children-tree {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding-left: 20px;
+    margin-top: 16px;
   }
 
-  .container {
-    padding: 0;
+  .children-tree::before {
+    left: 0;
+    width: 2px;
+  }
+
+  .child-node::before {
+    left: -20px;
+    width: 20px;
+  }
+
+  /* Alignement horizontal des cartes */
+  .staff-row {
+    flex-direction: row;
+    align-items: center;
+   gap: 16px;
+  }
+
+  .staff-thumb {
+    width: 70px;
+    height: 70px;
+  }
+
+  .staff-col {
+    flex: 1;
+  }
+
+  .staff-name {
+    font-size: 0.85rem;
+  }
+
+  .mini-tag {
+    font-size: 0.65rem !important;
+    padding: 3px 8px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Version mobile */
+  .about-page {
+    padding: 20px 0;
   }
 
   .content-column {
-    border-radius: 0;
     padding: 16px;
   }
 
-  .hero-content {
-    padding: 24px 18px;
-  }
-
-  .hero-image-card {
-    height: 210px;
-  }
-
   .section-box {
-    padding: 18px;
+    padding: 16px;
+    margin-top: 16px;
   }
 
-  .mission-item {
-    grid-template-columns: 1fr;
+  .section-head h2 {
+    font-size: 1.2rem;
   }
 
-  .mission-number {
-    width: 48px;
-    height: 48px;
+  .section-line {
+    width: 60px;
+    height: 3px;
   }
 
-  .premium-card {
-    padding: 12px 14px;
+  /* Arborescence mobile */
+  .children-tree {
+    padding-left: 16px;
+    gap: 12px;
   }
 
+  .children-tree::before {
+    left: -2px;
+  }
+
+  .child-node::before {
+    left: -16px;
+    width: 16px;
+    height: 2px;
+  }
+
+  /* Cartes en ligne sur mobile */
   .staff-row {
-    grid-template-columns: 46px 1fr;
+    flex-direction: row;
+    gap: 9px;
+    align-items: center;
+  }
+
+  .staff-thumb {
+    width: 55px;
+    height: 55px;
+  }
+
+  .staff-col {
+    flex: 1;
+  }
+
+  .staff-name {
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
+  .staff-meta {
+    font-size: 0.7rem;
+  }
+
+  .meta-k, .meta-v {
+    display: inline;
+  }
+
+  .mini-tag {
+    font-size: 0.6rem !important;
+    padding: 2px 6px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Cartes parentes */
+  .parent-card {
+    padding: 12px !important;
+  }
+
+  .parent-card .staff-name {
+    font-size: 0.8rem;
+  }
+
+  /* Cartes enfants */
+  .child-card {
+    padding: 10px !important;
+  }
+
+  /* Grille des autres organismes */
+  .compact-grid {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Très petits écrans */
+  .staff-row {
     gap: 10px;
   }
 
   .staff-thumb {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .staff-col {
+    min-width: 0;
   }
 
   .staff-name {
-    font-size: 0.82rem;
+    font-size: 0.7rem;
   }
 
-  .staff-subline,
   .staff-meta {
-    font-size: 0.73rem;
+    font-size: 0.65rem;
+  }
+
+  .mini-tag {
+    font-size: 0.55rem !important;
+    padding: 2px 5px !important;
+  }
+
+  .children-tree {
+    padding-left: 12px;
+  }
+
+  .child-node::before {
+    left: -12px;
+    width: 12px;
   }
 }
 </style>

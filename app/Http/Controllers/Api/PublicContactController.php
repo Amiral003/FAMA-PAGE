@@ -13,6 +13,9 @@ class PublicContactController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
+        // Log pour voir ce qui arrive
+        Log::info('Contact form data:', $request->all());
+
         if (! empty($request->input('website'))) {
             Log::warning('Honeypot contact déclenché', [
                 'ip' => $request->ip(),
@@ -26,6 +29,9 @@ class PublicContactController extends Controller
             ]);
         }
 
+        // Accepter indifféremment telephone, phone ou tel
+        $telephoneValue = $request->input('telephone') ?? $request->input('phone') ?? $request->input('tel') ?? null;
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
@@ -34,9 +40,20 @@ class PublicContactController extends Controller
             'website' => ['nullable', 'string', 'max:0'],
         ]);
 
+        // Validation manuelle du téléphone
+        if (empty($telephoneValue)) {
+            throw ValidationException::withMessages([
+                'telephone' => ['Le numéro de téléphone est requis.'],
+            ]);
+        }
+
+        // Nettoyer le numéro de téléphone
+        $telephoneClean = preg_replace('/[^0-9+]/', '', trim($telephoneValue));
+
         $msg = ContactMessage::create([
             'name' => trim($data['name']),
             'email' => mb_strtolower(trim($data['email'])),
+            'telephone' => $telephoneClean,
             'subject' => trim($data['subject']),
             'message' => trim($data['message']),
             'ip_address' => $request->ip(),

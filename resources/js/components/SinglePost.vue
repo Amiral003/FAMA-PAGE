@@ -9,7 +9,6 @@ import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import Skeleton from 'primevue/skeleton'
 import Image from 'primevue/image'
-import SidebarOfficial from '@/components/SidebarOfficial.vue'
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -311,7 +310,7 @@ ${fullUrl}`
   <div class="page-background staff-page-container">
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
 
-    <main id="main-content" class="main-layout container" v-if="!loading && post">
+    <main id="main-content" class="container" v-if="!loading && post">
       <article class="content-card staff-main-card" aria-labelledby="post-title">
         <nav class="top-nav" aria-label="Navigation de l’article">
           <Button
@@ -407,30 +406,30 @@ ${fullUrl}`
             >
               <template #item="slotProps">
                 <figure class="image-slide">
-  <Image
-    :src="`/storage/${slotProps.data.file_path}`"
-    preview
-    imageClass="main-post-img"
-    :alt="slotProps.data.caption || (
-      slotProps.index === 0
-        ? `${post.title} - Illustration principale`
-        : `${post.title} - Image ${slotProps.index + 1}`
-    )"
-    :pt="{
-      image: {
-        loading: slotProps.index === 0 ? 'eager' : 'lazy',
-        decoding: 'async'
-      }
-    }"
-  />
+                  <Image
+                    :src="`/storage/${slotProps.data.file_path}`"
+                    preview
+                    imageClass="main-post-img"
+                    :alt="slotProps.data.caption || (
+                      slotProps.index === 0
+                        ? `${post.title} - Illustration principale`
+                        : `${post.title} - Image ${slotProps.index + 1}`
+                    )"
+                    :pt="{
+                      image: {
+                        loading: slotProps.index === 0 ? 'eager' : 'lazy',
+                        decoding: 'async'
+                      }
+                    }"
+                  />
 
-  <figcaption
-    v-if="slotProps.data.caption"
-    class="image-caption"
-  >
-    {{ slotProps.data.caption }}
-  </figcaption>
-</figure>
+                  <figcaption
+                    v-if="slotProps.data.caption"
+                    class="image-caption"
+                  >
+                    {{ slotProps.data.caption }}
+                  </figcaption>
+                </figure>
               </template>
             </Carousel>
           </div>
@@ -479,13 +478,9 @@ ${fullUrl}`
           </div>
         </footer>
       </article>
-
-      <aside class="sidebar-column" aria-label="Informations complémentaires">
-        <SidebarOfficial />
-      </aside>
     </main>
 
-    <div v-else class="container main-layout py-8" aria-live="polite" aria-busy="true">
+    <div v-else class="container py-8" aria-live="polite" aria-busy="true">
       <div class="content-card staff-main-card">
         <Skeleton width="30%" height="2rem" class="mb-4"></Skeleton>
         <Skeleton width="100%" height="4rem" class="mb-6"></Skeleton>
@@ -499,6 +494,7 @@ ${fullUrl}`
 .page-background {
   min-height: 100vh;
   padding: 40px 0;
+  background: #f8fafc;
 }
 
 .skip-link {
@@ -524,13 +520,6 @@ ${fullUrl}`
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 20px;
-}
-
-.main-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 40px;
-  align-items: start;
 }
 
 .content-card {
@@ -613,7 +602,7 @@ ${fullUrl}`
   font-size: clamp(1.8rem, 4vw, 2.7rem);
   font-weight: 950;
   line-height: 1.13;
-  color: var(--text-main, #0f172a);
+  color: #0f172a;
   letter-spacing: -0.03em;
 }
 
@@ -669,7 +658,7 @@ ${fullUrl}`
 .rich-text-content {
   font-size: 1.18rem;
   line-height: 1.85;
-  color: var(--text-muted, #475569);
+  color: #475569;
   margin-bottom: 50px;
   word-break: break-word;
 }
@@ -801,13 +790,6 @@ ${fullUrl}`
   color: #475569;
 }
 
-.sidebar-column {
-  position: sticky;
-  top: 20px;
-  height: fit-content;
-  align-self: start;
-}
-
 .video-fallback {
   width: 100%;
   height: 100%;
@@ -851,16 +833,7 @@ ${fullUrl}`
   font-weight: 600;
 }
 
-@media (max-width: 1150px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar-column {
-    display: none;
-  }
-}
-
+/* Responsive */
 @media (max-width: 768px) {
   .page-background {
     padding: 0;
@@ -872,13 +845,7 @@ ${fullUrl}`
     margin: 0;
   }
 
-  .main-layout {
-    display: block;
-    width: 100%;
-  }
-
   .content-card {
-    width: 100%;
     margin: 0;
     padding: 18px 16px 26px;
     border-radius: 0;
@@ -917,17 +884,17 @@ ${fullUrl}`
   }
 
   .image-slide {
-  min-height: 430px;
-  max-height: 660px;
-  padding: 6px;
-  flex-direction: column;
-}
+    min-height: 430px;
+    max-height: 660px;
+    padding: 6px;
+    flex-direction: column;
+  }
 
-:deep(.main-post-img) {
-  width: 100%;
-  max-height: 600px;
-  border-radius: 10px;
-}
+  :deep(.main-post-img) {
+    width: 100%;
+    max-height: 600px;
+    border-radius: 10px;
+  }
 
   .rich-text-content {
     font-size: 1.02rem;
@@ -973,15 +940,16 @@ ${fullUrl}`
   }
 
   .image-slide {
-  min-height: 240px;
-  max-height: 420px;
-  flex-direction: column;
-}
-.image-caption {
-  font-size: 0.82rem;
-  padding: 0 6px;
-  margin-top: 8px;
-}
+    min-height: 240px;
+    max-height: 420px;
+    flex-direction: column;
+  }
+
+  .image-caption {
+    font-size: 0.82rem;
+    padding: 0 6px;
+    margin-top: 8px;
+  }
 
   :deep(.main-post-img) {
     max-height: 340px;

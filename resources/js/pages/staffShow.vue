@@ -29,6 +29,18 @@ const stripHtml = (value, fallback = '') => {
     .trim()
 }
 
+/**
+ * Détermination du mode d'affichage selon le volume de mots réels
+ */
+const isMissionsTextLong = computed(() => {
+  if (!staff.value?.missions) return false
+  const cleanStr = stripHtml(staff.value.missions)
+  if (!cleanStr) return false
+
+  const wordCount = cleanStr.split(/\s+/).filter(word => word.length > 0).length
+  return wordCount > 150
+})
+
 const storageUrl = (path) => {
   if (!path || typeof path !== 'string') return ''
   return `/storage/${encodeURI(path.replace(/^\/+/, ''))}`
@@ -36,6 +48,7 @@ const storageUrl = (path) => {
 
 const logoUrl = computed(() => (staff.value?.logo ? storageUrl(staff.value.logo) : ''))
 const leaderPhotoUrl = computed(() => (staff.value?.leader_photo ? storageUrl(staff.value.leader_photo) : ''))
+const secondLeaderPhotoUrl = computed(() => (staff.value?.second_leader_photo ? storageUrl(staff.value.second_leader_photo) : ''))
 
 const pageTitle = computed(() => {
   return staff.value?.name ? `${staff.value.name} | FAMa` : 'État-major | FAMa'
@@ -67,6 +80,16 @@ const hasCommand = computed(() => {
     cleanText(staff.value.leader_rank) ||
     cleanText(staff.value.leader_word) ||
     leaderPhotoUrl.value
+  )
+})
+
+const hasSecondCommand = computed(() => {
+  if (!staff.value) return false
+  return Boolean(
+    cleanText(staff.value.second_leader_name) ||
+    cleanText(staff.value.second_leader_rank) ||
+    cleanText(staff.value.second_leader_word) ||
+    secondLeaderPhotoUrl.value
   )
 })
 
@@ -205,95 +228,108 @@ useHead(() => {
           </div>
         </header>
 
-        <div class="main-grid">
-          <main class="content-column">
-            <section class="section-block">
-              <h2 class="section-title">Présentation</h2>
-              <div
-  class="prose-content"
-  v-html="staff.description || '<p>Aucune présentation n’est disponible pour le moment.</p>'"
-></div>
-            </section>
+        <section class="presentation-command-section">
+          <div class="presentation-col">
+            <h2 class="section-title">Présentation</h2>
+            <div class="prose-content" v-html="staff.description || '<p>Aucune présentation n’est disponible pour le moment.</p>'">
+            </div>
+          </div>
 
-            <section class="section-block">
-              <h2 class="section-title">Missions et attributions</h2>
-              <div
-  class="prose-content"
-  v-html="staff.missions || '<p>Les missions et attributions ne sont pas encore renseignées.</p>'"
-></div>
-            </section>
-          </main>
+          <div v-if="hasCommand" class="commandement-col">
+            <h2 class="section-title">Commandement</h2>
 
-          <aside class="side-column">
-            <section v-if="hasCommand" class="side-panel">
-              <h2 class="panel-title">Commandement</h2>
-
-              <div class="leader-card">
-                <div class="leader-photo">
-                  <img
-                    v-if="leaderPhotoUrl"
-                    :src="leaderPhotoUrl"
-                    :alt="staff.leader_name || 'Photo du commandement'"
-                    loading="lazy"
-                    decoding="async"
-                    width="420"
-                    height="300"
-                  />
-                  <div v-else class="leader-fallback">Photo non disponible</div>
-                </div>
-
-                <div class="leader-info">
-                  <p v-if="staff.leader_rank" class="leader-rank">{{ staff.leader_rank }}</p>
-                  <p v-if="staff.leader_name" class="leader-name">{{ staff.leader_name }}</p>
-                  <p v-if="staff.leader_word" class="leader-word">“{{ staff.leader_word }}”</p>
-                </div>
+            <div class="leader-card">
+              <div class="leader-photo">
+                <img
+                  v-if="leaderPhotoUrl"
+                  :src="leaderPhotoUrl"
+                  :alt="staff.leader_name || 'Photo du commandement'"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div v-else class="leader-fallback">Photo non disponible</div>
               </div>
-            </section>
-
-            <section v-if="hasContact" class="side-panel">
-              <h2 class="panel-title">Contacts officiels</h2>
-
-              <div class="contact-list">
-                <div v-if="staff.contact_address" class="contact-row">
-                  <span class="contact-label">Adresse</span>
-                  <span class="contact-value">{{ staff.contact_address }}</span>
-                </div>
-
-                <div v-if="staff.contact_phone" class="contact-row">
-                  <span class="contact-label">Téléphone</span>
-                  <a class="contact-link" :href="`tel:${staff.contact_phone}`">{{ staff.contact_phone }}</a>
-                </div>
-
-                <div v-if="staff.contact_hotline" class="contact-row">
-                  <span class="contact-label">Hotline</span>
-                  <a class="contact-link" :href="`tel:${staff.contact_hotline}`">{{ staff.contact_hotline }}</a>
-                </div>
-
-                <div v-if="staff.contact_email" class="contact-row">
-                  <span class="contact-label">Email</span>
-                  <a class="contact-link" :href="`mailto:${staff.contact_email}`">{{ staff.contact_email }}</a>
-                </div>
-
-                <div v-if="staff.contact_hours" class="contact-row">
-                  <span class="contact-label">Horaires</span>
-                  <span class="contact-value">{{ staff.contact_hours }}</span>
-                </div>
-
-                <div v-if="staff.contact_map_url" class="contact-row">
-                  <span class="contact-label">Localisation</span>
-                  <a
-                    class="contact-link"
-                    :href="staff.contact_map_url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Voir la carte
-                  </a>
-                </div>
+              <div class="leader-info">
+                <p class="leader-role">Chef</p>
+                <p v-if="staff.leader_rank" class="leader-rank">{{ staff.leader_rank }}</p>
+                <p v-if="staff.leader_name" class="leader-name">{{ staff.leader_name }}</p>
+                <p v-if="staff.leader_word" class="leader-word">“{{ staff.leader_word }}”</p>
               </div>
-            </section>
-          </aside>
-        </div>
+            </div>
+
+            <div v-if="hasSecondCommand" class="leader-card">
+              <div class="leader-photo">
+                <img
+                  v-if="secondLeaderPhotoUrl"
+                  :src="secondLeaderPhotoUrl"
+                  :alt="staff.second_leader_name || 'Photo du commandement adjoint'"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div v-else class="leader-fallback">Photo non disponible</div>
+              </div>
+              <div class="leader-info">
+                <p class="leader-role">Chef Adjoint</p>
+                <p v-if="staff.second_leader_rank" class="leader-rank">{{ staff.second_leader_rank }}</p>
+                <p v-if="staff.second_leader_name" class="leader-name">{{ staff.second_leader_name }}</p>
+                <p v-if="staff.second_leader_word" class="leader-word">“{{ staff.second_leader_word }}”</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="missions-block-full">
+          <h2 class="section-title">Missions et attributions</h2>
+          <div
+            class="journal-style-container"
+            :class="isMissionsTextLong ? 'missions-layout-multi' : 'missions-layout-single'"
+            v-html="staff.missions || '<p>Les missions et attributions ne sont pas encore renseignées.</p>'"
+          >
+          </div>
+        </section>
+
+        <aside v-if="hasContact" class="contacts-block-full">
+          <h2 class="section-title">Contacts officiels</h2>
+
+          <div class="contact-grid">
+            <div v-if="staff.contact_address" class="contact-item">
+              <span class="contact-label">Adresse</span>
+              <span class="contact-value">{{ staff.contact_address }}</span>
+            </div>
+
+            <div v-if="staff.contact_phone" class="contact-item">
+              <span class="contact-label">Téléphone</span>
+              <a class="contact-link" :href="`tel:${staff.contact_phone}`">{{ staff.contact_phone }}</a>
+            </div>
+
+            <div v-if="staff.contact_hotline" class="contact-item">
+              <span class="contact-label">Hotline</span>
+              <a class="contact-link" :href="`tel:${staff.contact_hotline}`">{{ staff.contact_hotline }}</a>
+            </div>
+
+            <div v-if="staff.contact_email" class="contact-item">
+              <span class="contact-label">Email</span>
+              <a class="contact-link" :href="`mailto:${staff.contact_email}`">{{ staff.contact_email }}</a>
+            </div>
+
+            <div v-if="staff.contact_hours" class="contact-item">
+              <span class="contact-label">Horaires</span>
+              <span class="contact-value">{{ staff.contact_hours }}</span>
+            </div>
+
+            <div v-if="staff.contact_map_url" class="contact-item">
+              <span class="contact-label">Localisation</span>
+              <a
+                class="contact-link"
+                :href="staff.contact_map_url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Voir la carte
+              </a>
+            </div>
+          </div>
+        </aside>
       </article>
     </section>
   </div>
@@ -306,7 +342,7 @@ useHead(() => {
 }
 
 .staff-shell {
-  max-width: 1180px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -345,7 +381,7 @@ useHead(() => {
 .staff-layout {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 32px;
 }
 
 .hero {
@@ -353,10 +389,11 @@ useHead(() => {
   grid-template-columns: 140px 1fr;
   gap: 24px;
   align-items: center;
-  padding: 28px;
-  border-radius: 22px;
+  padding: 32px;
+  border-radius: 24px;
   border: 1px solid rgba(20, 184, 44, 0.14);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  background: white;
 }
 
 .hero-media {
@@ -372,6 +409,7 @@ useHead(() => {
   display: grid;
   place-items: center;
   border: 1px solid rgba(20, 184, 44, 0.14);
+  background: #f8fafc;
 }
 
 .logo-frame img {
@@ -428,29 +466,26 @@ useHead(() => {
   font-weight: 500;
 }
 
-.main-grid {
+/* Section Présentation + Commandement côte à côte */
+.presentation-command-section {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.8fr);
-  gap: 28px;
-  align-items: start;
-}
-
-.content-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.section-block {
+  grid-template-columns: 60% 40%;
+  gap: 32px;
   padding: 28px;
   border-radius: 20px;
   border: 1px solid rgba(20, 184, 44, 0.12);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  background: white;
 }
 
-.section-title,
-.panel-title {
-  margin: 0 0 18px;
+.presentation-col,
+.commandement-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  margin: 0 0 20px;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 1.3px;
@@ -458,65 +493,42 @@ useHead(() => {
   color: #14b82c;
 }
 
+/* JUSTIFICATION DU TEXTE DE LA PRESENTATION */
 .prose-content {
   font-size: 16px;
   line-height: 1.9;
+  color: #334155;
+  text-align: justify;
+  text-justify: inter-word;
 }
 
 .prose-content :deep(p) {
   margin: 0 0 14px;
 }
 
-.prose-content :deep(p:last-child) {
+/* Cartes commandement */
+.leader-card {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  padding: 20px;
+  background: transparent;
+  border-radius: 16px;
+  transition: transform 0.2s ease;
+}
+
+.leader-card:last-child {
   margin-bottom: 0;
 }
 
-.prose-content :deep(ul),
-.prose-content :deep(ol) {
-  margin: 12px 0 16px;
-  padding-left: 22px;
-}
-
-.prose-content :deep(li) {
-  margin-bottom: 8px;
-}
-
-.prose-content :deep(a) {
-  color: #14b82c;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.prose-content :deep(a:hover) {
-  text-decoration: underline;
-}
-
-.side-column {
-  display: flex;
-  position: sticky;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.side-panel {
-  padding: 24px;
-  border-radius: 20px;
-  border: 1px solid rgba(20, 184, 44, 0.12);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-}
-
-.leader-card {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .leader-photo {
-  width: 100%;
-  min-height: 220px;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
   border-radius: 16px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.05);
+  background: #e2e8f0;
 }
 
 .leader-photo img {
@@ -526,67 +538,182 @@ useHead(() => {
 }
 
 .leader-fallback {
-  min-height: 220px;
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
   font-weight: 700;
-  opacity: 0.7;
+  font-size: 12px;
+  opacity: 0.6;
+  text-align: center;
+}
+
+.leader-info {
+  flex: 1;
+}
+
+.leader-role {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+  color: #14b82c;
+  margin-bottom: 8px;
 }
 
 .leader-rank {
   margin: 0 0 6px;
-  font-size: 14px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.7px;
-  opacity: 0.75;
+  color: #64748b;
 }
 
 .leader-name {
   margin: 0;
-  font-size: 22px;
-  font-weight: 850;
-  line-height: 1.2;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .leader-word {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   font-style: italic;
-  line-height: 1.7;
-  opacity: 0.85;
+  font-size: 13px;
+  color: #475569;
 }
 
-.contact-list {
+/* Missions block */
+.missions-block-full {
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(20, 184, 44, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  background: white;
+}
+
+/* Styles de base de la typographie journal */
+.journal-style-container {
+  font-size: 15px;
+  line-height: 1.85;
+  color: #1e293b;
+}
+
+/* ==========================================================================
+   JUSTIFICATION STRICTE SUR LES DEUX MODES DE MISSIONS
+   ========================================================================== */
+
+/* TEXTE COURT : Devient un bloc unifié JUSTIFIÉ sur toute la largeur */
+.missions-layout-single {
+  display: block;
+  width: 100%;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* TEXTE LONG : 3 colonnes ajustées et JUSTIFIÉES */
+.missions-layout-multi {
+  display: block;
+  column-count: 3;
+  column-gap: 48px;
+  column-rule: 1px solid rgba(20, 184, 44, 0.15);
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* Gestion des paragraphes injectés */
+.journal-style-container :deep(p) {
+  margin: 0 0 16px 0;
+}
+
+/* Indentation et cassures de colonnes réservées au mode long */
+.missions-layout-multi :deep(p) {
+  text-indent: 24px;
+  break-inside: avoid-column;
+}
+
+/* Lettrine sur le premier mot (uniquement en mode long) */
+.missions-layout-multi :deep(p:first-of-type::first-letter) {
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.8;
+  padding-top: 4px;
+  padding-right: 10px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.missions-layout-multi :deep(p:first-of-type) {
+  text-indent: 0;
+}
+
+/* Configuration des en-têtes et listes */
+.journal-style-container :deep(h3),
+.journal-style-container :deep(h4) {
+  margin: 24px 0 12px 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #14b82c;
+  text-transform: uppercase;
+}
+
+.missions-layout-multi :deep(h3),
+.missions-layout-multi :deep(h4) {
+  break-inside: avoid-column;
+}
+
+.journal-style-container :deep(ul),
+.journal-style-container :deep(ol) {
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+
+.missions-layout-multi :deep(ul),
+.missions-layout-multi :deep(ol) {
+  break-inside: avoid-column;
+}
+
+.journal-style-container :deep(li) {
+  margin-bottom: 8px;
+}
+
+/* Contacts - Grille */
+.contacts-block-full {
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(20, 184, 44, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  background: white;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.contact-item {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.contact-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(20, 184, 44, 0.08);
-}
-
-.contact-row:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+  gap: 8px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
 }
 
 .contact-label {
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 800;
-  opacity: 0.68;
+  color: #14b82c;
 }
 
 .contact-value,
 .contact-link {
   font-size: 15px;
-  line-height: 1.6;
-  word-break: break-word;
+  color: #1e293b;
+  font-weight: 500;
 }
 
 .contact-link {
@@ -595,46 +722,53 @@ useHead(() => {
   font-weight: 700;
 }
 
-.contact-link:hover {
-  text-decoration: underline;
-}
+/* ==========================================================================
+   Media Queries Responsive
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .presentation-command-section {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
 
-@media (max-width: 900px) {
-  .main-grid {
+  .contact-grid {
     grid-template-columns: 1fr;
   }
 
-  .side-column {
-    order: 2;
-  }
-
-  .content-column {
-    order: 1;
+  .missions-layout-multi {
+    column-count: 2;
+    column-gap: 32px;
   }
 }
 
 @media (max-width: 640px) {
-  .staff-page {
-    padding: 20px 0 36px;
-  }
-
   .hero {
     grid-template-columns: 1fr;
     text-align: center;
-    padding: 22px 18px;
   }
 
   .hero-meta {
     justify-content: center;
   }
 
-  .section-block,
-  .side-panel {
-    padding: 20px 16px;
+  .leader-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 
-  .leader-name {
-    font-size: 20px;
+  /* Sur smartphone, l'alignement à gauche redevient la norme pour le confort de lecture */
+  .missions-layout-multi,
+  .missions-layout-single,
+  .prose-content {
+    column-count: 1 !important;
+    column-gap: 0;
+    column-rule: none;
+    text-align: left !important;
+  }
+
+  .missions-layout-multi :deep(p) {
+    text-indent: 0;
   }
 }
 </style>

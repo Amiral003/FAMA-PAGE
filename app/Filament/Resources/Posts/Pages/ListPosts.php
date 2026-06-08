@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Posts\Pages;
 
-
 use App\Filament\Resources\Posts\PostResource;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\CreateAction;
@@ -30,7 +29,7 @@ class ListPosts extends ListRecords
     {
         return [
             /**
-             * ✅ Ancien bouton Create => renommé "Créer post"
+             * ✅ Bouton Create renommé "Créer post"
              * Crée des posts normaux (article/pdf)
              */
             CreateAction::make()
@@ -38,62 +37,60 @@ class ListPosts extends ListRecords
                 ->visible(fn () => Auth::user()->can('create', Post::class)),
 
             /**
-             * ⚡ Nouveau bouton => "Créer flash"
-             * - formulaire ultra rapide
-             * - status = publie directement
-             * - validated_by = auteur (rapide sans validation)
+             * ⚡ Bouton => "Créer flash"
+             * Formulaire ultra rapide, publication immédiate
              */
             Action::make('createFlash')
-    ->label('Créer flash')
-    ->icon('heroicon-o-bolt')
-    ->color('warning')
-    ->visible(fn () => Auth::check())
-    ->modalHeading('Créer un Flash Info (publication immédiate)')
-    ->modalSubmitActionLabel('Publier')
-    ->form([
-        Textarea::make('content')
-            ->label('Texte du flash')
-            ->placeholder("Écrivez un flash (taille d’un paragraphe)...")
-            ->rows(4)
-            ->required()
-            ->maxLength(600),
+                ->label('Créer flash')
+                ->icon('heroicon-o-bolt')
+                ->color('warning')
+                ->visible(fn () => Auth::check())
+                ->modalHeading('Créer un Flash Info (publication immédiate)')
+                ->modalSubmitActionLabel('Publier')
+                ->form([
+                    Textarea::make('content')
+                        ->label('Texte du flash')
+                        ->placeholder("Écrivez un flash (taille d’un paragraphe)...")
+                        ->rows(4)
+                        ->required()
+                        ->maxLength(600),
 
-        FileUpload::make('thumbnail')
-            ->label("Image du flash")
-            ->image()
-            ->disk('public')
-            ->directory('flashes')
-            ->imageEditor()
-            ->required(),
-    ])
-    ->action(function (array $data) {
-        $userId = Auth::id();
-        $flashText = trim($data['content']);
+                    FileUpload::make('thumbnail')
+                        ->label("Image du flash")
+                        ->image()
+                        ->disk('public')
+                        ->directory('flashes')
+                        ->imageEditor()
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    $userId = Auth::id();
+                    $flashText = trim($data['content']);
 
-        Post::create([
-            'title'           => Str::limit($flashText, 120, '...'),
-            'slug'            => Str::slug(Str::limit($flashText, 80, '')),
-            'type'            => Post::TYPE_FLASH,
-            'status'          => Post::STATUS_PUBLIE,
-            'thumbnail'       => $data['thumbnail'],
-            'content'         => $flashText,
-            'user_id'         => $userId,
-            'validated_by'    => $userId,
-            'validated_at'    => now(),
-            'published_at'    => now(),
-            'rejection_notes' => null,
-        ]);
+                    Post::create([
+                        'title'           => Str::limit($flashText, 120, '...'),
+                        'slug'            => Str::slug(Str::limit($flashText, 80, '')),
+                        'type'            => Post::TYPE_FLASH,
+                        'status'          => Post::STATUS_PUBLIE,
+                        'thumbnail'       => $data['thumbnail'],
+                        'content'         => $flashText,
+                        'user_id'         => $userId,
+                        'validated_by'    => $userId,
+                        'validated_at'    => now(),
+                        'published_at'    => now(),
+                        'rejection_notes' => null,
+                    ]);
 
-        \Filament\Notifications\Notification::make()
-            ->title('Flash publié immédiatement ⚡')
-            ->success()
-            ->send();
-    }),
+                    \Filament\Notifications\Notification::make()
+                        ->title('Flash publié immédiatement ⚡')
+                        ->success()
+                        ->send();
+                }),
         ];
     }
 
     /**
-     * ✅ Actions table (inchangées + markFixed)
+     * ✅ Actions table (Gestion des états, Validation et Programmation)
      */
     protected function getTableActions(): array
     {
@@ -146,38 +143,38 @@ class ListPosts extends ListRecords
                         ->send();
                 }),
 
-                // 🕒 PROGRAMMER (validateur) : brouillon -> programme
-Action::make('schedulePublication')
-    ->label('Programmer')
-    ->icon('heroicon-o-clock')
-    ->iconButton()
-    ->color('info')
-    ->visible(fn (Post $record) => Auth::user()->can('approve', $record))
-    ->form([
-       DateTimePicker::make('scheduled_at')
-    ->label('Date et heure de publication')
-    ->required()
-    ->native(false)
-    ->seconds(false)
-    ->minutesStep(1)
-    ->minDate(now())
-    ->default(now()->addMinutes(10))
-    ->helperText('Choisissez la date et l’heure exactes de publication. Exemple : aujourd’hui à 15:30.'),
-    ])
-    ->action(function (Post $record, array $data) {
-        $record->schedulePublication(
-            Auth::id(),
-            $data['scheduled_at']
-        );
+            // 🕒 PROGRAMMER (Saisie libre et complète autorisée)
+            Action::make('schedulePublication')
+                ->label('Programmer')
+                ->icon('heroicon-o-clock')
+                ->iconButton()
+                ->color('info')
+                ->visible(fn (Post $record) => Auth::user()->can('approve', $record))
+                ->form([
+                    DateTimePicker::make('scheduled_at')
+                        ->label('Date et heure de publication')
+                        ->required()
+                        ->native(true) // 🔥 On repasse en natif pour transformer le champ en un vrai <input> HTML saisissable
+                        ->timezone('Africa/Bamako') // Aligné sur ton fuseau horaire
+                        ->minDate(now()->startOfMinute()) // Bloque la validation si c'est dans le passé
+                        ->default(now()->addMinutes(10)) // Date initiale par défaut
+                        ->helperText('Cliquez sur le champ ou saisissez directement les chiffres au clavier (jour, mois, année, heure).'),
+                ])
+                ->action(function (Post $record, array $data) {
+                    $record->schedulePublication(
+                        Auth::id(),
+                        $data['scheduled_at']
+                    );
 
-        \Filament\Notifications\Notification::make()
-            ->title('Publication programmée')
-            ->body('Le post sera publié automatiquement à la date choisie.')
-            ->success()
-            ->send();
-    })
-    ->modalHeading('Programmer la publication')
-    ->modalSubmitActionLabel('Programmer'),
+                    \Filament\Notifications\Notification::make()
+                        ->title('Publication programmée')
+                        ->body('Le post changera de statut automatiquement à la date choisie.')
+                        ->success()
+                        ->send();
+                })
+                ->modalHeading('Programmer la publication')
+                ->modalWidth('md')
+                ->modalSubmitActionLabel('Valider la programmation'),
 
             // 🔴 REJETER (validateur) : brouillon -> revision + notes + notification
             Action::make('reject')
@@ -198,7 +195,7 @@ Action::make('schedulePublication')
                         $data['rejection_notes']
                     );
 
-                    // ✅ Notifier l’auteur (rédacteur)
+                    // Notifier l’auteur (rédacteur)
                     if ($record->author) {
                         $record->author->notify(
                             new PostRejectedNotification(
@@ -221,20 +218,19 @@ Action::make('schedulePublication')
     }
 
     /**
-     * ✅ Filtrage simple via query param (?status_filter=...)
+     * ✅ Filtrage de la table via query param (?status_filter=...)
      */
     protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
-
         $filter = request()->get('status_filter');
 
         return match ($filter) {
-            'a_traiter' => $query->where('status', Post::STATUS_BROUILLON),
-            'revisions' => $query->where('status', Post::STATUS_REVISION),
-            'publies'   => $query->where('status', Post::STATUS_PUBLIE),
+            'a_traiter'  => $query->where('status', Post::STATUS_BROUILLON),
+            'revisions'  => $query->where('status', Post::STATUS_REVISION),
+            'publies'    => $query->where('status', Post::STATUS_PUBLIE),
             'programmes' => $query->where('status', Post::STATUS_PROGRAMME),
-            default     => $query,
+            default      => $query,
         };
     }
 }
