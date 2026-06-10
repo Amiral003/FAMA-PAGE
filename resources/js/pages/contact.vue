@@ -44,15 +44,14 @@ const handleSubmit = async () => {
         email: form.value.email,
         subject: form.value.subject,
         message: form.value.message,
-        website: website.value, // champ honeypot - doit être vide
+        website: website.value,
       }),
     })
 
     if (res.status === 422) {
       const data = await res.json()
-      console.log('Erreurs backend:', data.errors) // ← Affiche les erreurs dans la console
+      console.log('Erreurs backend:', data.errors)
 
-      // Prendre la première erreur
       const firstErrorKey = Object.keys(data.errors)[0]
       const firstErrorMessage = data.errors[firstErrorKey][0]
 
@@ -166,7 +165,7 @@ const handleSubmit = async () => {
             </div>
 
             <div class="form-group">
-              <label for="contact-email">Email</label>
+              <label for="contact-email">Email <span class="optional">(optionnel)</span></label>
               <input
                 id="contact-email"
                 v-model="form.email"
@@ -175,11 +174,10 @@ const handleSubmit = async () => {
                 autocomplete="email"
                 inputmode="email"
                 maxlength="255"
-                required
               />
             </div>
 
-            <!-- HONEYPOT - Champ caché pour les robots -->
+            <!-- HONEYPOT -->
             <div class="hp-wrapper">
               <label for="website" style="display: none;">Site web</label>
               <input
@@ -204,6 +202,7 @@ const handleSubmit = async () => {
                 <option value="" disabled>Choisissez un sujet</option>
                 <option value="information">Demande d'information</option>
                 <option value="recrutement">Question recrutement</option>
+                <option value="signalement">Faire un signalement</option>
                 <option value="presse">Espace presse</option>
               </select>
             </div>
@@ -330,6 +329,12 @@ const handleSubmit = async () => {
   color: #444;
 }
 
+.optional {
+  font-weight: normal;
+  font-size: 0.8rem;
+  color: #888;
+}
+
 input,
 select,
 textarea {
@@ -395,7 +400,7 @@ textarea {
   font-weight: 700;
 }
 
-/* HONEYPOT - caché visuellement mais pas avec display:none (les robots peuvent ignorer display:none) */
+/* HONEYPOT */
 .hp-wrapper {
   position: absolute;
   left: -9999px;

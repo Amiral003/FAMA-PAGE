@@ -120,22 +120,22 @@ class StaffResource extends Resource
                 ->description('Description officielle et attributions de la structure.')
                 ->columnSpanFull()
                 ->schema([
-                    RichEditor::make('description')
-                        ->label('Description générale')
-                        ->toolbarButtons([
-                            'bold',
-                            'italic',
-                            'underline',
-                            'bulletList',
-                            'orderedList',
-                            'link',
-                            'undo',
-                            'redo',
-                        ])
-                        ->columnSpanFull(),
+                    // RichEditor::make('description')
+                    //     ->label('Description générale')
+                    //     ->toolbarButtons([
+                    //         'bold',
+                    //         'italic',
+                    //         'underline',
+                    //         'bulletList',
+                    //         'orderedList',
+                    //         'link',
+                    //         'undo',
+                    //         'redo',
+                    //     ])
+                    //     ->columnSpanFull(),
 
                     RichEditor::make('missions')
-                        ->label('Missions et attributions')
+                        ->label('Description générale')
                         ->toolbarButtons([
                             'bold',
                             'italic',

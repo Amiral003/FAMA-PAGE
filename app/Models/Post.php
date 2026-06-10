@@ -50,94 +50,78 @@ class Post extends Model
         'scheduled_at',
     ];
 
-
-
     protected $casts = [
         'validated_at' => 'datetime',
         'published_at' => 'datetime',
         'scheduled_at' => 'datetime',
     ];
 
-
     protected static function makeUniqueSlug(string $title): string
-{
-    $base = Str::slug($title);
+    {
+        $base = Str::slug($title);
 
-    // fallback si titre vide ou caractères bizarres
-    if ($base === '') {
-        $base = 'post';
+        if ($base === '') {
+            $base = 'post';
+        }
+
+        $slug = $base;
+        $i = 2;
+
+        while (static::where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $i;
+            $i++;
+        }
+
+        return $slug;
     }
-
-    $slug = $base;
-    $i = 2;
-
-    // ✅ Postgres + index unique => on évite les collisions
-    while (static::where('slug', $slug)->exists()) {
-        $slug = $base . '-' . $i;
-        $i++;
-    }
-
-    return $slug;
-}
 
     // -------------------------------------------------
-    // ✅ BOOTED : slug + statut par défaut (compatible avec ta contrainte CHECK)
+    // ✅ BOOTED : slug + statut par défaut
     // -------------------------------------------------
     protected static function booted(): void
     {
         static::creating(function (Post $post) {
-            // 1) Slug auto
-            
-            // 1) Slug auto / slug manuel sécurisé
-if (!empty($post->slug)) {
-    // si Filament envoie un slug manuel : on le normalise + on garantit l'unicité
-    $post->slug = Str::slug($post->slug);
+            if (!empty($post->slug)) {
+                $post->slug = Str::slug($post->slug);
+                $base = $post->slug !== '' ? $post->slug : 'post';
+                $slug = $base;
+                $i = 2;
 
-    $base = $post->slug !== '' ? $post->slug : 'post';
-    $slug = $base;
-    $i = 2;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $base . '-' . $i;
+                    $i++;
+                }
 
-    while (static::where('slug', $slug)->exists()) {
-        $slug = $base . '-' . $i;
-        $i++;
-    }
+                $post->slug = $slug;
+            } elseif (!empty($post->title)) {
+                $post->slug = static::makeUniqueSlug($post->title);
+            }
 
-    $post->slug = $slug;
-} elseif (!empty($post->title)) {
-    $post->slug = static::makeUniqueSlug($post->title);
-}
-
-            // 2) Statut par défaut : brouillon
-            // IMPORTANT: ta DB avait un DEFAULT "Brouillion" (ancien) -> ça casse le CHECK.
-            // Ici on force en PHP pour éviter toute insertion incorrecte.
             if (empty($post->status)) {
                 $post->status = self::STATUS_BROUILLON;
             }
 
-            // 3) Type par défaut (si oublié)
             if (empty($post->type)) {
                 $post->type = self::TYPE_ARTICLE;
             }
         });
 
         static::updating(function (Post $post) {
-            // Si le titre change et que le slug est vide, on le régénère.
-            // (On ne touche pas si slug déjà présent pour ne pas casser les URLs publiées)
             if ($post->isDirty('title') && empty($post->slug) && !empty($post->title)) {
                 $post->slug = static::makeUniqueSlug($post->title);
             }
         });
     }
 
-    public function dailyViews(): \Illuminate\Database\Eloquent\Relations\HasMany
-{
-    return $this->hasMany(\App\Models\PostViewDaily::class);
-}
+    public function dailyViews(): HasMany
+    {
+        return $this->hasMany(\App\Models\PostViewDaily::class);
+    }
 
     public function isVideo(): bool
-{
-    return $this->type === self::TYPE_VIDEO;
-}
+    {
+        return $this->type === self::TYPE_VIDEO;
+    }
 
     // -------------------------------------------------
     // ✅ RELATIONS
@@ -151,11 +135,7 @@ if (!empty($post->slug)) {
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-        /**
-     * ✅ Alias de compatibilité
-     * Filament / anciens fichiers utilisent souvent $post->user.
-     * On garde author() (plus clair), mais on fournit user() pour éviter les erreurs.
-     */
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -167,7 +147,7 @@ if (!empty($post->slug)) {
     }
 
     // -------------------------------------------------
-    // ✅ SCOPES : simplifier API + queries
+    // ✅ SCOPES
     // -------------------------------------------------
     public function scopePublished($query)
     {
@@ -176,17 +156,13 @@ if (!empty($post->slug)) {
 
     public function scopePublicOrder($query)
     {
-        // Ordre stable pour le fil public :
-        // 1) published_at (si défini)
-        // 2) validated_at
-        // 3) created_at
         return $query->orderByDesc('published_at')
             ->orderByDesc('validated_at')
             ->orderByDesc('created_at');
     }
 
     // -------------------------------------------------
-    // ✅ WORKFLOW FINAL (TA VISION)
+    // ✅ WORKFLOW
     // -------------------------------------------------
 
     /**
@@ -204,59 +180,63 @@ if (!empty($post->slug)) {
             'validated_by'    => $validatorId,
             'validated_at'    => now(),
             'published_at'    => now(),
-            'rejection_notes' => null, // une fois publié, on nettoie le motif
+            'rejection_notes' => null,
         ]);
     }
 
-
+    /**
+     * ✅ PROGRAMMER (CORRIGÉ)
+     * Permet de programmer un brouillon OU de reprogrammer un post déjà programmé
+     */
     public function schedulePublication(int $validatorId, $scheduledAt): void
-{
-    if ($this->status !== self::STATUS_BROUILLON) {
-        throw new LogicException('Seuls les brouillons peuvent être programmés.');
+    {
+        // ✅ Autoriser brouillon ET programme (reprogrammation)
+        if (!in_array($this->status, [
+            self::STATUS_BROUILLON,
+            self::STATUS_PROGRAMME,
+        ], true)) {
+            throw new LogicException('Seuls les brouillons ou les posts déjà programmés peuvent être programmés/reprogrammés.');
+        }
+
+        $this->update([
+            'status'          => self::STATUS_PROGRAMME,
+            'validated_by'    => $validatorId,
+            'validated_at'    => now(),
+            'scheduled_at'    => $scheduledAt,
+            'published_at'    => null,
+            'rejection_notes' => null,
+        ]);
     }
 
-    $this->update([
-        'status'          => self::STATUS_PROGRAMME,
-        'validated_by'    => $validatorId,
-        'validated_at'    => now(),
-        'scheduled_at'    => $scheduledAt,
-        'published_at'    => null,
-        'rejection_notes' => null,
-    ]);
-}
     /**
      * Rejeter pour correction (Validateur)
      * Règle: Le validateur rejette UNIQUEMENT les brouillons.
      * Résultat: status = revision + notes (visible en admin) + audit validator.
      */
     public function rejectForRevision(int $validatorId, string $notes): void
-{
-    // ✅ Autoriser brouillon ET publie
-    if (! in_array($this->status, [
-        self::STATUS_BROUILLON,
-        self::STATUS_PUBLIE,
-    ], true)) {
-        throw new LogicException(
-            'Seuls les brouillons ou les posts publiés peuvent être rejetés pour révision.'
-        );
+    {
+        if (!in_array($this->status, [
+            self::STATUS_BROUILLON,
+            self::STATUS_PUBLIE,
+        ], true)) {
+            throw new LogicException(
+                'Seuls les brouillons ou les posts publiés peuvent être rejetés pour révision.'
+            );
+        }
+
+        $this->update([
+            'status'          => self::STATUS_REVISION,
+            'validated_by'    => $validatorId,
+            'validated_at'    => now(),
+            'rejection_notes' => $notes,
+            'published_at'    => null,
+        ]);
     }
-
-    $this->update([
-        'status'          => self::STATUS_REVISION,
-        'validated_by'    => $validatorId,
-        'validated_at'    => now(),
-        'rejection_notes' => $notes,
-
-        // 🔴 IMPORTANT si le post était publié :
-        // il ne doit plus apparaître sur le site public
-        'published_at'    => null,
-    ]);
-}
 
     /**
      * Marquer corrigé (Rédacteur)
      * Règle: après correction, le rédacteur remet le post en brouillon
-     * pour qu’il soit clairement "à traiter" côté validateur.
+     * pour qu'il soit clairement "à traiter" côté validateur.
      */
     public function markFixed(int $authorId): void
     {
@@ -270,15 +250,11 @@ if (!empty($post->slug)) {
 
         $this->update([
             'status' => self::STATUS_BROUILLON,
-            // On ne supprime pas rejection_notes ici :
-            // - soit tu la gardes pour historique
-            // - soit tu la vides si tu veux (à toi de décider)
-            // 'rejection_notes' => null,
         ]);
     }
 
     // -------------------------------------------------
-    // ✅ Helpers utiles
+    // ✅ Helpers
     // -------------------------------------------------
     public function isPublic(): bool
     {

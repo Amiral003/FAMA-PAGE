@@ -15,31 +15,22 @@ use Illuminate\Support\Str;
 use App\Models\Post;
 use App\Notifications\PostRejectedNotification;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Notifications\Notification;
 
 class ListPosts extends ListRecords
 {
     protected static string $resource = PostResource::class;
 
     /**
-     * ✅ Header actions :
-     * - "Créer post" (ancien bouton Create, renommé)
-     * - "Créer flash" (nouveau, publication instantanée)
+     * ✅ Header actions
      */
     protected function getHeaderActions(): array
     {
         return [
-            /**
-             * ✅ Bouton Create renommé "Créer post"
-             * Crée des posts normaux (article/pdf)
-             */
             CreateAction::make()
                 ->label('Créer post')
                 ->visible(fn () => Auth::user()->can('create', Post::class)),
 
-            /**
-             * ⚡ Bouton => "Créer flash"
-             * Formulaire ultra rapide, publication immédiate
-             */
             Action::make('createFlash')
                 ->label('Créer flash')
                 ->icon('heroicon-o-bolt')
@@ -81,7 +72,7 @@ class ListPosts extends ListRecords
                         'rejection_notes' => null,
                     ]);
 
-                    \Filament\Notifications\Notification::make()
+                    Notification::make()
                         ->title('Flash publié immédiatement ⚡')
                         ->success()
                         ->send();
@@ -90,12 +81,12 @@ class ListPosts extends ListRecords
     }
 
     /**
-     * ✅ Actions table (Gestion des états, Validation et Programmation)
+     * ✅ Actions table
      */
     protected function getTableActions(): array
     {
         return [
-            // 👁️ PREVIEW (lecture seule)
+            // 👁️ PREVIEW
             Action::make('preview')
                 ->label('Voir')
                 ->icon('heroicon-o-eye')
@@ -104,7 +95,8 @@ class ListPosts extends ListRecords
                 ->modalWidth('4xl')
                 ->modalContent(fn (Post $record) => view('filament.components.post-preview', ['post' => $record]))
                 ->modalSubmitAction(false)
-                ->modalCancelActionLabel('Fermer'),
+                ->modalCancelActionLabel('Fermer')
+                ->modalFooterActions([]),
 
             // ✏️ EDIT
             EditAction::make()->iconButton(),
@@ -120,69 +112,117 @@ class ListPosts extends ListRecords
                 ->action(function (Post $record) {
                     $record->markFixed(Auth::id());
 
-                    \Filament\Notifications\Notification::make()
+                    Notification::make()
                         ->title('Post remis en brouillon (prêt à être revalidé)')
                         ->success()
                         ->send();
                 }),
 
-            // 🟢 PUBLIER (validateur) : brouillon -> publie
+            // 🟢 PUBLIER (validateur) - visible seulement pour brouillon
             Action::make('approve')
                 ->label('Publier')
                 ->icon('heroicon-o-check-circle')
                 ->iconButton()
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn (Post $record) => Auth::user()->can('approve', $record))
+                ->visible(fn (Post $record) =>
+                    Auth::user()->can('approve', $record) &&
+                    $record->status === Post::STATUS_BROUILLON
+                )
                 ->action(function (Post $record) {
                     $record->publish(Auth::id());
 
-                    \Filament\Notifications\Notification::make()
+                    Notification::make()
                         ->title('Post publié')
                         ->success()
                         ->send();
                 }),
 
-            // 🕒 PROGRAMMER (Saisie libre et complète autorisée)
+            // 🕒 PROGRAMMER
             Action::make('schedulePublication')
                 ->label('Programmer')
                 ->icon('heroicon-o-clock')
                 ->iconButton()
                 ->color('info')
-                ->visible(fn (Post $record) => Auth::user()->can('approve', $record))
+                ->visible(fn (Post $record) =>
+                    Auth::user()->can('approve', $record) &&
+                    in_array($record->status, [Post::STATUS_BROUILLON, Post::STATUS_PROGRAMME])
+                )
                 ->form([
                     DateTimePicker::make('scheduled_at')
                         ->label('Date et heure de publication')
                         ->required()
-                        ->native(true) // 🔥 On repasse en natif pour transformer le champ en un vrai <input> HTML saisissable
-                        ->timezone('Africa/Bamako') // Aligné sur ton fuseau horaire
-                        ->minDate(now()->startOfMinute()) // Bloque la validation si c'est dans le passé
-                        ->default(now()->addMinutes(10)) // Date initiale par défaut
-                        ->helperText('Cliquez sur le champ ou saisissez directement les chiffres au clavier (jour, mois, année, heure).'),
+                        ->native(true)
+                        ->timezone('Africa/Bamako')
+                        ->minDate(now()->startOfMinute())
+                        ->default(now()->addMinutes(10))
+                        ->helperText('Cliquez sur le champ ou saisissez directement les chiffres au clavier.'),
                 ])
                 ->action(function (Post $record, array $data) {
-                    $record->schedulePublication(
-                        Auth::id(),
-                        $data['scheduled_at']
-                    );
+                    switch ($record->status) {
+                        case Post::STATUS_PUBLIE:
+                            Notification::make()
+                                ->title('❌ Impossible de reprogrammer')
+                                ->body('Ce post est déjà publié. Vous ne pouvez pas reprogrammer un contenu déjà publié.')
+                                ->danger()
+                                ->send();
+                            return;
 
-                    \Filament\Notifications\Notification::make()
-                        ->title('Publication programmée')
-                        ->body('Le post changera de statut automatiquement à la date choisie.')
-                        ->success()
-                        ->send();
+                        case Post::STATUS_REVISION:
+                            Notification::make()
+                                ->title('⚠️ Action impossible')
+                                ->body('Ce post a été renvoyé pour révision. Veuillez le modifier avant de pouvoir le programmer.')
+                                ->warning()
+                                ->send();
+                            return;
+
+                        case Post::STATUS_BROUILLON:
+                        case Post::STATUS_PROGRAMME:
+                            try {
+                                $record->schedulePublication(
+                                    Auth::id(),
+                                    $data['scheduled_at']
+                                );
+
+                                $formattedDate = \Carbon\Carbon::parse($data['scheduled_at'])->format('d/m/Y à H:i');
+
+                                Notification::make()
+                                    ->title('✅ Publication programmée avec succès')
+                                    ->body("Le post sera publié le {$formattedDate}")
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('❌ Erreur lors de la programmation')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
+                            return;
+
+                        default:
+                            Notification::make()
+                                ->title('⚠️ Action non autorisée')
+                                ->body('Seuls les brouillons peuvent être programmés.')
+                                ->warning()
+                                ->send();
+                            return;
+                    }
                 })
                 ->modalHeading('Programmer la publication')
                 ->modalWidth('md')
                 ->modalSubmitActionLabel('Valider la programmation'),
 
-            // 🔴 REJETER (validateur) : brouillon -> revision + notes + notification
+            // 🔴 REJETER (validateur)
             Action::make('reject')
                 ->label('Renvoyer')
                 ->icon('heroicon-o-arrow-path')
                 ->iconButton()
                 ->color('danger')
-                ->visible(fn (Post $record) => Auth::user()->can('reject', $record))
+                ->visible(fn (Post $record) =>
+                    Auth::user()->can('reject', $record) &&
+                    in_array($record->status, [Post::STATUS_BROUILLON, Post::STATUS_PUBLIE])
+                )
                 ->form([
                     Textarea::make('rejection_notes')
                         ->label('Motif du rejet')
@@ -190,26 +230,34 @@ class ListPosts extends ListRecords
                         ->required(),
                 ])
                 ->action(function (Post $record, array $data) {
-                    $record->rejectForRevision(
-                        Auth::id(),
-                        $data['rejection_notes']
-                    );
-
-                    // Notifier l’auteur (rédacteur)
-                    if ($record->author) {
-                        $record->author->notify(
-                            new PostRejectedNotification(
-                                $record,
-                                $data['rejection_notes'],
-                                Auth::user()
-                            )
+                    try {
+                        $record->rejectForRevision(
+                            Auth::id(),
+                            $data['rejection_notes']
                         );
-                    }
 
-                    \Filament\Notifications\Notification::make()
-                        ->title('Post renvoyé pour correction')
-                        ->danger()
-                        ->send();
+                        if ($record->author) {
+                            $record->author->notify(
+                                new PostRejectedNotification(
+                                    $record,
+                                    $data['rejection_notes'],
+                                    Auth::user()
+                                )
+                            );
+                        }
+
+                        Notification::make()
+                            ->title('Post renvoyé pour correction')
+                            ->body('L\'auteur a été notifié.')
+                            ->success()
+                            ->send();
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('❌ Erreur lors du renvoi')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 })
                 ->successNotification(null)
                 ->modalHeading('Renvoyer pour correction')
@@ -218,7 +266,7 @@ class ListPosts extends ListRecords
     }
 
     /**
-     * ✅ Filtrage de la table via query param (?status_filter=...)
+     * ✅ Filtrage de la table
      */
     protected function getTableQuery(): Builder
     {

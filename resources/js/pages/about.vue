@@ -388,8 +388,7 @@ const otherStaffs = computed(() => {
                           <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
                           <h3 class="staff-name">{{ s.name }}</h3>
                           <div class="staff-meta" v-if="s.leader_name">
-                            <span class="meta-k">Chef suprême des Armées </span>
-                            <span class="meta-v">{{ s.leader_name }}
+                            <span class="meta-k">{{ s.leader_name }}
                               <span class="text-xs text-slate-400 font-normal">({{ s.leader_rank }})</span>
                             </span>
                           </div>
@@ -417,8 +416,7 @@ const otherStaffs = computed(() => {
                           <Tag :value="mdacParent.initials" severity="success" rounded class="mini-tag mb-1" />
                           <h3 class="staff-name">{{ mdacParent.name }}</h3>
                           <div class="staff-meta" v-if="mdacParent.leader_name">
-                            <span class="meta-k">Ministre </span>
-                            <span class="meta-v">{{ mdacParent.leader_name }}
+                            <span class="meta-k">{{ mdacParent.leader_name }}
                               <span v-if="mdacParent.leader_rank" class="text-xs text-slate-400 font-normal">({{ mdacParent.leader_rank }})</span>
                             </span>
                           </div>
@@ -433,7 +431,7 @@ const otherStaffs = computed(() => {
               <div v-if="mdacChildren.length" class="children-tree">
                 <div v-for="s in mdacChildren" :key="s.id" class="child-node">
                   <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
-                    <Card class="staff-card compact-card premium-card child-card">
+                    <Card class="staff-card compact-card child-card">
                       <template #content>
                         <div class="staff-row">
                           <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
@@ -441,7 +439,6 @@ const otherStaffs = computed(() => {
                           <div class="staff-col">
                             <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
                             <h3 class="staff-name">{{ s.name }}</h3>
-
                           </div>
                         </div>
                       </template>
@@ -467,8 +464,7 @@ const otherStaffs = computed(() => {
                           <Tag :value="emgaParent.initials" severity="success" rounded class="mini-tag mb-1" />
                           <h3 class="staff-name">{{ emgaParent.name }}</h3>
                           <div class="staff-meta" v-if="emgaParent.leader_name">
-                            <span class="meta-k">Chef d'État-Major </span>
-                            <span class="meta-v">{{ emgaParent.leader_name }}
+                            <span class="meta-k">{{ emgaParent.leader_name }}
                               <span v-if="emgaParent.leader_rank" class="text-xs text-slate-400 font-normal">({{ emgaParent.leader_rank }})</span>
                             </span>
                           </div>
@@ -483,7 +479,7 @@ const otherStaffs = computed(() => {
               <div v-if="emgaChildren.length" class="children-tree">
                 <div v-for="s in emgaChildren" :key="s.id" class="child-node">
                   <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
-                    <Card class="staff-card compact-card premium-card child-card">
+                    <Card class="staff-card compact-card child-card">
                       <template #content>
                         <div class="staff-row">
                           <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
@@ -491,7 +487,6 @@ const otherStaffs = computed(() => {
                           <div class="staff-col">
                             <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
                             <h3 class="staff-name">{{ s.name }}</h3>
-
                           </div>
                         </div>
                       </template>
@@ -501,12 +496,13 @@ const otherStaffs = computed(() => {
               </div>
             </div>
 
-            <!-- AUTRES ORGANISMES AUTONOMES -->
+            <!-- AUTRES ORGANISMES AUTONOMES - MAINTENANT AVEC LA MEME COULEUR QUE LES CHILDREN -->
             <div v-if="otherStaffs.length" class="hierarchy-group mt-6">
               <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Autres organismes</div>
               <div class="staff-grid compact-grid">
                 <RouterLink v-for="s in otherStaffs" :key="s.id" :to="`/etat-major/${s.slug}`" class="staff-link">
-                  <Card class="staff-card compact-card premium-card">
+                  <!-- Utilisation de child-card au lieu de premium-card -->
+                  <Card class="staff-card compact-card child-card">
                     <template #content>
                       <div class="staff-row">
                         <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
@@ -846,7 +842,7 @@ const otherStaffs = computed(() => {
   width: auto !important;
 }
 
-/* Cartes premium */
+/* Cartes premium (Présidence, MDAC, EMGA) */
 .premium-card {
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: linear-gradient(135deg, #40a15e, #1a4629);
@@ -866,7 +862,6 @@ const otherStaffs = computed(() => {
   background: linear-gradient(135deg, #40a15e, #1a4629);
   border-left: 4px solid #14b82c !important;
   margin-bottom: 14px;
-
 }
 
 .parent-card .staff-name {
@@ -886,7 +881,7 @@ const otherStaffs = computed(() => {
   color: #ffffff !important;
 }
 
-/* Cartes enfants */
+/* Cartes enfants (MDAC children, EMGA children, ET MAINTENANT AUTRES ORGANISMES) */
 .child-card {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
@@ -894,6 +889,11 @@ const otherStaffs = computed(() => {
 
 .child-card .staff-name {
   color: #0f172a !important;
+}
+
+.child-card .mini-tag {
+  background: rgba(20, 184, 44, 0.15) !important;
+  color: #14b82c !important;
 }
 
 /* Grid pour les enfants */
@@ -1000,7 +1000,6 @@ const otherStaffs = computed(() => {
 }
 
 @media (max-width: 900px) {
-  /* Arborescence sur tablette */
   .children-tree {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1018,7 +1017,6 @@ const otherStaffs = computed(() => {
     width: 20px;
   }
 
-  /* Alignement horizontal des cartes */
   .staff-row {
     flex-direction: row;
     align-items: center;
@@ -1045,7 +1043,6 @@ const otherStaffs = computed(() => {
 }
 
 @media (max-width: 768px) {
-  /* Version mobile */
   .about-page {
     padding: 20px 0;
   }
@@ -1068,7 +1065,6 @@ const otherStaffs = computed(() => {
     height: 3px;
   }
 
-  /* Arborescence mobile */
   .children-tree {
     padding-left: 16px;
     gap: 12px;
@@ -1084,7 +1080,6 @@ const otherStaffs = computed(() => {
     height: 2px;
   }
 
-  /* Cartes en ligne sur mobile */
   .staff-row {
     flex-direction: row;
     gap: 9px;
@@ -1119,7 +1114,6 @@ const otherStaffs = computed(() => {
     margin-bottom: 4px !important;
   }
 
-  /* Cartes parentes */
   .parent-card {
     padding: 12px !important;
   }
@@ -1128,19 +1122,16 @@ const otherStaffs = computed(() => {
     font-size: 0.8rem;
   }
 
-  /* Cartes enfants */
   .child-card {
     padding: 10px !important;
   }
 
-  /* Grille des autres organismes */
   .compact-grid {
     gap: 8px;
   }
 }
 
 @media (max-width: 480px) {
-  /* Très petits écrans */
   .staff-row {
     gap: 10px;
   }
