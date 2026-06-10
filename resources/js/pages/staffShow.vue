@@ -197,10 +197,10 @@ useHead(() => {
         <!-- Header avec logo et titre -->
         <header class="hero">
           <div class="hero-media">
-            <div class="logo-frame">
-              <img v-if="logoUrl" :src="logoUrl" :alt="staff.name" loading="eager" />
-              <div v-else class="logo-fallback">{{ staff.initials || 'EM' }}</div>
-            </div>
+            <div class="logo-frame" style="display: flex; align-items: center; justify-content: center; background: transparent;">
+  <img v-if="logoUrl" :src="logoUrl" :alt="staff.name" style="max-width: 120px; max-height: 120px; width: auto; height: auto; object-fit: contain;" loading="eager" />
+  <div v-else class="logo-fallback" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #40a15e, #1a4629); color: white; font-size: 1.5rem; font-weight: bold;">{{ staff.initials || 'EM' }}</div>
+</div>
           </div>
           <div class="hero-body">
             <p class="hero-kicker">État-major</p>
@@ -402,8 +402,8 @@ useHead(() => {
   overflow: hidden;
   display: grid;
   place-items: center;
-  border: 1px solid #eef2ff;
-  background: #f8fafc;
+  /* border: 1px solid #eef2ff; */
+  background: transparent;
 }
 
 .logo-frame img {

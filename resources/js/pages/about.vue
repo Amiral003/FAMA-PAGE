@@ -379,8 +379,7 @@ const otherStaffs = computed(() => {
               <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Haute Autorité</div>
               <div class="staff-grid compact-grid">
                 <RouterLink v-for="s in presidencyStaff" :key="s.id" :to="`/etat-major/${s.slug}`" class="staff-link">
-                  <Card class="staff-card compact-card premium-card border-l-4 border-amber-500">
-                    <template #content>
+                    <Card class="staff-card compact-card premium-card parent-card border-l-4 border-amber-500">                    <template #content>
                       <div class="staff-row">
                         <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
                         <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
@@ -773,13 +772,13 @@ const otherStaffs = computed(() => {
 }
 
 .staff-thumb {
- width: 90px;
+  width: 90px;
   height: 90px;
   flex-shrink: 0;
-  border-radius: 16px;
+  border-radius: 0; /* Change de 16px à 0 */
   overflow: hidden;
   background: transparent;
-  border: 1px solid rgba(20, 184, 44, 0.2);
+  border:transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -787,16 +786,19 @@ const otherStaffs = computed(() => {
 }
 
 .staff-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* Change de cover à contain */
   padding: 0;
 }
+
 
 .staff-thumb.fallback {
   font-size: 0.9rem;
   font-weight: 900;
-  color: #14b82c;
+  color: #40a15e;
 }
 
 .staff-col {
@@ -860,7 +862,7 @@ const otherStaffs = computed(() => {
 /* Cartes parentes (MDAC/EMGA) */
 .parent-card {
   background: linear-gradient(135deg, #40a15e, #1a4629);
-  border-left: 4px solid #14b82c !important;
+  /* border-left: 4px solid #40a15e !important; */
   margin-bottom: 14px;
 }
 
@@ -944,23 +946,14 @@ const otherStaffs = computed(() => {
 .children-tree::before {
   content: "";
   position: absolute;
-  top: -26px;
-  left: 1px;
+  top: -25.5px;
+  left: 0.5px;
   width: 3px;
   height: calc(100% + 20px);
-  background: #14b82c;
+  background: #40a15e;
   border-radius: 3px;
 }
-.child-node::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: -12px;
-  width: 12px;
-  height: 1.5px;
-  background: #14b82c;
-  border-radius: 1px;
-}
+
 .child-node {
   position: relative;
 }
@@ -972,7 +965,7 @@ const otherStaffs = computed(() => {
   left: -21px;
   width: 21px;
   height: 3px;
-  background: #14b82c;
+  background: #40a15e;
   border-radius: 3px;
 }
 
