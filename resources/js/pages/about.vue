@@ -43,13 +43,25 @@ useHead({
     { name: 'twitter:image', content: `${siteUrl}/images/og-default.jpg` },
   ],
   link: [{ rel: 'canonical', href: `${siteUrl}/about` }],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'GovernmentOrganization',
+        name: 'Forces Armées Maliennes',
+        alternateName: 'FAMa',
+        url: `${siteUrl}/about`,
+        description: pageDescription,
+      }),
+    },
+  ],
 })
 
 const staffs = ref([])
 const isLoading = ref(false)
 const loadError = ref('')
 
-// États de gestion de positionnement dynamique
 const isFixed = ref(false)
 const isBottomed = ref(false)
 
@@ -57,8 +69,20 @@ const mainLayout = ref(null)
 const contentColumn = ref(null)
 const sidebarContainer = ref(null)
 
+const sortByOrder = (items) => {
+  return [...items].sort((a, b) => {
+    const orderA = Number(a?.order ?? 9999)
+    const orderB = Number(b?.order ?? 9999)
+
+    if (orderA !== orderB) return orderA - orderB
+
+    return String(a?.name ?? '').localeCompare(String(b?.name ?? ''), 'fr')
+  })
+}
+
 const handleScroll = () => {
   if (!mainLayout.value || !contentColumn.value || !sidebarContainer.value) return
+
   if (window.innerWidth <= 1024) {
     isFixed.value = false
     isBottomed.value = false
@@ -68,16 +92,12 @@ const handleScroll = () => {
   const layoutRect = mainLayout.value.getBoundingClientRect()
   const contentRect = contentColumn.value.getBoundingClientRect()
   const sidebarHeight = sidebarContainer.value.offsetHeight
-
   const topSpacing = 24
 
-  if (layoutRect.top <= topSpacing) {
-    isFixed.value = true
-  } else {
-    isFixed.value = false
-  }
+  isFixed.value = layoutRect.top <= topSpacing
 
   const maxTopAllowed = contentRect.bottom - sidebarHeight
+
   if (topSpacing >= maxTopAllowed) {
     isFixed.value = false
     isBottomed.value = true
@@ -87,9 +107,10 @@ const handleScroll = () => {
 }
 
 const getStaffTypeLabel = (s) => {
-  const name = `${s.name || ''} ${s.initials || ''}`.toLowerCase()
+  const name = `${s?.name || ''} ${s?.initials || ''}`.toLowerCase()
 
   if (name.includes('minist')) return 'MINISTÈRE'
+
   if (
     name.includes('état-major général') ||
     name.includes('etat-major general') ||
@@ -117,7 +138,11 @@ const fetchStaffs = async () => {
 
   try {
     const res = await fetch('/api/public/staffs', {
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      credentials: 'same-origin',
     })
 
     if (!res.ok) {
@@ -125,7 +150,8 @@ const fetchStaffs = async () => {
       return
     }
 
-    staffs.value = await res.json()
+    const data = await res.json()
+    staffs.value = Array.isArray(data) ? data : []
   } catch (e) {
     loadError.value = 'Erreur réseau. Veuillez réessayer plus tard.'
   } finally {
@@ -144,64 +170,74 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleScroll)
 })
 
-// ================= LOGIQUE DE TRI HIERARCHIQUE SÉCURISÉE =================
-
-// 1. La Présidence (PR)
 const presidencyStaff = computed(() => {
   if (!Array.isArray(staffs.value)) return []
-  return staffs.value.filter(s => s && s.initials === 'PR')
+
+  return sortByOrder(
+    staffs.value.filter((s) => s && s.initials === 'PR')
+  )
 })
 
-// 2. Le Ministère (MDAC) seul
 const mdacParent = computed(() => {
   if (!Array.isArray(staffs.value)) return null
-  return staffs.value.find(s => s && s.initials === 'MDAC') || null
+
+  return staffs.value.find((s) => s && s.initials === 'MDAC') || null
 })
 
-// 3. Les ENFANTS du Ministère (MDAC)
-const mdacChildren = computed(() => {
-  if (!Array.isArray(staffs.value)) return []
-  const mdac = mdacParent.value
-  if (!mdac || !mdac.id) return []
-
-  return staffs.value
-    .filter(s => s && Number(s.parent_staff_id) === Number(mdac.id) && s.initials !== 'EMGA')
-    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
-})
-
-// 4. L'État-Major Général des Armées (EMGA) seul
 const emgaParent = computed(() => {
   if (!Array.isArray(staffs.value)) return null
-  return staffs.value.find(s => s && s.initials === 'EMGA') || null
+
+  return staffs.value.find((s) => s && s.initials === 'EMGA') || null
 })
 
-// 5. Les ENFANTS de l'État-Major (EMGA)
+const mdacChildren = computed(() => {
+  if (!Array.isArray(staffs.value)) return []
+
+  const mdac = mdacParent.value
+  if (!mdac?.id) return []
+
+  return sortByOrder(
+    staffs.value.filter((s) => {
+      return (
+        s &&
+        Number(s.parent_staff_id) === Number(mdac.id) &&
+        s.initials !== 'EMGA'
+      )
+    })
+  )
+})
+
 const emgaChildren = computed(() => {
   if (!Array.isArray(staffs.value)) return []
-  const emga = emgaParent.value
-  if (!emga || !emga.id) return []
 
-  return staffs.value
-    .filter(s => s && Number(s.parent_staff_id) === Number(emga.id))
-    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+  const emga = emgaParent.value
+  if (!emga?.id) return []
+
+  return sortByOrder(
+    staffs.value.filter((s) => {
+      return s && Number(s.parent_staff_id) === Number(emga.id)
+    })
+  )
 })
 
-// 6. Les Autres organismes autonomes
 const otherStaffs = computed(() => {
   if (!Array.isArray(staffs.value)) return []
+
   const mdacId = mdacParent.value?.id
   const emgaId = emgaParent.value?.id
 
-  return staffs.value
-    .filter(s =>
-      s &&
-      s.initials !== 'PR' &&
-      s.initials !== 'MDAC' &&
-      s.initials !== 'EMGA' &&
-      s.parent_staff_id !== mdacId &&
-      s.parent_staff_id !== emgaId
-    )
-    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+  return sortByOrder(
+    staffs.value.filter((s) => {
+      return (
+        s &&
+        s.initials !== 'PR' &&
+        s.initials !== 'MDAC' &&
+        s.initials !== 'EMGA' &&
+        Number(s.parent_staff_id) !== Number(mdacId) &&
+        Number(s.parent_staff_id) !== Number(emgaId)
+      )
+    })
+  )
 })
 </script>
 
@@ -237,7 +273,12 @@ const otherStaffs = computed(() => {
             </div>
 
             <div class="hero-image-card">
-              <img :src="aboutImg1" alt="Forces Armées Maliennes" />
+              <img
+                :src="aboutImg1"
+                alt="Forces Armées Maliennes"
+                loading="eager"
+                decoding="async"
+              />
             </div>
           </div>
         </section>
@@ -269,6 +310,8 @@ const otherStaffs = computed(() => {
               <img
                 :src="aboutImg2"
                 alt="Organisation institutionnelle des FAMa"
+                loading="lazy"
+                decoding="async"
               />
             </div>
           </div>
@@ -283,10 +326,8 @@ const otherStaffs = computed(() => {
           <div class="mission-grid">
             <div class="mission-item">
               <div class="mission-number">01</div>
-
               <div class="mission-body">
                 <h3>Défense du territoire</h3>
-
                 <p>
                   Assurer l'intégrité du territoire national et contribuer à la
                   protection de la souveraineté de l'État.
@@ -296,10 +337,8 @@ const otherStaffs = computed(() => {
 
             <div class="mission-item">
               <div class="mission-number">02</div>
-
               <div class="mission-body">
                 <h3>Protection des populations</h3>
-
                 <p>
                   Participer à la sécurisation des populations, des institutions
                   et des espaces stratégiques.
@@ -309,10 +348,8 @@ const otherStaffs = computed(() => {
 
             <div class="mission-item">
               <div class="mission-number">03</div>
-
               <div class="mission-body">
                 <h3>Appui au commandement</h3>
-
                 <p>
                   Structurer, coordonner et soutenir les opérations à travers
                   les structures de commandement, directions et services.
@@ -343,22 +380,21 @@ const otherStaffs = computed(() => {
           </div>
         </section>
 
-        <!-- SECTION DES STRUCTURES -->
         <section class="section-box structures-box">
           <div class="section-head">
             <h2>Structures institutionnelles</h2>
             <div class="section-line"></div>
           </div>
 
-          <p class="staff-intro mt-2">
-            Organisation hiérarchique de la Défense Nationale et des Forces Armées.
+          <p class="staff-intro">
+            Organisation hiérarchique de la Défense nationale et des Forces Armées.
           </p>
 
           <div v-if="loadError" class="error-box">
             {{ loadError }}
           </div>
 
-          <div v-else-if="isLoading" class="staff-grid compact-grid">
+          <div v-else-if="isLoading" class="compact-grid">
             <Card v-for="i in 4" :key="i" class="staff-card compact-card">
               <template #content>
                 <div class="staff-row">
@@ -372,23 +408,48 @@ const otherStaffs = computed(() => {
             </Card>
           </div>
 
-          <div v-else class="hierarchy-container space-y-8 mt-6">
+          <div v-else class="hierarchy-container">
+            <div v-if="presidencyStaff.length" class="hierarchy-group">
+              
 
-            <!-- BLOC HAUTE AUTORITÉ : PRÉSIDENCE -->
-            <div v-if="presidencyStaff.length" class="hierarchy-group mb-6">
-              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Haute Autorité</div>
-              <div class="staff-grid compact-grid">
-                <RouterLink v-for="s in presidencyStaff" :key="s.id" :to="`/etat-major/${s.slug}`" class="staff-link">
-                    <Card class="staff-card compact-card premium-card parent-card border-l-4 border-amber-500">                    <template #content>
+              <div class="compact-grid">
+                <RouterLink
+                  v-for="s in presidencyStaff"
+                  :key="s.id"
+                  :to="`/etat-major/${s.slug}`"
+                  class="staff-link"
+                >
+                  <Card class="staff-card compact-card premium-card parent-card presidency-card">
+                    <template #content>
                       <div class="staff-row">
-                        <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
-                        <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                        <div class="staff-thumb" v-if="s.logo">
+                          <img
+                            :src="`/storage/${s.logo}`"
+                            :alt="s.name"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+
+                        <div class="staff-thumb fallback" v-else>
+                          {{ (s.initials || 'FAMa').slice(0, 4) }}
+                        </div>
+
                         <div class="staff-col">
-                          <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
+
                           <h3 class="staff-name">{{ s.name }}</h3>
+
+                          <div class="staff-type">
+                            {{ getStaffTypeLabel(s) }}
+                          </div>
+
                           <div class="staff-meta" v-if="s.leader_name">
-                            <span class="meta-k">{{ s.leader_name }}
-                              <span class="text-xs text-slate-400 font-normal">({{ s.leader_rank }})</span>
+                            <span class="meta-k">
+                              {{ s.leader_name }}
+                              <span v-if="s.leader_rank" class="leader-rank">
+                                ({{ s.leader_rank }})
+                              </span>
                             </span>
                           </div>
                         </div>
@@ -399,24 +460,42 @@ const otherStaffs = computed(() => {
               </div>
             </div>
 
-            <!-- BLOC MINISTÈRE (MDAC) & SES ENFANTS -->
-            <div v-if="mdacParent" class="org-tree-container mb-8">
-              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Tutelle / Administration</div>
+            <div v-if="mdacParent" class="org-tree-container">
+              
 
-              <!-- Carte Parente : MDAC -->
               <div class="parent-node">
-                <RouterLink :to="`/etat-major/${mdacParent.slug}`" class="staff-link block">
+                <RouterLink :to="`/etat-major/${mdacParent.slug}`" class="staff-link">
                   <Card class="staff-card compact-card premium-card parent-card">
                     <template #content>
                       <div class="staff-row">
-                        <div class="staff-thumb" v-if="mdacParent.logo"><img :src="`/storage/${mdacParent.logo}`" :alt="mdacParent.name" /></div>
-                        <div class="staff-thumb fallback" v-else>{{ mdacParent.initials }}</div>
+                        <div class="staff-thumb" v-if="mdacParent.logo">
+                          <img
+                            :src="`/storage/${mdacParent.logo}`"
+                            :alt="mdacParent.name"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+
+                        <div class="staff-thumb fallback" v-else>
+                          {{ mdacParent.initials }}
+                        </div>
+
                         <div class="staff-col">
-                          <Tag :value="mdacParent.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <Tag :value="mdacParent.initials" severity="success" rounded class="mini-tag" />
+
                           <h3 class="staff-name">{{ mdacParent.name }}</h3>
+
+                          <div class="staff-type">
+                            {{ getStaffTypeLabel(mdacParent) }}
+                          </div>
+
                           <div class="staff-meta" v-if="mdacParent.leader_name">
-                            <span class="meta-k">{{ mdacParent.leader_name }}
-                              <span v-if="mdacParent.leader_rank" class="text-xs text-slate-400 font-normal">({{ mdacParent.leader_rank }})</span>
+                            <span class="meta-k">
+                              {{ mdacParent.leader_name }}
+                              <span v-if="mdacParent.leader_rank" class="leader-rank">
+                                ({{ mdacParent.leader_rank }})
+                              </span>
                             </span>
                           </div>
                         </div>
@@ -426,18 +505,33 @@ const otherStaffs = computed(() => {
                 </RouterLink>
               </div>
 
-              <!-- Enfants du MDAC -->
               <div v-if="mdacChildren.length" class="children-tree">
-                <div v-for="s in mdacChildren" :key="s.id" class="child-node">
+                <div
+                  v-for="s in mdacChildren"
+                  :key="s.id"
+                  class="child-node"
+                >
                   <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
                     <Card class="staff-card compact-card child-card">
                       <template #content>
                         <div class="staff-row">
-                          <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
-                          <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                          <div class="staff-thumb" v-if="s.logo">
+                            <img
+                              :src="`/storage/${s.logo}`"
+                              :alt="s.name"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+
+                          <div class="staff-thumb fallback" v-else>
+                            {{ (s.initials || 'FAMa').slice(0, 4) }}
+                          </div>
+
                           <div class="staff-col">
-                            <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                            <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
                             <h3 class="staff-name">{{ s.name }}</h3>
+                            <div class="staff-type">{{ getStaffTypeLabel(s) }}</div>
                           </div>
                         </div>
                       </template>
@@ -447,24 +541,42 @@ const otherStaffs = computed(() => {
               </div>
             </div>
 
-            <!-- BLOC ÉTAT-MAJOR (EMGA) & SES ENFANTS -->
-            <div v-if="emgaParent" class="org-tree-container mb-8">
-              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Commandement Opérationnel</div>
+            <div v-if="emgaParent" class="org-tree-container">
+              
 
-              <!-- Carte Parente : EMGA -->
               <div class="parent-node">
-                <RouterLink :to="`/etat-major/${emgaParent.slug}`" class="staff-link block">
+                <RouterLink :to="`/etat-major/${emgaParent.slug}`" class="staff-link">
                   <Card class="staff-card compact-card premium-card parent-card">
                     <template #content>
                       <div class="staff-row">
-                        <div class="staff-thumb" v-if="emgaParent.logo"><img :src="`/storage/${emgaParent.logo}`" :alt="emgaParent.name" /></div>
-                        <div class="staff-thumb fallback" v-else>{{ emgaParent.initials }}</div>
+                        <div class="staff-thumb" v-if="emgaParent.logo">
+                          <img
+                            :src="`/storage/${emgaParent.logo}`"
+                            :alt="emgaParent.name"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+
+                        <div class="staff-thumb fallback" v-else>
+                          {{ emgaParent.initials }}
+                        </div>
+
                         <div class="staff-col">
-                          <Tag :value="emgaParent.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <Tag :value="emgaParent.initials" severity="success" rounded class="mini-tag" />
+
                           <h3 class="staff-name">{{ emgaParent.name }}</h3>
+
+                          <div class="staff-type">
+                            {{ getStaffTypeLabel(emgaParent) }}
+                          </div>
+
                           <div class="staff-meta" v-if="emgaParent.leader_name">
-                            <span class="meta-k">{{ emgaParent.leader_name }}
-                              <span v-if="emgaParent.leader_rank" class="text-xs text-slate-400 font-normal">({{ emgaParent.leader_rank }})</span>
+                            <span class="meta-k">
+                              {{ emgaParent.leader_name }}
+                              <span v-if="emgaParent.leader_rank" class="leader-rank">
+                                ({{ emgaParent.leader_rank }})
+                              </span>
                             </span>
                           </div>
                         </div>
@@ -474,18 +586,33 @@ const otherStaffs = computed(() => {
                 </RouterLink>
               </div>
 
-              <!-- Enfants de l'EMGA -->
               <div v-if="emgaChildren.length" class="children-tree">
-                <div v-for="s in emgaChildren" :key="s.id" class="child-node">
+                <div
+                  v-for="s in emgaChildren"
+                  :key="s.id"
+                  class="child-node"
+                >
                   <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
                     <Card class="staff-card compact-card child-card">
                       <template #content>
                         <div class="staff-row">
-                          <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
-                          <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                          <div class="staff-thumb" v-if="s.logo">
+                            <img
+                              :src="`/storage/${s.logo}`"
+                              :alt="s.name"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+
+                          <div class="staff-thumb fallback" v-else>
+                            {{ (s.initials || 'FAMa').slice(0, 4) }}
+                          </div>
+
                           <div class="staff-col">
-                            <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                            <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
                             <h3 class="staff-name">{{ s.name }}</h3>
+                            <div class="staff-type">{{ getStaffTypeLabel(s) }}</div>
                           </div>
                         </div>
                       </template>
@@ -495,20 +622,38 @@ const otherStaffs = computed(() => {
               </div>
             </div>
 
-            <!-- AUTRES ORGANISMES AUTONOMES - MAINTENANT AVEC LA MEME COULEUR QUE LES CHILDREN -->
-            <div v-if="otherStaffs.length" class="hierarchy-group mt-6">
-              <div class="hierarchy-title-border text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Autres organismes</div>
-              <div class="staff-grid compact-grid">
-                <RouterLink v-for="s in otherStaffs" :key="s.id" :to="`/etat-major/${s.slug}`" class="staff-link">
-                  <!-- Utilisation de child-card au lieu de premium-card -->
+            <div v-if="otherStaffs.length" class="hierarchy-group">
+              <div class="hierarchy-title-border">
+                Autres organismes
+              </div>
+
+              <div class="compact-grid">
+                <RouterLink
+                  v-for="s in otherStaffs"
+                  :key="s.id"
+                  :to="`/etat-major/${s.slug}`"
+                  class="staff-link"
+                >
                   <Card class="staff-card compact-card child-card">
                     <template #content>
                       <div class="staff-row">
-                        <div class="staff-thumb" v-if="s.logo"><img :src="`/storage/${s.logo}`" :alt="s.name" /></div>
-                        <div class="staff-thumb fallback" v-else>{{ (s.initials || 'FAMa').slice(0, 4) }}</div>
+                        <div class="staff-thumb" v-if="s.logo">
+                          <img
+                            :src="`/storage/${s.logo}`"
+                            :alt="s.name"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+
+                        <div class="staff-thumb fallback" v-else>
+                          {{ (s.initials || 'FAMa').slice(0, 4) }}
+                        </div>
+
                         <div class="staff-col">
-                          <Tag :value="s.initials" severity="success" rounded class="mini-tag mb-1" />
+                          <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
                           <h3 class="staff-name">{{ s.name }}</h3>
+                          <div class="staff-type">{{ getStaffTypeLabel(s) }}</div>
                         </div>
                       </div>
                     </template>
@@ -516,12 +661,10 @@ const otherStaffs = computed(() => {
                 </RouterLink>
               </div>
             </div>
-
           </div>
         </section>
       </section>
 
-      <!-- Sidebar -->
       <aside class="sidebar-wrapper-column">
         <div
           ref="sidebarContainer"
@@ -538,7 +681,6 @@ const otherStaffs = computed(() => {
 </template>
 
 <style scoped>
-/* Styles globaux */
 .about-page {
   min-height: 100vh;
   padding: 36px 0 50px;
@@ -560,6 +702,8 @@ const otherStaffs = computed(() => {
 }
 
 .content-column {
+  min-width: 0;
+  overflow: hidden;
   background: #ffffff;
   border-radius: 22px;
   padding: 28px;
@@ -591,7 +735,6 @@ const otherStaffs = computed(() => {
   width: 320px;
 }
 
-/* Hero */
 .hero-premium {
   position: relative;
   border-radius: 22px;
@@ -602,10 +745,14 @@ const otherStaffs = computed(() => {
 
 .hero-content {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
   gap: 24px;
   align-items: center;
   padding: 34px;
+}
+
+.hero-text-block {
+  min-width: 0;
 }
 
 .hero-topline {
@@ -623,6 +770,7 @@ const otherStaffs = computed(() => {
   font-size: clamp(2rem, 4vw, 3.1rem);
   line-height: 1.08;
   font-weight: 950;
+  overflow-wrap: anywhere;
 }
 
 .hero-text {
@@ -658,13 +806,18 @@ const otherStaffs = computed(() => {
   box-shadow: 0 18px 35px rgba(0, 0, 0, 0.22);
 }
 
-.hero-image-card img {
+.hero-image-card img,
+.intro-image img,
+.staff-thumb img {
   width: 100%;
   height: 100%;
+}
+
+.hero-image-card img,
+.intro-image img {
   object-fit: cover;
 }
 
-/* Sections */
 .section-box {
   margin-top: 24px;
   padding: 24px;
@@ -691,16 +844,26 @@ const otherStaffs = computed(() => {
 
 .intro-grid {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 24px;
   align-items: center;
   margin-top: 18px;
 }
 
-.intro-content p, .org-text, .staff-intro {
+.intro-content {
+  min-width: 0;
+}
+
+.intro-content p,
+.org-text,
+.staff-intro {
   color: #334155;
   line-height: 1.85;
   margin: 0 0 14px;
+}
+
+.staff-intro {
+  margin-top: 14px;
 }
 
 .intro-image {
@@ -708,12 +871,6 @@ const otherStaffs = computed(() => {
   border-radius: 16px;
   overflow: hidden;
   background: #f1f5f9;
-}
-
-.intro-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .mission-grid {
@@ -724,7 +881,7 @@ const otherStaffs = computed(() => {
 
 .mission-item {
   display: grid;
-  grid-template-columns: 56px 1fr;
+  grid-template-columns: 56px minmax(0, 1fr);
   gap: 14px;
   padding: 16px;
   border-radius: 16px;
@@ -741,6 +898,10 @@ const otherStaffs = computed(() => {
   font-weight: 950;
   color: #0f7a21;
   background: rgba(20, 184, 44, 0.1);
+}
+
+.mission-body {
+  min-width: 0;
 }
 
 .mission-body h3 {
@@ -764,21 +925,72 @@ const otherStaffs = computed(() => {
   margin-top: 16px;
 }
 
-/* Structure des cartes - Alignement horizontal parfait */
+.hierarchy-container {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  margin-top: 24px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.hierarchy-title-border {
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.compact-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 100%;
+}
+
+.staff-link {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  text-decoration: none;
+}
+
+.staff-card {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.compact-card {
+  border-radius: 16px;
+}
+
+.compact-card :deep(.p-card-body) {
+  padding: 0;
+}
+
+.compact-card :deep(.p-card-content) {
+  padding: 0;
+}
+
 .staff-row {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  width: 100%;
+  min-width: 0;
 }
 
 .staff-thumb {
   width: 90px;
   height: 90px;
-  flex-shrink: 0;
-  border-radius: 0; /* Change de 16px à 0 */
+  flex: 0 0 90px;
+  border-radius: 0;
   overflow: hidden;
   background: transparent;
-  border:transparent;
+  border: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -790,10 +1002,8 @@ const otherStaffs = computed(() => {
   height: auto;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain; /* Change de cover à contain */
-  padding: 0;
+  object-fit: contain;
 }
-
 
 .staff-thumb.fallback {
   font-size: 0.9rem;
@@ -804,47 +1014,62 @@ const otherStaffs = computed(() => {
 .staff-col {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
 }
 
 .staff-name {
-  margin: 0 0 4px;
+  margin: 4px 0 4px;
   font-size: 0.9rem;
   font-weight: 950;
   color: #ebedf2;
   text-transform: uppercase;
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
+.staff-type {
+  display: inline-block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .staff-meta {
   font-size: 0.78rem;
-  margin-top: 2px;
+  margin-top: 6px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .meta-k {
- color: #e3c6a9 !important;
+  color: #e3c6a9 !important;
   font-weight: 850;
   margin-right: 4px;
 }
 
-.meta-v {
-  color: #e8eaed;
-  font-weight: 750;
+.leader-rank {
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
-/* Style des tags - Affiche les initiales */
 .mini-tag {
+  max-width: 100%;
   font-size: 0.7rem !important;
   font-weight: 800 !important;
   padding: 4px 10px !important;
   background: rgba(20, 184, 44, 0.15) !important;
   color: #14b82c !important;
   border: none !important;
-  display: inline-block !important;
-  width: auto !important;
+  display: inline-flex !important;
+  width: fit-content !important;
 }
 
-/* Cartes premium (Présidence, MDAC, EMGA) */
 .premium-card {
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: linear-gradient(135deg, #40a15e, #1a4629);
@@ -859,10 +1084,8 @@ const otherStaffs = computed(() => {
   box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
 }
 
-/* Cartes parentes (MDAC/EMGA) */
 .parent-card {
   background: linear-gradient(135deg, #40a15e, #1a4629);
-  /* border-left: 4px solid #40a15e !important; */
   margin-bottom: 14px;
 }
 
@@ -870,12 +1093,12 @@ const otherStaffs = computed(() => {
   color: #ffffff !important;
 }
 
-.parent-card .meta-k {
- color: #e3c6a9 !important;
+.parent-card .staff-type {
+  color: rgba(255, 255, 255, 0.74);
 }
 
-.parent-card .meta-v {
-  color: #ffffff !important;
+.parent-card .meta-k {
+  color: #e3c6a9 !important;
 }
 
 .parent-card .mini-tag {
@@ -883,10 +1106,21 @@ const otherStaffs = computed(() => {
   color: #ffffff !important;
 }
 
-/* Cartes enfants (MDAC children, EMGA children, ET MAINTENANT AUTRES ORGANISMES) */
+.presidency-card {
+  border-left: 4px solid #f59e0b !important;
+}
+
 .child-card {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+}
+
+.child-card:hover {
+  border-color: rgba(20, 184, 44, 0.35) !important;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
 }
 
 .child-card .staff-name {
@@ -898,29 +1132,68 @@ const otherStaffs = computed(() => {
   color: #14b82c !important;
 }
 
-/* Grid pour les enfants */
-.compact-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.org-tree-container {
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.parent-node {
+  position: relative;
+  max-width: 100%;
 }
 
 .children-tree {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   margin-top: 12px;
-  padding-left: 20px;
+  padding-left: 28px;
+  max-width: 100%;
 }
 
 .child-node {
+  position: relative;
   width: 100%;
+  max-width: 100%;
 }
 
-.staff-link {
-  display: block;
-  text-decoration: none;
-  width: 100%;
+.child-node::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -28px;
+  width: 28px;
+  height: 3px;
+  background: #40a15e;
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+
+.child-node::after {
+  content: "";
+  position: absolute;
+  left: -28px;
+  top: -14px;
+  width: 3px;
+  height: calc(100% + 14px);
+  background: #40a15e;
+  border-radius: 3px;
+}
+
+.child-node:first-child::after {
+  top: -26px;
+  height: calc(100% + 26px);
+}
+
+.child-node:last-child::after {
+  height: calc(50% + 14px);
+}
+
+.child-node:first-child:last-child::after {
+  top: -26px;
+  height: calc(50% + 26px);
 }
 
 .error-box {
@@ -932,59 +1205,25 @@ const otherStaffs = computed(() => {
   font-weight: 700;
 }
 
-/* Traits d'arborescence */
-.org-tree-container {
-  position: relative;
-}
-
-.children-tree {
-  position: relative;
-  margin-top: 8px;
-  padding-left: 28px;
-}
-
-.children-tree::before {
-  content: "";
-  position: absolute;
-  top: -25.5px;
-  left: 0.5px;
-  width: 3px;
-  height: calc(100% + 20px);
-  background: #40a15e;
-  border-radius: 3px;
-}
-
-.child-node {
-  position: relative;
-}
-
-.child-node::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: -21px;
-  width: 21px;
-  height: 3px;
-  background: #40a15e;
-  border-radius: 3px;
-}
-
-/* Responsive */
 @media (max-width: 1024px) {
   .main-layout {
     grid-template-columns: 1fr;
   }
+
   .sidebar-wrapper-column,
   .js-dynamic-sidebar {
     width: 100% !important;
   }
+
   .hero-content,
   .intro-grid {
     grid-template-columns: 1fr;
   }
+
   .hero-image-card {
     height: 240px;
   }
+
   .js-dynamic-sidebar.is-fixed,
   .js-dynamic-sidebar.is-bottomed {
     position: static !important;
@@ -994,35 +1233,30 @@ const otherStaffs = computed(() => {
 
 @media (max-width: 900px) {
   .children-tree {
-    grid-template-columns: 1fr;
     gap: 16px;
-    padding-left: 20px;
+    padding-left: 22px;
     margin-top: 16px;
   }
 
-  .children-tree::before {
-    left: 0;
-    width: 2px;
+  .child-node::before {
+    left: -22px;
+    width: 22px;
   }
 
-  .child-node::before {
-    left: -20px;
-    width: 20px;
+  .child-node::after {
+    left: -22px;
   }
 
   .staff-row {
     flex-direction: row;
     align-items: center;
-   gap: 16px;
+    gap: 16px;
   }
 
   .staff-thumb {
     width: 70px;
     height: 70px;
-  }
-
-  .staff-col {
-    flex: 1;
+    flex-basis: 70px;
   }
 
   .staff-name {
@@ -1063,18 +1297,18 @@ const otherStaffs = computed(() => {
     gap: 12px;
   }
 
-  .children-tree::before {
-    left: -2px;
-  }
-
   .child-node::before {
     left: -16px;
     width: 16px;
     height: 2px;
   }
 
+  .child-node::after {
+    left: -16px;
+    width: 2px;
+  }
+
   .staff-row {
-    flex-direction: row;
     gap: 9px;
     align-items: center;
   }
@@ -1082,10 +1316,7 @@ const otherStaffs = computed(() => {
   .staff-thumb {
     width: 55px;
     height: 55px;
-  }
-
-  .staff-col {
-    flex: 1;
+    flex-basis: 55px;
   }
 
   .staff-name {
@@ -1093,12 +1324,12 @@ const otherStaffs = computed(() => {
     margin-bottom: 2px;
   }
 
-  .staff-meta {
-    font-size: 0.7rem;
+  .staff-type {
+    font-size: 0.58rem;
   }
 
-  .meta-k, .meta-v {
-    display: inline;
+  .staff-meta {
+    font-size: 0.7rem;
   }
 
   .mini-tag {
@@ -1132,10 +1363,7 @@ const otherStaffs = computed(() => {
   .staff-thumb {
     width: 50px;
     height: 50px;
-  }
-
-  .staff-col {
-    min-width: 0;
+    flex-basis: 50px;
   }
 
   .staff-name {
@@ -1158,6 +1386,10 @@ const otherStaffs = computed(() => {
   .child-node::before {
     left: -12px;
     width: 12px;
+  }
+
+  .child-node::after {
+    left: -12px;
   }
 }
 </style>

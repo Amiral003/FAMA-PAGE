@@ -304,7 +304,7 @@ public function comOps(Request $request)
         ->published()
         ->where('type', Post::TYPE_ARTICLE) // ✅ UNIQUEMENT actualités
         ->with(['media' => function ($m) {
-            $m->orderBy('order');
+            $m->orderBy('order')->orderBy('id');
         }])
         ->publicOrder()
         ->select([

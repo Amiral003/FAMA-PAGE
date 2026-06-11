@@ -10,7 +10,6 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 
 const router = useRouter()
-const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
 useHead({
   title: 'Galerie Photo | FAMa',
@@ -37,18 +36,22 @@ const currentPhoto = ref(null)
 
 const sentinel = ref(null)
 let observer = null
+let tmr = null
 
 const downloadPhoto = async (photo) => {
   try {
     const response = await fetch(photo.src)
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
+
     const link = document.createElement('a')
     link.href = url
     link.download = photo.filename || `fama_photo_${photo.id}.jpg`
+
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
     window.URL.revokeObjectURL(url)
   } catch (error) {
     window.open(photo.src, '_blank')
@@ -56,6 +59,8 @@ const downloadPhoto = async (photo) => {
 }
 
 const openPhoto = (photo) => {
+  if (photo.failed) return
+
   currentPhoto.value = photo
   showModal.value = true
 }
@@ -80,8 +85,8 @@ const fetchPhotos = async () => {
 
     const payload = res.data
     const posts = payload?.data ?? payload ?? []
-
     const newPhotos = []
+    const sizes = ['portrait', 'landscape', 'square', 'portrait', 'landscape']
 
     for (const post of posts) {
       const media = Array.isArray(post.media) ? post.media : []
@@ -91,8 +96,9 @@ const fetchPhotos = async () => {
         .map((m, idx) => {
           const filePath = m.file_path
           const fileName = filePath.split('/').pop()
+
           return {
-            id: `${post.id}-${idx}`,
+            id: `${post.id}-${m.id ?? idx}`,
             src: `/storage/${filePath}`,
             alt: post.title,
             postSlug: post.slug,
@@ -100,11 +106,12 @@ const fetchPhotos = async () => {
             caption: m.caption || post.excerpt || null,
             date: post.published_at || post.created_at,
             filename: fileName,
+            failed: false,
+            size: sizes[(Number(post.id) + idx) % sizes.length],
           }
         })
 
       newPhotos.push(...postPhotos)
-      totalPhotosCount.value += postPhotos.length
     }
 
     if (page.value === 1) {
@@ -113,6 +120,7 @@ const fetchPhotos = async () => {
       photos.value = [...photos.value, ...newPhotos]
     }
 
+    totalPhotosCount.value = photos.value.length
     hasMore.value = !!payload.next_page_url
     page.value += 1
   } catch (e) {
@@ -129,6 +137,7 @@ const resetAndReload = async () => {
   loading.value = true
   photos.value = []
   totalPhotosCount.value = 0
+
   await fetchPhotos()
 }
 
@@ -137,9 +146,15 @@ const setupObserver = () => {
 
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting) fetchPhotos()
+      if (entries[0].isIntersecting) {
+        fetchPhotos()
+      }
     },
-    { root: null, threshold: 0.1 }
+    {
+      root: null,
+      threshold: 0.1,
+      rootMargin: '200px',
+    }
   )
 
   observer.observe(sentinel.value)
@@ -152,13 +167,20 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  if (observer && sentinel.value) observer.unobserve(sentinel.value)
+  if (observer && sentinel.value) {
+    observer.unobserve(sentinel.value)
+  }
+
+  if (tmr) {
+    clearTimeout(tmr)
+  }
+
   observer = null
 })
 
-let tmr = null
 watch(search, () => {
   clearTimeout(tmr)
+
   tmr = setTimeout(() => {
     resetAndReload()
   }, 350)
@@ -174,20 +196,25 @@ watch(search, () => {
             <i class="pi pi-images"></i>
             <span>Galerie officielle FAMa</span>
           </div>
+
           <h1 class="page-title">Galerie Photo</h1>
+
           <p class="page-subtitle">
             Explorez les moments forts des Forces Armées Maliennes
           </p>
+
           <div class="stats-row">
             <div class="stat-box">
               <strong>{{ totalPhotosCount }}</strong>
-              <span>Photos</span>
+              <span>Photos chargées</span>
             </div>
           </div>
         </div>
+
         <div class="hero-tools">
           <div class="search-wrapper">
             <i class="pi pi-search"></i>
+
             <InputText
               v-model="search"
               placeholder="Rechercher..."
@@ -197,31 +224,36 @@ watch(search, () => {
         </div>
       </header>
 
-      <!-- Loading -->
-      <div v-if="loading" class="photo-grid">
+      <div v-if="loading" class="photo-grid-skeleton">
         <div v-for="i in 12" :key="i" class="photo-skeleton">
           <Skeleton width="100%" height="100%" class="skeleton-img" />
         </div>
       </div>
 
-      <!-- Galerie - Masonry style (adapté à chaque photo) -->
       <div v-else>
         <div class="photo-grid-masonry">
           <div
             v-for="photo in photos"
             :key="photo.id"
-            class="photo-item"
+            :class="['photo-item', `photo-${photo.size}`]"
           >
             <div class="photo-container">
               <img
+                v-if="!photo.failed"
                 :src="photo.src"
                 :alt="photo.alt"
                 class="photo-img"
                 loading="lazy"
                 @click="openPhoto(photo)"
+                @error="photo.failed = true"
               />
 
-              <div class="photo-overlay">
+              <div v-else class="image-error">
+                <i class="pi pi-image"></i>
+                <span>Image indisponible</span>
+              </div>
+
+              <div v-if="!photo.failed" class="photo-overlay">
                 <div class="overlay-buttons">
                   <button
                     class="overlay-btn download-btn"
@@ -230,6 +262,7 @@ watch(search, () => {
                   >
                     <i class="pi pi-download"></i>
                   </button>
+
                   <button
                     class="overlay-btn view-btn"
                     @click.stop="openPhoto(photo)"
@@ -238,6 +271,7 @@ watch(search, () => {
                     <i class="pi pi-search-plus"></i>
                   </button>
                 </div>
+
                 <div class="overlay-caption" v-if="photo.caption">
                   <span>{{ photo.caption }}</span>
                 </div>
@@ -263,12 +297,11 @@ watch(search, () => {
 
         <div v-if="!loading && !loadingMore && !hasMore && photos.length" class="end-feed">
           <i class="pi pi-check-circle"></i>
-          <span>Fin de la galerie — {{ totalPhotosCount }} photos</span>
+          <span>Fin de la galerie — {{ totalPhotosCount }} photos chargées</span>
         </div>
       </div>
     </div>
 
-    <!-- Modal -->
     <Dialog
       v-model:visible="showModal"
       :modal="true"
@@ -282,11 +315,13 @@ watch(search, () => {
         <div class="modal-image">
           <img :src="currentPhoto.src" :alt="currentPhoto.alt" />
         </div>
+
         <div class="modal-info">
           <div v-if="currentPhoto.caption" class="modal-caption">
             <i class="pi pi-comment"></i>
             <p>{{ currentPhoto.caption }}</p>
           </div>
+
           <div class="modal-actions">
             <Button
               label="Voir l'article"
@@ -294,6 +329,7 @@ watch(search, () => {
               class="p-button-success"
               @click="goToPost(currentPhoto.postSlug)"
             />
+
             <Button
               label="Télécharger"
               icon="pi pi-download"
@@ -320,7 +356,6 @@ watch(search, () => {
   padding: 0 16px;
 }
 
-/* En-tête */
 .hero-banner {
   display: flex;
   justify-content: space-between;
@@ -356,7 +391,7 @@ watch(search, () => {
 }
 
 .page-subtitle {
-  margin: 0;
+  margin: 0 0 16px;
   color: #475569;
 }
 
@@ -402,32 +437,69 @@ watch(search, () => {
   background: #fff !important;
 }
 
-/* MASONRY STYLE - Chaque photo garde sa proportion naturelle */
+/* Skeleton stable */
+.photo-grid-skeleton {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.photo-skeleton {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #e2e8f0;
+  aspect-ratio: 4 / 3;
+}
+
+.skeleton-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Masonry style Pinterest */
 .photo-grid-masonry {
   column-count: 4;
   column-gap: 20px;
 }
 
 .photo-item {
-  break-inside: avoid;
-  margin-bottom: 20px;
   position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 20px;
+  break-inside: avoid;
+  page-break-inside: avoid;
   border-radius: 16px;
   overflow: hidden;
   background: #f1f5f9;
   cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
 .photo-container {
   position: relative;
   width: 100%;
   overflow: hidden;
+  background: #e2e8f0;
+}
+
+.photo-square .photo-container {
+  aspect-ratio: 1 / 1;
+}
+
+.photo-portrait .photo-container {
+  aspect-ratio: 3 / 4;
+}
+
+.photo-landscape .photo-container {
+  aspect-ratio: 4 / 3;
 }
 
 .photo-img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  object-fit: cover;
   transition: transform 0.4s ease;
 }
 
@@ -435,14 +507,27 @@ watch(search, () => {
   transform: scale(1.02);
 }
 
-/* Overlay au survol */
+.image-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.image-error i {
+  font-size: 2rem;
+}
+
 .photo-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.2));
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.2));
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -465,7 +550,7 @@ watch(search, () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   border: none;
   cursor: pointer;
   display: flex;
@@ -482,7 +567,7 @@ watch(search, () => {
 }
 
 .overlay-caption {
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   border-radius: 8px;
   padding: 8px 12px;
   color: white;
@@ -498,20 +583,6 @@ watch(search, () => {
   overflow: hidden;
 }
 
-/* Skeleton */
-.photo-skeleton {
-  border-radius: 16px;
-  overflow: hidden;
-  background: #e2e8f0;
-  aspect-ratio: 4 / 3;
-}
-
-.skeleton-img {
-  width: 100%;
-  height: 100%;
-}
-
-/* Loading more */
 .loading-more {
   display: flex;
   justify-content: center;
@@ -527,7 +598,7 @@ watch(search, () => {
   border-radius: 40px;
   color: #14b82c;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .sentinel {
@@ -555,7 +626,6 @@ watch(search, () => {
   margin-bottom: 16px;
 }
 
-/* Modal */
 .photo-modal :deep(.p-dialog-header) {
   background: #0f172a;
   color: white;
@@ -622,18 +692,29 @@ watch(search, () => {
   justify-content: flex-end;
 }
 
-/* Responsive - Masonry columns */
 @media (max-width: 1200px) {
   .photo-grid-masonry {
     column-count: 3;
     column-gap: 16px;
+  }
+
+  .photo-grid-skeleton {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .photo-item {
+    margin-bottom: 16px;
   }
 }
 
 @media (max-width: 900px) {
   .photo-grid-masonry {
     column-count: 2;
-    column-gap: 16px;
+  }
+
+  .photo-grid-skeleton {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -680,6 +761,11 @@ watch(search, () => {
   .photo-grid-masonry {
     column-count: 1;
     column-gap: 12px;
+  }
+
+  .photo-grid-skeleton {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .photo-item {
