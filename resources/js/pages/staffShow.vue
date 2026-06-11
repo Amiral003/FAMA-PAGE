@@ -717,7 +717,6 @@ useHead(() => {
 .contact-link:hover {
   text-decoration: underline;
 }
-
 /* Responsive */
 @media (max-width: 1024px) {
   .missions-layout-multi {
@@ -731,6 +730,21 @@ useHead(() => {
     grid-template-columns: 1fr;
     text-align: center;
   }
+
+  /* AJOUTEZ CES LIGNES POUR CENTRER LE LOGO SUR MOBILE */
+  .hero-media {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .logo-frame {
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  /* FIN DES AJOUTS */
 
   .hero-meta {
     justify-content: center;
