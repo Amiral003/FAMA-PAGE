@@ -11,12 +11,14 @@ import Skeleton from 'primevue/skeleton'
 import Image from 'primevue/image'
 import { formatDistanceToNow } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import SidebarOfficial from './SidebarOfficial.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const post = ref(null)
 const loading = ref(true)
+const recentPdfs = ref([])
 
 const siteUrl = computed(() => {
   if (typeof window === 'undefined') return ''
@@ -263,6 +265,15 @@ onMounted(async () => {
   try {
     const res = await axios.get(`/api/posts/${route.params.slug}`)
     post.value = res.data.data || res.data
+
+    try {
+      const pdfsRes = await axios.get('/api/posts/recent-pdfs')
+      recentPdfs.value = pdfsRes.data.data || pdfsRes.data
+    } catch (pdfError) {
+      console.error('Erreur chargement PDFs récents:', pdfError)
+      recentPdfs.value = []
+    }
+
   } catch (e) {
     router.push('/actualites')
   } finally {
@@ -307,196 +318,256 @@ ${fullUrl}`
 </script>
 
 <template>
-  <div class="page-background staff-page-container">
+  <div class="page-background">
     <a href="#main-content" class="skip-link">Passer au contenu principal</a>
 
-    <main id="main-content" class="container" v-if="!loading && post">
-      <article class="content-card staff-main-card" aria-labelledby="post-title">
-        <nav class="top-nav" aria-label="Navigation de l’article">
-          <Button
-            icon="pi pi-arrow-left"
-            label="Retour"
-            class="back-btn-modern"
-            @click="router.back()"
-          />
-
-          <div class="share-actions-minimal" aria-label="Actions de partage">
-            <button
-              class="minimal-share-btn"
-              type="button"
-              @click="share('facebook')"
-              aria-label="Partager sur Facebook"
-            >
-              <i class="pi pi-facebook" aria-hidden="true"></i>
-            </button>
-
-            <button
-              class="minimal-share-btn"
-              type="button"
-              @click="share('whatsapp')"
-              aria-label="Partager sur WhatsApp"
-            >
-              <i class="pi pi-whatsapp" aria-hidden="true"></i>
-            </button>
-          </div>
-        </nav>
-
-        <header class="post-header">
-          <div class="meta-badges">
-            <Tag
-              :value="post.type === 'video' ? 'VIDÉO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'ACTUALITÉ')"
-              :severity="post.type === 'video' ? 'info' : (post.pdf_path ? 'danger' : 'success')"
-              class="fama-tag"
+    <div class="main-layout">
+      <main id="main-content" class="main-content" v-if="!loading && post">
+        <article class="content-card" aria-labelledby="post-title">
+          <nav class="top-nav" aria-label="Navigation de l'article">
+            <Button
+              icon="pi pi-arrow-left"
+              label="Retour"
+              class="back-btn-modern"
+              @click="router.back()"
             />
 
-            <span class="publish-date">
-              <i class="pi pi-calendar-plus mr-2" aria-hidden="true"></i>
-              <time :datetime="post.published_at || post.created_at">
-                {{ getRelativeDate(post.published_at || post.created_at) }}
-              </time>
-            </span>
-          </div>
-
-          <h1 id="post-title" class="post-title">{{ post.title }}</h1>
-        </header>
-
-        <section class="media-section" aria-label="Média principal de l’article">
-          <div v-if="isVideo" class="video-container">
-            <iframe
-              v-if="youtubeEmbedUrl"
-              :src="youtubeEmbedUrl"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-              loading="lazy"
-              referrerpolicy="strict-origin-when-cross-origin"
-              :title="`Vidéo YouTube : ${post.title}`"
-            ></iframe>
-
-            <video
-              v-else-if="isMp4Video"
-              :src="post.video_url"
-              controls
-              playsinline
-              preload="metadata"
-              :title="post.title"
-            ></video>
-
-            <div v-else class="video-fallback">
-              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-              <p>Cette vidéo ne peut pas être affichée pour le moment.</p>
-              <a
-                v-if="post.video_url"
-                :href="post.video_url"
-                target="_blank"
-                rel="noopener noreferrer"
+            <div class="share-actions-minimal" aria-label="Actions de partage">
+              <button
+                class="minimal-share-btn"
+                type="button"
+                @click="share('facebook')"
+                aria-label="Partager sur Facebook"
               >
-                Ouvrir la vidéo
-              </a>
+                <i class="pi pi-facebook" aria-hidden="true"></i>
+              </button>
+
+              <button
+                class="minimal-share-btn"
+                type="button"
+                @click="share('whatsapp')"
+                aria-label="Partager sur WhatsApp"
+              >
+                <i class="pi pi-whatsapp" aria-hidden="true"></i>
+              </button>
             </div>
-          </div>
+          </nav>
 
-          <div v-else-if="allMedia.length > 0" class="carousel-wrapper staff-info-block">
-            <Carousel
-              :value="allMedia"
-              :numVisible="1"
-              :numScroll="1"
-              circular
-              :autoplayInterval="5000"
-            >
-              <template #item="slotProps">
-                <figure class="image-slide">
-                  <Image
-                    :src="`/storage/${slotProps.data.file_path}`"
-                    preview
-                    imageClass="main-post-img"
-                    :alt="slotProps.data.caption || (
-                      slotProps.index === 0
-                        ? `${post.title} - Illustration principale`
-                        : `${post.title} - Image ${slotProps.index + 1}`
-                    )"
-                    :pt="{
-                      image: {
-                        loading: slotProps.index === 0 ? 'eager' : 'lazy',
-                        decoding: 'async'
-                      }
-                    }"
-                  />
-
-                  <figcaption
-                    v-if="slotProps.data.caption"
-                    class="image-caption"
-                  >
-                    {{ slotProps.data.caption }}
-                  </figcaption>
-                </figure>
-              </template>
-            </Carousel>
-          </div>
-        </section>
-
-        <section class="post-body" aria-label="Contenu de l’article">
-          <div class="rich-text-content" v-html="post.content"></div>
-
-          <div v-if="post.pdf_path" class="pdf-action-card-modern">
-            <div class="pdf-info-modern">
-              <div class="pdf-icon-box">
-                <i class="pi pi-file-pdf" aria-hidden="true"></i>
-              </div>
-
-              <div>
-                <span class="pdf-title-modern">Document officiel joint</span>
-                <p class="pdf-sub-modern">
-                  Consultez ou téléchargez le fichier PDF publié officiellement par les FAMa.
-                </p>
-              </div>
-            </div>
-
-            <div class="pdf-buttons-modern">
-              <Button
-                label="Ouvrir le PDF"
-                icon="pi pi-eye"
-                class="pdf-read-btn"
-                @click="openPdf(post.pdf_path)"
+          <header class="post-header">
+            <div class="meta-badges">
+              <Tag
+                :value="post.type === 'video' ? 'VIDÉO OFFICIELLE' : (post.pdf_path ? 'DOCUMENT OFFICIEL' : 'ACTUALITÉ')"
+                :severity="post.type === 'video' ? 'info' : (post.pdf_path ? 'danger' : 'success')"
+                class="fama-tag"
               />
 
-              <a :href="`/storage/${post.pdf_path}`" download class="pdf-download-btn">
-                <i class="pi pi-download" aria-hidden="true"></i>
-                Télécharger
-              </a>
+              <span class="publish-date">
+                <i class="pi pi-calendar-plus mr-2" aria-hidden="true"></i>
+                <time :datetime="post.published_at || post.created_at">
+                  {{ getRelativeDate(post.published_at || post.created_at) }}
+                </time>
+              </span>
             </div>
-          </div>
-        </section>
 
-        <footer class="post-footer">
-          <div class="signature-box">
-            <div class="fama-divider"></div>
-            <p class="signature-name">{{ 'LA RÉDACTION' }}</p>
-            <p class="signature-rank">
-              Direction de l'Information et des Relations Publiques des Armées
-            </p>
-          </div>
-        </footer>
-      </article>
-    </main>
+            <h1 id="post-title" class="post-title">{{ post.title }}</h1>
+          </header>
 
-    <div v-else class="container py-8" aria-live="polite" aria-busy="true">
-      <div class="content-card staff-main-card">
-        <Skeleton width="30%" height="2rem" class="mb-4"></Skeleton>
-        <Skeleton width="100%" height="4rem" class="mb-6"></Skeleton>
-        <Skeleton width="100%" height="400px" class="mb-4"></Skeleton>
+          <section class="media-section" aria-label="Média principal de l'article">
+            <div v-if="isVideo" class="video-container">
+              <iframe
+                v-if="youtubeEmbedUrl"
+                :src="youtubeEmbedUrl"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                :title="`Vidéo YouTube : ${post.title}`"
+              ></iframe>
+
+              <video
+                v-else-if="isMp4Video"
+                :src="post.video_url"
+                controls
+                playsinline
+                preload="metadata"
+                :title="post.title"
+              ></video>
+
+              <div v-else class="video-fallback">
+                <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                <p>Cette vidéo ne peut pas être affichée pour le moment.</p>
+                <a
+                  v-if="post.video_url"
+                  :href="post.video_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ouvrir la vidéo
+                </a>
+              </div>
+            </div>
+
+            <div v-else-if="allMedia.length > 0" class="carousel-wrapper">
+              <Carousel
+                :value="allMedia"
+                :numVisible="1"
+                :numScroll="1"
+                circular
+                :autoplayInterval="5000"
+              >
+                <template #item="slotProps">
+                  <figure class="image-slide">
+                    <Image
+                      :src="`/storage/${slotProps.data.file_path}`"
+                      preview
+                      imageClass="main-post-img"
+                      :alt="slotProps.data.caption || (
+                        slotProps.index === 0
+                          ? `${post.title} - Illustration principale`
+                          : `${post.title} - Image ${slotProps.index + 1}`
+                      )"
+                      :pt="{
+                        image: {
+                          loading: slotProps.index === 0 ? 'eager' : 'lazy',
+                          decoding: 'async'
+                        }
+                      }"
+                    />
+
+                    <figcaption
+                      v-if="slotProps.data.caption"
+                      class="image-caption"
+                    >
+                      {{ slotProps.data.caption }}
+                    </figcaption>
+                  </figure>
+                </template>
+              </Carousel>
+            </div>
+          </section>
+
+          <section class="post-body" aria-label="Contenu de l'article">
+            <div class="rich-text-content" v-html="post.content"></div>
+
+            <div v-if="post.pdf_path" class="pdf-action-card-modern">
+              <div class="pdf-info-modern">
+                <div class="pdf-icon-box">
+                  <i class="pi pi-file-pdf" aria-hidden="true"></i>
+                </div>
+
+                <div>
+                  <span class="pdf-title-modern">Document officiel joint</span>
+                  <p class="pdf-sub-modern">
+                    Consultez ou téléchargez le fichier PDF publié officiellement par les FAMa.
+                  </p>
+                </div>
+              </div>
+
+              <div class="pdf-buttons-modern">
+                <Button
+                  label="Ouvrir le PDF"
+                  icon="pi pi-eye"
+                  class="pdf-read-btn"
+                  @click="openPdf(post.pdf_path)"
+                />
+
+                <a :href="`/storage/${post.pdf_path}`" download class="pdf-download-btn">
+                  <i class="pi pi-download" aria-hidden="true"></i>
+                  Télécharger
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <footer class="post-footer">
+            <div class="signature-box">
+              <div class="fama-divider"></div>
+              <p class="signature-name">{{ 'LA RÉDACTION' }}</p>
+              <p class="signature-rank">
+                Direction de l'Information et des Relations Publiques des Armées
+              </p>
+            </div>
+          </footer>
+        </article>
+      </main>
+
+      <aside class="sidebar-column" v-if="!loading">
+        <SidebarOfficial :recentDocs="recentPdfs" />
+      </aside>
+
+      <div v-if="loading" class="main-content">
+        <div class="content-card">
+          <Skeleton width="30%" height="2rem" class="mb-4"></Skeleton>
+          <Skeleton width="100%" height="4rem" class="mb-6"></Skeleton>
+          <Skeleton width="100%" height="400px" class="mb-4"></Skeleton>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Reset et styles de base */
 .page-background {
   min-height: 100vh;
   padding: 40px 0;
   background: #f8fafc;
+  overflow-x: visible;
 }
 
+/* Layout principal - CORRECTION CLÉ */
+.main-layout {
+  display: flex;
+  gap: 30px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+   align-items: flex-start; /* Changé de start à stretch */
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar qui prend toute la hauteur */
+.sidebar-column {
+  width: 320px;
+  flex-shrink: 0;
+  position:sticky;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Force le composant SidebarOfficial à prendre toute la hauteur */
+.sidebar-column :deep(.sidebar-official) {
+  height: 100%;
+  flex: 1;
+}
+
+/* Carte de contenu */
+.content-card {
+  width: 100%;
+  padding: 40px 50px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Le footer (signature) reste en bas */
+.post-footer {
+  margin-top: auto;
+  padding-top: 34px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* Skip link */
 .skip-link {
   position: absolute;
   left: 16px;
@@ -515,22 +586,7 @@ ${fullUrl}`
   top: 16px;
 }
 
-.container {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.content-card {
-  width: 100%;
-  padding: 40px 50px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-}
-
+/* Navigation */
 .top-nav {
   display: flex;
   justify-content: space-between;
@@ -580,6 +636,7 @@ ${fullUrl}`
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
+/* Header */
 .post-header {
   margin-bottom: 35px;
 }
@@ -606,6 +663,7 @@ ${fullUrl}`
   letter-spacing: -0.03em;
 }
 
+/* Media */
 .media-section {
   margin-bottom: 40px;
 }
@@ -655,6 +713,7 @@ ${fullUrl}`
   background: #ffffff;
 }
 
+/* Contenu */
 .rich-text-content {
   font-size: 1.18rem;
   line-height: 1.85;
@@ -673,6 +732,7 @@ ${fullUrl}`
   border-radius: 14px;
 }
 
+/* PDF */
 .pdf-action-card-modern {
   display: flex;
   justify-content: space-between;
@@ -757,8 +817,9 @@ ${fullUrl}`
   filter: brightness(0.96);
 }
 
+/* Footer - Signature */
 .post-footer {
-  margin-top: 58px;
+  margin-top: auto; /* Pousse la signature vers le bas */
   padding-top: 34px;
   border-top: 1px solid rgba(148, 163, 184, 0.18);
 }
@@ -790,6 +851,7 @@ ${fullUrl}`
   color: #475569;
 }
 
+/* Fallback vidéo */
 .video-fallback {
   width: 100%;
   height: 100%;
@@ -834,15 +896,24 @@ ${fullUrl}`
 }
 
 /* Responsive */
+@media (max-width: 992px) {
+  .main-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sidebar-column {
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .page-background {
     padding: 0;
   }
 
-  .container {
-    max-width: 100%;
+  .main-layout {
     padding: 0;
-    margin: 0;
   }
 
   .content-card {
