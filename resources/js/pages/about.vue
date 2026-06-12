@@ -410,7 +410,7 @@ const otherStaffs = computed(() => {
 
           <div v-else class="hierarchy-container">
             <div v-if="presidencyStaff.length" class="hierarchy-group">
-              
+
 
               <div class="compact-grid">
                 <RouterLink
@@ -440,9 +440,7 @@ const otherStaffs = computed(() => {
 
                           <h3 class="staff-name">{{ s.name }}</h3>
 
-                          <div class="staff-type">
-                            {{ getStaffTypeLabel(s) }}
-                          </div>
+
 
                           <div class="staff-meta" v-if="s.leader_name">
                             <span class="meta-k">
@@ -461,7 +459,7 @@ const otherStaffs = computed(() => {
             </div>
 
             <div v-if="mdacParent" class="org-tree-container">
-              
+
 
               <div class="parent-node">
                 <RouterLink :to="`/etat-major/${mdacParent.slug}`" class="staff-link">
@@ -486,9 +484,7 @@ const otherStaffs = computed(() => {
 
                           <h3 class="staff-name">{{ mdacParent.name }}</h3>
 
-                          <div class="staff-type">
-                            {{ getStaffTypeLabel(mdacParent) }}
-                          </div>
+
 
                           <div class="staff-meta" v-if="mdacParent.leader_name">
                             <span class="meta-k">
@@ -531,7 +527,6 @@ const otherStaffs = computed(() => {
                           <div class="staff-col">
                             <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
                             <h3 class="staff-name">{{ s.name }}</h3>
-                            <div class="staff-type">{{ getStaffTypeLabel(s) }}</div>
                           </div>
                         </div>
                       </template>
@@ -542,7 +537,7 @@ const otherStaffs = computed(() => {
             </div>
 
             <div v-if="emgaParent" class="org-tree-container">
-              
+
 
               <div class="parent-node">
                 <RouterLink :to="`/etat-major/${emgaParent.slug}`" class="staff-link">
@@ -567,9 +562,7 @@ const otherStaffs = computed(() => {
 
                           <h3 class="staff-name">{{ emgaParent.name }}</h3>
 
-                          <div class="staff-type">
-                            {{ getStaffTypeLabel(emgaParent) }}
-                          </div>
+
 
                           <div class="staff-meta" v-if="emgaParent.leader_name">
                             <span class="meta-k">
@@ -612,7 +605,6 @@ const otherStaffs = computed(() => {
                           <div class="staff-col">
                             <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
                             <h3 class="staff-name">{{ s.name }}</h3>
-                            <div class="staff-type">{{ getStaffTypeLabel(s) }}</div>
                           </div>
                         </div>
                       </template>
@@ -653,7 +645,6 @@ const otherStaffs = computed(() => {
                         <div class="staff-col">
                           <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
                           <h3 class="staff-name">{{ s.name }}</h3>
-                          <div class="staff-type">{{ getStaffTypeLabel(s) }}</div>
                         </div>
                       </div>
                     </template>
