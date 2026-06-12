@@ -432,7 +432,7 @@ const otherStaffs = computed(() => {
                         </div>
 
                         <div class="staff-thumb fallback" v-else>
-                          {{ (s.initials || 'FAMa').slice(0, 4) }}
+                          {{ (s.initials || 'FAMa') }}
                         </div>
 
                         <div class="staff-col">
@@ -521,7 +521,7 @@ const otherStaffs = computed(() => {
                           </div>
 
                           <div class="staff-thumb fallback" v-else>
-                            {{ (s.initials || 'FAMa').slice(0, 4) }}
+                            {{ (s.initials || 'FAMa') }}
                           </div>
 
                           <div class="staff-col">
@@ -599,7 +599,7 @@ const otherStaffs = computed(() => {
                           </div>
 
                           <div class="staff-thumb fallback" v-else>
-                            {{ (s.initials || 'FAMa').slice(0, 4) }}
+                            {{ (s.initials || 'FAMa') }}
                           </div>
 
                           <div class="staff-col">
@@ -639,7 +639,7 @@ const otherStaffs = computed(() => {
                         </div>
 
                         <div class="staff-thumb fallback" v-else>
-                          {{ (s.initials || 'FAMa').slice(0, 4) }}
+                          {{ (s.initials || 'FAMa') }}
                         </div>
 
                         <div class="staff-col">
