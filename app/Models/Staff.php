@@ -10,7 +10,7 @@ class Staff extends Model
     // ✅ Evite les requêtes N+1
     // protected $with = ['staffs'];
     protected $table = 'staffs';
-    
+
     protected $fillable = [
     'name',
     'initials',

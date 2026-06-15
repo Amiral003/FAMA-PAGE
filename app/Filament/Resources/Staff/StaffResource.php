@@ -70,14 +70,15 @@ class StaffResource extends Resource
                             ->label('Structure parente')
                             ->options(function (?Staff $record) {
                                 return Staff::query()
-                                    ->whereIn('initials', ['PR', 'MDAC', 'EMGA'])
+                                    ->whereIn('initials', ['PR', 'MDAC', 'EMGA', 'MSP'])
                                     ->when($record, fn ($query) => $query->whereKeyNot($record->id))
                                     ->orderByRaw("
                                         CASE initials
                                             WHEN 'PR' THEN 1
                                             WHEN 'MDAC' THEN 2
                                             WHEN 'EMGA' THEN 3
-                                            ELSE 4
+                                            WHEN 'MSP' THEN 4
+                                            ELSE 5
                                         END
                                     ")
                                     ->get()
@@ -90,7 +91,7 @@ class StaffResource extends Resource
                             ->preload()
                             ->nullable()
                             ->placeholder('Aucune structure parente')
-                            ->helperText('Choisir uniquement entre PR, MDAC ou EMGA.'),
+                            ->helperText('Choisir uniquement entre PR, MDAC, EMGA ou MSP.'),
 
                         TextInput::make('slug')
                             ->label('Lien URL')

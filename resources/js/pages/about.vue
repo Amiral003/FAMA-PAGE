@@ -189,6 +189,11 @@ const emgaParent = computed(() => {
 
   return staffs.value.find((s) => s && s.initials === 'EMGA') || null
 })
+const mspParent = computed(() => {
+  if (!Array.isArray(staffs.value)) return null
+
+  return staffs.value.find((s) => s && s.initials === 'MSP') || null
+})
 
 const mdacChildren = computed(() => {
   if (!Array.isArray(staffs.value)) return []
@@ -219,22 +224,36 @@ const emgaChildren = computed(() => {
     })
   )
 })
+const mspChildren = computed(() => {
+  if (!Array.isArray(staffs.value)) return []
+
+  const msp = mspParent.value
+  if (!msp?.id) return []
+
+  return sortByOrder(
+    staffs.value.filter((s) => {
+      return s && Number(s.parent_staff_id) === Number(msp.id)
+    })
+  )
+})
 
 const otherStaffs = computed(() => {
   if (!Array.isArray(staffs.value)) return []
 
   const mdacId = mdacParent.value?.id
   const emgaId = emgaParent.value?.id
-
+    const mspId = mspParent.value?.id
   return sortByOrder(
     staffs.value.filter((s) => {
       return (
         s &&
         s.initials !== 'PR' &&
         s.initials !== 'MDAC' &&
+        s.initials!=='MSP'&&
         s.initials !== 'EMGA' &&
         Number(s.parent_staff_id) !== Number(mdacId) &&
-        Number(s.parent_staff_id) !== Number(emgaId)
+        Number(s.parent_staff_id) !== Number(emgaId) &&
+        Number(s.parent_staff_id)!== Number(mspId)
       )
     })
   )
@@ -613,7 +632,81 @@ const otherStaffs = computed(() => {
                 </div>
               </div>
             </div>
+            <span>Ministère de la Securité</span>
+             <!-- Bloc MSP -->
+<div v-if="mspParent" class="org-tree-container">
+  <div class="parent-node">
+    <RouterLink :to="`/etat-major/${mspParent.slug}`" class="staff-link">
+      <Card class="staff-card compact-card premium-card parent-card">
+        <template #content>
+          <div class="staff-row">
+            <div class="staff-thumb" v-if="mspParent.logo">
+              <img
+                :src="`/storage/${mspParent.logo}`"
+                :alt="mspParent.name"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
 
+            <div class="staff-thumb fallback" v-else>
+              {{ mspParent.initials }}
+            </div>
+
+            <div class="staff-col">
+              <Tag :value="mspParent.initials" severity="success" rounded class="mini-tag" />
+
+              <h3 class="staff-name">{{ mspParent.name }}</h3>
+
+              <div class="staff-meta" v-if="mspParent.leader_name">
+                <span class="meta-k">
+                  {{ mspParent.leader_name }}
+                  <span v-if="mspParent.leader_rank" class="leader-rank">
+                    ({{ mspParent.leader_rank }})
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </Card>
+    </RouterLink>
+  </div>
+
+  <div v-if="mspChildren.length" class="children-tree">
+    <div
+      v-for="s in mspChildren"
+      :key="s.id"
+      class="child-node"
+    >
+      <RouterLink :to="`/etat-major/${s.slug}`" class="staff-link">
+        <Card class="staff-card compact-card child-card">
+          <template #content>
+            <div class="staff-row">
+              <div class="staff-thumb" v-if="s.logo">
+                <img
+                  :src="`/storage/${s.logo}`"
+                  :alt="s.name"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+
+              <div class="staff-thumb fallback" v-else>
+                {{ s.initials || 'FAMa' }}
+              </div>
+
+              <div class="staff-col">
+                <Tag :value="s.initials" severity="success" rounded class="mini-tag" />
+                <h3 class="staff-name">{{ s.name }}</h3>
+              </div>
+            </div>
+          </template>
+        </Card>
+      </RouterLink>
+    </div>
+  </div>
+</div>
             <div v-if="otherStaffs.length" class="hierarchy-group">
               <div class="hierarchy-title-border">
                 Autres organismes
