@@ -189,10 +189,10 @@ const emgaParent = computed(() => {
 
   return staffs.value.find((s) => s && s.initials === 'EMGA') || null
 })
-const mspParent = computed(() => {
+const mspcParent = computed(() => {
   if (!Array.isArray(staffs.value)) return null
 
-  return staffs.value.find((s) => s && s.initials === 'MSP') || null
+  return staffs.value.find((s) => s && s.initials === 'MSPC') || null
 })
 
 const mdacChildren = computed(() => {
@@ -224,15 +224,15 @@ const emgaChildren = computed(() => {
     })
   )
 })
-const mspChildren = computed(() => {
+const mspcChildren = computed(() => {
   if (!Array.isArray(staffs.value)) return []
 
-  const msp = mspParent.value
-  if (!msp?.id) return []
+  const mspc = mspcParent.value
+  if (!mspc?.id) return []
 
   return sortByOrder(
     staffs.value.filter((s) => {
-      return s && Number(s.parent_staff_id) === Number(msp.id)
+      return s && Number(s.parent_staff_id) === Number(mspc.id)
     })
   )
 })
@@ -242,18 +242,18 @@ const otherStaffs = computed(() => {
 
   const mdacId = mdacParent.value?.id
   const emgaId = emgaParent.value?.id
-    const mspId = mspParent.value?.id
+    const mspcId = mspcParent.value?.id
   return sortByOrder(
     staffs.value.filter((s) => {
       return (
         s &&
         s.initials !== 'PR' &&
         s.initials !== 'MDAC' &&
-        s.initials!=='MSP'&&
+        s.initials!=='MSPC'&&
         s.initials !== 'EMGA' &&
         Number(s.parent_staff_id) !== Number(mdacId) &&
         Number(s.parent_staff_id) !== Number(emgaId) &&
-        Number(s.parent_staff_id)!== Number(mspId)
+        Number(s.parent_staff_id)!== Number(mspcId)
       )
     })
   )
@@ -555,35 +555,35 @@ const otherStaffs = computed(() => {
               </div>
             </div>
                          <!-- Bloc MSP -->
-<div v-if="mspParent" class="org-tree-container">
+<div v-if="mspcParent" class="org-tree-container">
   <div class="parent-node">
-    <RouterLink :to="`/etat-major/${mspParent.slug}`" class="staff-link">
+    <RouterLink :to="`/etat-major/${mspcParent.slug}`" class="staff-link">
       <Card class="staff-card compact-card premium-card parent-card">
         <template #content>
           <div class="staff-row">
-            <div class="staff-thumb" v-if="mspParent.logo">
+            <div class="staff-thumb" v-if="mspcParent.logo">
               <img
-                :src="`/storage/${mspParent.logo}`"
-                :alt="mspParent.name"
+                :src="`/storage/${mspcParent.logo}`"
+                :alt="mspcParent.name"
                 loading="lazy"
                 decoding="async"
               />
             </div>
 
             <div class="staff-thumb fallback" v-else>
-              {{ mspParent.initials }}
+              {{ mspcParent.initials }}
             </div>
 
             <div class="staff-col">
-              <Tag :value="mspParent.initials" severity="success" rounded class="mini-tag" />
+              <Tag :value="mspcParent.initials" severity="success" rounded class="mini-tag" />
 
-              <h3 class="staff-name">{{ mspParent.name }}</h3>
+              <h3 class="staff-name">{{ mspcParent.name }}</h3>
 
-              <div class="staff-meta" v-if="mspParent.leader_name">
+              <div class="staff-meta" v-if="mspcParent.leader_name">
                 <span class="meta-k">
-                  {{ mspParent.leader_name }}
-                  <span v-if="mspParent.leader_rank" class="leader-rank">
-                    ({{ mspParent.leader_rank }})
+                  {{ mspcParent.leader_name }}
+                  <span v-if="mspcParent.leader_rank" class="leader-rank">
+                    ({{ mspcParent.leader_rank }})
                   </span>
                 </span>
               </div>
@@ -594,9 +594,9 @@ const otherStaffs = computed(() => {
     </RouterLink>
   </div>
 
-  <div v-if="mspChildren.length" class="children-tree">
+  <div v-if="mspcChildren.length" class="children-tree">
     <div
-      v-for="s in mspChildren"
+      v-for="s in mspcChildren"
       :key="s.id"
       class="child-node"
     >
