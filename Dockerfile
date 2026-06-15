@@ -11,7 +11,8 @@ RUN apt-get update \
         zip \
         unzip \
         ca-certificates \
-        libpq-dev \
+        libpq-dev \ 
+        postgresql-client \
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
