@@ -152,13 +152,22 @@ class StaffResource extends Resource
                                 ->label('Nom complet')
                                 ->maxLength(255),
 
-                            FileUpload::make('leader_photo')
-                                ->label('Photo du chef principal')
+                            FileUpload::make('leader_photos')
+                                ->label('Photos du chef principal')
                                 ->image()
+                                ->multiple()
+                                ->maxFiles(3)
+                                ->reorderable()
                                 ->disk('public')
                                 ->directory('leaders')
                                 ->imageEditor()
-                                ->maxSize(2048),
+                                ->maxSize(2048)
+                                ->helperText("Ajoutez jusqu'a 3 photos. La premiere reste utilisee comme photo principale.")
+                                ->afterStateHydrated(function ($component, $state, ?Staff $record) {
+                                    if (empty($state) && $record?->leader_photo) {
+                                        $component->state([$record->leader_photo]);
+                                    }
+                                }),
 
                             Textarea::make('leader_word')
                                 ->label('Mot du chef principal')

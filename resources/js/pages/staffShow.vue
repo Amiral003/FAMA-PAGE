@@ -9,6 +9,7 @@ const slug = computed(() => String(route.params.slug || '').trim())
 const staff = ref(null)
 const isLoading = ref(false)
 const loadError = ref('')
+const activeLeaderPhotoIndex = ref(0)
 let controller = null
 
 const cleanText = (value, fallback = '') => {
@@ -41,8 +42,37 @@ const storageUrl = (path) => {
   return `/storage/${encodeURI(path.replace(/^\/+/, ''))}`
 }
 
+const normalizePhotoPaths = (photos, legacyPhoto = '') => {
+  const paths = []
+  const addPath = (photo) => {
+    if (typeof photo !== 'string') return
+    const cleanPhoto = photo.trim()
+    if (cleanPhoto && !paths.includes(cleanPhoto)) paths.push(cleanPhoto)
+  }
+
+  if (Array.isArray(photos)) {
+    photos.forEach(addPath)
+  } else if (typeof photos === 'string') {
+    try {
+      const parsedPhotos = JSON.parse(photos)
+      if (Array.isArray(parsedPhotos)) parsedPhotos.forEach(addPath)
+      else addPath(photos)
+    } catch {
+      addPath(photos)
+    }
+  }
+
+  addPath(legacyPhoto)
+  return paths.slice(0, 3)
+}
+
 const logoUrl = computed(() => (staff.value?.logo ? storageUrl(staff.value.logo) : ''))
-const leaderPhotoUrl = computed(() => (staff.value?.leader_photo ? storageUrl(staff.value.leader_photo) : ''))
+const leaderPhotoUrls = computed(() => {
+  if (!staff.value) return []
+  return normalizePhotoPaths(staff.value.leader_photos, staff.value.leader_photo).map(storageUrl)
+})
+const activeLeaderPhotoUrl = computed(() => leaderPhotoUrls.value[activeLeaderPhotoIndex.value] || '')
+const hasMultipleLeaderPhotos = computed(() => leaderPhotoUrls.value.length > 1)
 const secondLeaderPhotoUrl = computed(() => (staff.value?.second_leader_photo ? storageUrl(staff.value.second_leader_photo) : ''))
 
 const missionsHtml = computed(() => {
@@ -74,9 +104,25 @@ const hasCommand = computed(() => {
   return Boolean(
     cleanText(staff.value.leader_name) ||
     cleanText(staff.value.leader_rank) ||
-    leaderPhotoUrl.value
+    leaderPhotoUrls.value.length > 0
   )
 })
+
+const showPreviousLeaderPhoto = () => {
+  if (!leaderPhotoUrls.value.length) return
+  activeLeaderPhotoIndex.value =
+    (activeLeaderPhotoIndex.value - 1 + leaderPhotoUrls.value.length) % leaderPhotoUrls.value.length
+}
+
+const showNextLeaderPhoto = () => {
+  if (!leaderPhotoUrls.value.length) return
+  activeLeaderPhotoIndex.value = (activeLeaderPhotoIndex.value + 1) % leaderPhotoUrls.value.length
+}
+
+const selectLeaderPhoto = (index) => {
+  if (index < 0 || index >= leaderPhotoUrls.value.length) return
+  activeLeaderPhotoIndex.value = index
+}
 
 const hasSecondCommand = computed(() => {
   if (!staff.value) return false
@@ -142,6 +188,9 @@ const fetchStaff = async () => {
 
 onMounted(fetchStaff)
 watch(slug, fetchStaff)
+watch(leaderPhotoUrls, () => {
+  activeLeaderPhotoIndex.value = 0
+})
 
 onBeforeUnmount(() => {
   if (controller) controller.abort()
@@ -224,18 +273,54 @@ useHead(() => {
 
               <!-- Commandant principal -->
               <div class="leader-photo-wrapper">
-                <!-- PHOTO EN CARRE -->
-                <div class="photo-border-square">
-                  <img
-                    v-if="leaderPhotoUrl"
-                    :src="leaderPhotoUrl"
-                    :alt="staff.leader_name || 'Photo du commandement'"
-                    class="command-photo-square"
-                  />
-                  <div v-else class="command-photo-fallback-square">
-                    <span class="fallback-icon">★</span>
+                <div class="leader-gallery" :class="{ 'has-controls': hasMultipleLeaderPhotos }">
+                  <button
+                    v-if="hasMultipleLeaderPhotos"
+                    type="button"
+                    class="gallery-control gallery-control-prev"
+                    aria-label="Photo precedente"
+                    @click="showPreviousLeaderPhoto"
+                  >
+                    ‹
+                  </button>
+
+                  <!-- PHOTO EN CARRE -->
+                  <div class="photo-border-square">
+                    <img
+                      v-if="activeLeaderPhotoUrl"
+                      :src="activeLeaderPhotoUrl"
+                      :alt="staff.leader_name || 'Photo du commandement'"
+                      class="command-photo-square"
+                    />
+                    <div v-else class="command-photo-fallback-square">
+                      <span class="fallback-icon">★</span>
+                    </div>
                   </div>
+
+                  <button
+                    v-if="hasMultipleLeaderPhotos"
+                    type="button"
+                    class="gallery-control gallery-control-next"
+                    aria-label="Photo suivante"
+                    @click="showNextLeaderPhoto"
+                  >
+                    ›
+                  </button>
                 </div>
+
+                <div v-if="hasMultipleLeaderPhotos" class="gallery-dots" aria-label="Choisir une photo">
+                  <button
+                    v-for="(_, index) in leaderPhotoUrls"
+                    :key="index"
+                    type="button"
+                    class="gallery-dot"
+                    :class="{ active: index === activeLeaderPhotoIndex }"
+                    :aria-label="`Afficher la photo ${index + 1}`"
+                    :aria-current="index === activeLeaderPhotoIndex ? 'true' : 'false'"
+                    @click="selectLeaderPhoto(index)"
+                  ></button>
+                </div>
+
                 <!-- Infos du leader dans un petit cadre coloré (tag/badge) -->
                 <div class="leader-info-tag">
                   <p v-if="staff.leader_rank" class="command-rank">{{ staff.leader_rank }}</p>
@@ -498,6 +583,63 @@ useHead(() => {
 .leader-photo-wrapper {
   text-align: center;
   margin-bottom: 20px;
+}
+
+.leader-gallery {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-control {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.gallery-control:hover {
+  background: rgba(20, 184, 44, 0.92);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.gallery-control-prev {
+  left: 8px;
+}
+
+.gallery-control-next {
+  right: 8px;
+}
+
+.gallery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+
+.gallery-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.gallery-dot.active {
+  background: #14b82c;
+  transform: scale(1.25);
 }
 
 /* PHOTO EN CARRE */

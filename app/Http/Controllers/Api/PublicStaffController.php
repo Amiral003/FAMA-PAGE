@@ -11,7 +11,7 @@ class PublicStaffController extends Controller
         return Staff::query()
             ->select([
                 'id','parent_staff_id','name','initials','slug','logo','motto','description',
-                'leader_name','leader_rank','leader_photo','order',
+                'leader_name','leader_rank','leader_photo','leader_photos','order',
                 'contact_email','contact_phone','contact_hotline','contact_address',
                 'contact_hours','contact_map_url','contact_socials',
                 'second_leader_rank','second_leader_name','second_leader_photo','second_leader_word'

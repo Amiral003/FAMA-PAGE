@@ -23,6 +23,7 @@ class Staff extends Model
     'leader_name',
     'leader_rank',
     'leader_photo',
+    'leader_photos',
     'leader_word',
 
     'second_leader_name',
@@ -45,8 +46,28 @@ class Staff extends Model
 
 protected $casts = [
     'order' => 'integer',
+    'leader_photos' => 'array',
     'contact_socials' => 'array',
 ];
+
+public function setLeaderPhotosAttribute($value): void
+{
+    if (is_string($value)) {
+        $decoded = json_decode($value, true);
+        $value = json_last_error() === JSON_ERROR_NONE ? $decoded : [$value];
+    }
+
+    $photos = collect(is_array($value) ? $value : [])
+        ->filter(fn ($photo) => is_string($photo) && trim($photo) !== '')
+        ->map(fn ($photo) => trim($photo))
+        ->unique()
+        ->take(3)
+        ->values()
+        ->all();
+
+    $this->attributes['leader_photos'] = $photos ? json_encode($photos) : null;
+    $this->attributes['leader_photo'] = $photos[0] ?? null;
+}
 
 
 
@@ -66,4 +87,3 @@ public function children()
 }
 
 }
-
