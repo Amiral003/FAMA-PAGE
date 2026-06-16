@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Support\SafeHtml;
 use Illuminate\Http\Request;
 use App\Models\PostViewDaily;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,8 @@ class PostController extends Controller
             'validated_by',
             'user_id',
             'created_at',
-        ]);
+        ])
+        ->each(fn (Post $post) => $this->sanitizePostContent($post));
 }
 
 private function trackPostView(Post $post): void
@@ -159,7 +161,10 @@ private function resolveCountry(?string $ip): ?string
         'created_at',
     ]);
 
-    return response()->json($query->paginate($perPage));
+    $posts = $query->paginate($perPage);
+    $posts->getCollection()->each(fn (Post $post) => $this->sanitizePostContent($post));
+
+    return response()->json($posts);
 }
 
 public function comOps(Request $request)
@@ -192,7 +197,10 @@ public function comOps(Request $request)
         });
     }
 
-    return response()->json($query->paginate($perPage));
+    $posts = $query->paginate($perPage);
+    $posts->getCollection()->each(fn (Post $post) => $this->sanitizePostContent($post));
+
+    return response()->json($posts);
 }
 
     /**
@@ -222,6 +230,7 @@ public function comOps(Request $request)
             'created_at',
         ])
         ->map(function ($post) {
+            $this->sanitizePostContent($post);
             $post->display_text = str($post->content ?: $post->title)->squish()->toString();
 
             return $post;
@@ -273,7 +282,10 @@ public function comOps(Request $request)
             });
         }
 
-        return response()->json($query->paginate($perPage));
+        $posts = $query->paginate($perPage);
+        $posts->getCollection()->each(fn (Post $post) => $this->sanitizePostContent($post));
+
+        return response()->json($posts);
     }
 
     /**
@@ -290,7 +302,10 @@ public function comOps(Request $request)
 
     $this->trackPostView($post);
 
-    return response()->json($post->fresh(['media', 'author', 'validator']));
+    $post = $post->fresh(['media', 'author', 'validator']);
+    $this->sanitizePostContent($post);
+
+    return response()->json($post);
 }
 
    public function photos(Request $request)
@@ -358,7 +373,10 @@ public function recruitment(Request $request)
         });
     }
 
-    return response()->json($query->paginate($perPage));
+    $posts = $query->paginate($perPage);
+    $posts->getCollection()->each(fn (Post $post) => $this->sanitizePostContent($post));
+
+    return response()->json($posts);
 }
 
 public function latestPdfs(Request $request)
@@ -384,5 +402,10 @@ public function latestPdfs(Request $request)
                 'created_at',
             ])
     );
+}
+
+private function sanitizePostContent(Post $post): void
+{
+    $post->content = SafeHtml::clean($post->content);
 }
 }

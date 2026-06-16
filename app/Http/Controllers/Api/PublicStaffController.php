@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
+use App\Support\SafeHtml;
 
 class PublicStaffController extends Controller
 {
@@ -17,13 +18,24 @@ class PublicStaffController extends Controller
                 'second_leader_rank','second_leader_name','second_leader_photo','second_leader_word'
             ])
             ->orderBy('order')
-            ->get();
+            ->get()
+            ->each(fn (Staff $staff) => $this->sanitizeStaffHtml($staff));
     }
 
     public function show(string $slug)
     {
-        return Staff::query()
+        $staff = Staff::query()
             ->where('slug', $slug)
             ->firstOrFail();
+
+        $this->sanitizeStaffHtml($staff);
+
+        return $staff;
+    }
+
+    private function sanitizeStaffHtml(Staff $staff): void
+    {
+        $staff->description = SafeHtml::clean($staff->description);
+        $staff->missions = SafeHtml::clean($staff->missions);
     }
 }
