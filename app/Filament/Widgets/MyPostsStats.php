@@ -20,42 +20,37 @@ class MyPostsStats extends BaseWidget
     {
         $user = Auth::user();
 
-        $drafts = Post::query()
+        $stats = Post::query()
             ->where('user_id', $user->id)
-            ->where('status', Post::STATUS_BROUILLON)
-            ->count();
-
-        $inReview = Post::query()
-            ->where('user_id', $user->id)
-            ->where('status', Post::STATUS_REVISION)
-            ->count();
-
-        $published = Post::query()
-            ->where('user_id', $user->id)
-            ->where('status', Post::STATUS_PUBLIE)
-            ->count();
-
-        $totalViews = (int) Post::query()
-            ->where('user_id', $user->id)
-            ->sum('total_views');
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as drafts,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as in_review,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as published,
+                COALESCE(SUM(total_views), 0) as total_views
+            ", [
+                Post::STATUS_BROUILLON,
+                Post::STATUS_REVISION,
+                Post::STATUS_PUBLIE,
+            ])
+            ->first();
 
         return [
-            Stat::make('Mes brouillons', $drafts)
+            Stat::make('Mes brouillons', (int) $stats->drafts)
                 ->description('Contenus en préparation')
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('gray'),
 
-            Stat::make('En révision', $inReview)
+            Stat::make('En révision', (int) $stats->in_review)
                 ->description('Contenus en attente de validation')
                 ->descriptionIcon('heroicon-m-pencil-square')
                 ->color('warning'),
 
-            Stat::make('Publiés', $published)
+            Stat::make('Publiés', (int) $stats->published)
                 ->description('Contenus déjà en ligne')
                 ->descriptionIcon('heroicon-m-check-badge')
                 ->color('success'),
 
-            Stat::make('Vues cumulées', number_format($totalViews, 0, ',', ' '))
+            Stat::make('Vues cumulées', number_format((int) $stats->total_views, 0, ',', ' '))
                 ->description('Audience totale de mes contenus')
                 ->descriptionIcon('heroicon-m-eye')
                 ->color('primary'),

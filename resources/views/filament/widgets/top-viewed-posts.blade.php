@@ -8,45 +8,76 @@
             Vue rapide des contenus les plus consultés.
         </x-slot>
 
-        <div style="overflow-x: auto; padding-bottom: 6px;">
-            <div style="display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 12px; min-width: 1120px;">
+        <style>
+            .top-viewed-posts-scroll {
+                overflow-x: auto;
+                padding-bottom: 6px;
+            }
+
+            .top-viewed-posts-grid {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(220px, 1fr));
+                gap: 12px;
+                min-width: 1120px;
+            }
+
+            @media (max-width: 1180px) {
+                .top-viewed-posts-scroll {
+                    overflow-x: visible;
+                }
+
+                .top-viewed-posts-grid {
+                    grid-template-columns: repeat(2, minmax(220px, 1fr));
+                    min-width: 0;
+                }
+            }
+
+            @media (max-width: 640px) {
+                .top-viewed-posts-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
+        <div class="top-viewed-posts-scroll">
+            <div class="top-viewed-posts-grid">
                 @forelse ($posts as $post)
                     @php
-    $image = null;
+                        $image = null;
 
-    if ($post->type === 'video' && ! empty($post->video_thumbnail_url)) {
-        $image = $post->video_thumbnail_url;
-    } elseif (! empty($post->thumbnail)) {
-        $image = \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail);
-    } elseif ($post->media && $post->media->count() > 0) {
-        $image = \Illuminate\Support\Facades\Storage::disk('public')->url($post->media->first()->file_path);
-    }
+                        if ($post->type === 'video' && ! empty($post->video_thumbnail_url)) {
+                            $image = $post->video_thumbnail_url;
+                        } elseif (! empty($post->thumbnail)) {
+                            $image = \Illuminate\Support\Facades\Storage::disk('public')->url($post->thumbnail);
+                        } elseif ($post->media && $post->media->count() > 0) {
+                            $image = \Illuminate\Support\Facades\Storage::disk('public')->url($post->media->first()->file_path);
+                        }
 
-    $rank = $loop->iteration;
+                        $rank = $loop->iteration;
 
-    $typeLabel = match ($post->type) {
-        'flash' => 'Flash',
-        'video' => 'Vidéo',
-        'pdf' => 'PDF',
-        'recrutement' => 'Recrutement',
-        default => 'Communiqué',
-    };
+                        $typeLabel = match ($post->type) {
+                            'flash' => 'Flash',
+                            'video' => 'Vidéo',
+                            'pdf' => 'PDF',
+                            'recrutement' => 'Recrutement',
+                            default => 'Communiqué',
+                        };
 
-    $typeClasses = match ($post->type) {
-        'flash' => 'background:#fff7ed;color:#c2410c;',
-        'video' => 'background:#eff6ff;color:#1d4ed8;',
-        'pdf' => 'background:#fef2f2;color:#b91c1c;',
-        'recrutement' => 'background:#f5f3ff;color:#6d28d9;',
-        default => 'background:#ecfdf5;color:#15803d;',
-    };
+                        $typeClasses = match ($post->type) {
+                            'flash' => 'background:#fff7ed;color:#c2410c;',
+                            'video' => 'background:#eff6ff;color:#1d4ed8;',
+                            'pdf' => 'background:#fef2f2;color:#b91c1c;',
+                            'recrutement' => 'background:#f5f3ff;color:#6d28d9;',
+                            default => 'background:#ecfdf5;color:#15803d;',
+                        };
 
-    $rankClasses = match ($rank) {
-        1 => 'background:#fef3c7;color:#92400e;',
-        2 => 'background:#e5e7eb;color:#374151;',
-        3 => 'background:#ffedd5;color:#9a3412;',
-        default => 'background:#f1f5f9;color:#334155;',
-    };
-@endphp
+                        $rankClasses = match ($rank) {
+                            1 => 'background:#fef3c7;color:#92400e;',
+                            2 => 'background:#e5e7eb;color:#374151;',
+                            3 => 'background:#ffedd5;color:#9a3412;',
+                            default => 'background:#f1f5f9;color:#334155;',
+                        };
+                    @endphp
 
                     <div style="
                         background: white;
@@ -56,7 +87,6 @@
                         box-shadow: 0 1px 3px rgba(0,0,0,0.06);
                         min-height: 100%;
                     ">
-                        {{-- image petite --}}
                         <div style="position: relative; height: 110px; background: #f1f5f9;">
                             @if ($image)
                                 <img
@@ -101,7 +131,6 @@
                             </div>
                         </div>
 
-                        {{-- contenu compact --}}
                         <div style="padding: 12px;">
                             <p style="
                                 margin: 0 0 8px 0;
@@ -166,7 +195,7 @@
                         color: #64748b;
                         font-size: 14px;
                     ">
-                        Aucune donnée d’audience disponible pour le moment.
+                        Aucune donnée d'audience disponible pour le moment.
                     </div>
                 @endforelse
             </div>

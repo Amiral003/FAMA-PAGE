@@ -40,6 +40,7 @@ class MyRecentPosts extends TableWidget
                 TextColumn::make('created_at')
                     ->label('Date')
                     ->dateTime('d/m/Y'),
-            ]);
+            ])
+            ->paginated(false);
     }
 }

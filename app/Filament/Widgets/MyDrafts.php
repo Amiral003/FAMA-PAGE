@@ -40,6 +40,7 @@ class MyDrafts extends TableWidget
                 TextColumn::make('updated_at')
                     ->label('Dernière modification')
                     ->dateTime('d/m/Y'),
-            ]);
+            ])
+            ->paginated(false);
     }
 }

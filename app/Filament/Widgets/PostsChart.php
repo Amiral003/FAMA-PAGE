@@ -3,23 +3,28 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Post;
-use Filament\Widgets\ChartWidget;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PostsChart extends ChartWidget
 {
     protected static ?int $sort = 4;
-    protected ?string $maxHeight = '200px'; // Très compact pour éviter le scroll
-    public ?string $filter = '30'; 
+
+    protected ?string $maxHeight = '200px'; // Tres compact pour eviter le scroll
+
+    public ?string $filter = '30';
 
     public static function canView(): bool
     {
         return Auth::user()->hasAnyRole(['super-admin', 'validateur']);
     }
 
-    public function getHeading(): string { return 'Historique des publications validées'; }
+    public function getHeading(): string
+    {
+        return 'Historique des publications validées';
+    }
 
     protected function getFilters(): ?array
     {
@@ -33,11 +38,11 @@ class PostsChart extends ChartWidget
             ->map(fn ($i) => now()->subDays($i)->format('Y-m-d'))
             ->reverse();
 
-        $counts = Post::where('status', 'publie')
-            ->whereNotNull('validated_at') 
+        $counts = Post::where('status', Post::STATUS_PUBLIE)
+            ->whereNotNull('validated_at')
             ->whereDate('validated_at', '>=', now()->subDays($activeFilter - 1))
-            ->select(DB::raw("DATE(validated_at) as date"), DB::raw('count(*) as aggregate'))
-            ->groupBy(DB::raw("DATE(validated_at)"))
+            ->select(DB::raw('DATE(validated_at) as date'), DB::raw('count(*) as aggregate'))
+            ->groupBy(DB::raw('DATE(validated_at)'))
             ->pluck('aggregate', 'date');
 
         return [
@@ -45,7 +50,7 @@ class PostsChart extends ChartWidget
                 'label' => 'Articles validés',
                 'data' => $days->map(fn ($date) => $counts->get($date, 0))->values()->toArray(),
                 'fill' => 'start',
-                'borderColor' => '#14a44d', 
+                'borderColor' => '#14a44d',
                 'backgroundColor' => 'rgba(20, 164, 77, 0.1)',
                 'tension' => 0.3,
             ]],
@@ -53,6 +58,13 @@ class PostsChart extends ChartWidget
         ];
     }
 
-    protected function getType(): string { return 'line'; }
-    public function getColumnSpan(): int | string | array { return 'full'; }
+    protected function getType(): string
+    {
+        return 'line';
+    }
+
+    public function getColumnSpan(): int | string | array
+    {
+        return 'full';
+    }
 }

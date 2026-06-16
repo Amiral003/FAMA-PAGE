@@ -41,6 +41,7 @@ class MyRejectedPosts extends TableWidget
                 TextColumn::make('updated_at')
                     ->label('Date')
                     ->dateTime('d/m/Y'),
-            ]);
+            ])
+            ->paginated(false);
     }
 }
