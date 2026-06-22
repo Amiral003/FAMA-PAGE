@@ -13,6 +13,7 @@ Schedule::command('posts:publish-scheduled')->everyMinute();
 
 Schedule::command('backup:run')->dailyAt('02:00');
 Schedule::command('backup:clean')->dailyAt('03:00');
+Schedule::command('generate:sitemap')->dailyAt('01:30');
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
