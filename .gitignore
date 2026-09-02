@@ -27,3 +27,5 @@ Thumbs.db
 .env.*
 !.env.example
 /public/hot
+# Sitemap généré automatiquement en production
+public/sitemap.xml
