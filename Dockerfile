@@ -37,6 +37,9 @@ RUN apt-get update \
         opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+COPY docker/php/www-production.conf /usr/local/etc/php-fpm.d/zz-fama-production.conf
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -44,6 +47,9 @@ COPY . .
 
 RUN mkdir -p \
     storage/app/public \
+    storage/app/private \
+    storage/app/livewire-tmp \
+    storage/app/backup-temp \
     storage/framework/cache/data \
     storage/framework/sessions \
     storage/framework/views \

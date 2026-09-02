@@ -33,7 +33,7 @@ useHead({
     { property: 'og:type', content: 'website' },
     { property: 'og:title', content: pageTitle },
     { property: 'og:description', content: pageDescription },
-    { property: 'og:url', content: `${baseUrl}/videos` },
+    { property: 'og:url', content: `${baseUrl}/videotheque` },
     { property: 'og:site_name', content: 'Forces Armées Maliennes' },
     { property: 'og:locale', content: 'fr_FR' },
     { property: 'og:image', content: `${baseUrl}/images/og-default.jpg` },
@@ -44,7 +44,7 @@ useHead({
     { name: 'twitter:description', content: pageDescription },
     { name: 'twitter:image', content: `${baseUrl}/images/og-default.jpg` },
   ],
-  link: [{ rel: 'canonical', href: `${baseUrl}/videos` }],
+  link: [{ rel: 'canonical', href: `${baseUrl}/videotheque` }],
   script: [
     {
       type: 'application/ld+json',
@@ -53,7 +53,7 @@ useHead({
         '@type': 'CollectionPage',
         name: pageTitle,
         description: pageDescription,
-        url: `${baseUrl}/videos`,
+        url: `${baseUrl}/videotheque`,
         isPartOf: {
           '@type': 'WebSite',
           name: 'Forces Armées Maliennes',
@@ -83,7 +83,7 @@ useHead({
             '@type': 'ListItem',
             position: 2,
             name: 'Vidéothèque',
-            item: `${baseUrl}/videos`,
+            item: `${baseUrl}/videotheque`,
           },
         ],
       }),

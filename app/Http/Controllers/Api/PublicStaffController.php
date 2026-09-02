@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Support\SafeHtml;
+use Illuminate\Support\Facades\Cache;
 
 class PublicStaffController extends Controller
 {
-    public function index()
-    {
+public function index()
+{
+    return Cache::remember('public:staffs:index:v1', 300, function () {
         return Staff::query()
             ->select([
                 'id','parent_staff_id','name','initials','slug','logo','motto','description',
@@ -20,7 +22,8 @@ class PublicStaffController extends Controller
             ->orderBy('order')
             ->get()
             ->each(fn (Staff $staff) => $this->sanitizeStaffHtml($staff));
-    }
+    });
+}
 
     public function show(string $slug)
     {

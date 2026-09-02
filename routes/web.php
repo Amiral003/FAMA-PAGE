@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PostController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\PublicPostPageController;
+use App\Http\Controllers\PublicRecruitmentPageController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorSetupController;
 
@@ -41,6 +42,14 @@ Route::middleware('auth')->group(function () {
 Route::get('/', function () {
     return view('front');
 });
+
+// Page publique d'un article : SEO serveur + SPA Vue
+Route::get('/posts/{slug}', PublicPostPageController::class)
+    ->name('public.posts.show');
+
+// Recrutement & concours : SEO serveur + SPA Vue
+Route::get('/recrutement', PublicRecruitmentPageController::class)
+    ->name('public.recruitment');
 
 // 5. Capture du Front-end SPA
 

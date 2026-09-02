@@ -1,11 +1,18 @@
 .git
-node_modules
-vendor
+.gitignore
 
-storage/logs
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
+node_modules/
+vendor/
 
 .env
-.env.*storage/app/FAMa
+.env.*
+
+storage/app/
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+Dockerfile.backup-before-redis
+*.log
+bundle-report.html
