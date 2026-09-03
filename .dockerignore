@@ -16,3 +16,5 @@ storage/framework/views/
 Dockerfile.backup-before-redis
 *.log
 bundle-report.html
+public/build/
+public/sitemap.xml

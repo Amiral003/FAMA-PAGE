@@ -96,7 +96,7 @@ Artisan::command('generate:sitemap', function () {
     // =========================
     // Génération fichier XML
     // =========================
-    $sitemap->writeToFile(public_path('sitemap.xml'));
+    $sitemap->writeToFile(storage_path('app/generated/sitemap.xml'));
 
     $this->info('Sitemap dynamique généré avec succès.');
 
