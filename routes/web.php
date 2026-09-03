@@ -7,6 +7,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\PublicPostPageController;
 use App\Http\Controllers\PublicRecruitmentPageController;
 use App\Http\Controllers\PublicAboutPageController;
+use App\Http\Controllers\PublicStaffPageController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorSetupController;
 
@@ -79,6 +80,9 @@ Route::get('/', function () {
 // À propos : SEO serveur + SPA Vue
 Route::get('/about', PublicAboutPageController::class)
     ->name('public.about');
+
+Route::get('/etat-major/{slug}', PublicStaffPageController::class)
+    ->name('public.staff.show');
 
 // Page publique d'un article : SEO serveur + SPA Vue
 Route::get('/posts/{slug}', PublicPostPageController::class)

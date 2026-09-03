@@ -93,6 +93,123 @@
                 </section>
             </main>
 
+        @elseif(isset($seoStaff))
+            @php($staff = $seoStaff['staff'])
+
+            <main>
+                <nav aria-label="Fil d’Ariane">
+                    <a href="{{ url('/') }}">Accueil</a>
+                    <span aria-hidden="true"> / </span>
+                    <a href="{{ url('/about') }}">À propos</a>
+                    <span aria-hidden="true"> / </span>
+                    <span>{{ trim($staff->name) }}</span>
+                </nav>
+
+                <article>
+                    <header>
+                        @if($staff->logo)
+                            <img
+                                src="{{ url('/storage/' . ltrim($staff->logo, '/')) }}"
+                                alt="Logo {{ trim($staff->name) }}"
+                            >
+                        @endif
+
+                        <p>Structure institutionnelle</p>
+
+                        <h1>{{ trim($staff->name) }}</h1>
+
+                        @if($staff->initials)
+                            <p>{{ $staff->initials }}</p>
+                        @endif
+
+                        @if($staff->motto)
+                            <p>{{ $staff->motto }}</p>
+                        @endif
+                    </header>
+
+                    @if($staff->description)
+                        <section>
+                            <h2>Présentation</h2>
+                            {!! $staff->description !!}
+                        </section>
+                    @endif
+
+                    @if($staff->missions)
+                        <section>
+                            <h2>Missions et attributions</h2>
+                            {!! $staff->missions !!}
+                        </section>
+                    @endif
+
+                    @if($staff->leader_name || $staff->leader_rank)
+                        <section>
+                            <h2>Commandement</h2>
+
+                            @if($staff->leader_rank)
+                                <p>{{ $staff->leader_rank }}</p>
+                            @endif
+
+                            @if($staff->leader_name)
+                                <p>{{ $staff->leader_name }}</p>
+                            @endif
+                        </section>
+                    @endif
+
+                    @if(
+                        $staff->contact_address ||
+                        $staff->contact_phone ||
+                        $staff->contact_hotline ||
+                        $staff->contact_email ||
+                        $staff->contact_hours
+                    )
+                        <section>
+                            <h2>Contacts officiels</h2>
+
+                            @if($staff->contact_address)
+                                <p>
+                                    <strong>Adresse :</strong>
+                                    {{ $staff->contact_address }}
+                                </p>
+                            @endif
+
+                            @if($staff->contact_phone)
+                                <p>
+                                    <strong>Téléphone :</strong>
+                                    <a href="tel:{{ $staff->contact_phone }}">
+                                        {{ $staff->contact_phone }}
+                                    </a>
+                                </p>
+                            @endif
+
+                            @if($staff->contact_hotline)
+                                <p>
+                                    <strong>Hotline :</strong>
+                                    <a href="tel:{{ $staff->contact_hotline }}">
+                                        {{ $staff->contact_hotline }}
+                                    </a>
+                                </p>
+                            @endif
+
+                            @if($staff->contact_email)
+                                <p>
+                                    <strong>Email :</strong>
+                                    <a href="mailto:{{ $staff->contact_email }}">
+                                        {{ $staff->contact_email }}
+                                    </a>
+                                </p>
+                            @endif
+
+                            @if($staff->contact_hours)
+                                <p>
+                                    <strong>Horaires :</strong>
+                                    {{ $staff->contact_hours }}
+                                </p>
+                            @endif
+                        </section>
+                    @endif
+                </article>
+            </main>
+
         @elseif(isset($seoAbout))
             <main>
                 <header>
