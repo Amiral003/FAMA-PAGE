@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Post;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\PublicPostPageController;
 use App\Http\Controllers\PublicRecruitmentPageController;
+use App\Http\Controllers\PublicAboutPageController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorSetupController;
 
@@ -38,10 +41,44 @@ Route::middleware('auth')->group(function () {
     ->name('two-factor.setup');
 });
 
-// 4. Route d'accueil
+// 4. Route d'accueil : SEO serveur + SPA Vue
 Route::get('/', function () {
-    return view('front');
+    $latestPosts = Cache::remember('seo:home:latest-posts', 60, function () {
+        return Post::query()
+            ->published()
+            ->where('type', Post::TYPE_ARTICLE)
+            ->whereNotNull('slug')
+            ->publicOrder()
+            ->limit(8)
+            ->get(['title', 'slug', 'published_at']);
+    });
+
+    $seo = [
+        'title' => 'Forces Armées Maliennes - Portail officiel',
+        'description' => 'Portail officiel des Forces Armées Maliennes : actualités, informations institutionnelles, communiqués, recrutement et publications officielles.',
+        'canonical' => url('/'),
+        'type' => 'website',
+        'image' => url('/images/og-default.jpg'),
+    ];
+
+    $seoHome = [
+        'latestPosts' => $latestPosts,
+    ];
+
+    $jsonLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => 'Forces Armées Maliennes',
+        'url' => url('/'),
+        'inLanguage' => 'fr',
+    ];
+
+    return view('front', compact('seo', 'seoHome', 'jsonLd'));
 });
+
+// À propos : SEO serveur + SPA Vue
+Route::get('/about', PublicAboutPageController::class)
+    ->name('public.about');
 
 // Page publique d'un article : SEO serveur + SPA Vue
 Route::get('/posts/{slug}', PublicPostPageController::class)
