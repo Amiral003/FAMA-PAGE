@@ -161,6 +161,57 @@
                 @endif
             </main>
 
+        @elseif(isset($seoPhotoGallery))
+            <main>
+                <header>
+                    <p>Galerie officielle FAMa</p>
+
+                    <h1>Galerie Photo</h1>
+
+                    <p>
+                        Explorez les moments forts des
+                        Forces Armées Maliennes.
+                    </p>
+                </header>
+
+                @if($seoPhotoGallery['photos']->isNotEmpty())
+                    <section aria-labelledby="photo-gallery-title">
+                        <h2 id="photo-gallery-title">
+                            Dernières photos
+                        </h2>
+
+                        <div>
+                            @foreach($seoPhotoGallery['photos'] as $photo)
+                                <figure>
+                                    <a href="{{ $photo['post_url'] }}">
+                                        <img
+                                            src="{{ $photo['src'] }}"
+                                            alt="{{ $photo['alt'] }}"
+                                            loading="lazy"
+                                            decoding="async"
+                                        >
+                                    </a>
+
+                                    <figcaption>
+                                        <a href="{{ $photo['post_url'] }}">
+                                            {{ $photo['post_title'] }}
+                                        </a>
+
+                                        @if($photo['published_at'])
+                                            <time
+                                                datetime="{{ $photo['published_at']->toIso8601String() }}"
+                                            >
+                                                {{ $photo['published_at']->format('d/m/Y') }}
+                                            </time>
+                                        @endif
+                                    </figcaption>
+                                </figure>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+            </main>
+
         @elseif(isset($seoStaff))
             @php($staff = $seoStaff['staff'])
 

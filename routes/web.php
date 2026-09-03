@@ -9,6 +9,7 @@ use App\Http\Controllers\PublicRecruitmentPageController;
 use App\Http\Controllers\PublicAboutPageController;
 use App\Http\Controllers\PublicStaffPageController;
 use App\Http\Controllers\PublicNewsPageController;
+use App\Http\Controllers\PublicPhotoGalleryPageController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorSetupController;
 
@@ -87,6 +88,9 @@ Route::get('/etat-major/{slug}', PublicStaffPageController::class)
 
 Route::get('/actualites', PublicNewsPageController::class)
     ->name('public.news');
+
+Route::get('/phototheque', PublicPhotoGalleryPageController::class)
+    ->name('public.photos');
 
 Route::redirect('/communiques', '/actualites', 301);
 Route::redirect('/portfolio', '/actualites', 301);
