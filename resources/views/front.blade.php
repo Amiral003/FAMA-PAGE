@@ -93,6 +93,74 @@
                 </section>
             </main>
 
+        @elseif(isset($seoNews))
+            <main>
+                <header>
+                    <h1>Actualités & Communiqués</h1>
+                    <p>
+                        Retrouvez les dernières actualités, informations
+                        et publications officielles des Forces Armées Maliennes.
+                    </p>
+                </header>
+
+                @if($seoNews['posts']->isNotEmpty())
+                    <section aria-labelledby="latest-news-title">
+                        <h2 id="latest-news-title">Dernières publications</h2>
+
+                        <ol>
+                            @foreach($seoNews['posts'] as $post)
+                                <li>
+                                    <article>
+                                        <h3>
+                                            <a href="{{ url('/posts/' . $post->slug) }}">
+                                                {{ $post->title }}
+                                            </a>
+                                        </h3>
+
+                                        @php
+                                            $publishedDate = $post->published_at
+                                                ?? $post->created_at;
+
+                                            $excerpt = \Illuminate\Support\Str::limit(
+                                                preg_replace(
+                                                    '/\s+/u',
+                                                    ' ',
+                                                    trim(
+                                                        html_entity_decode(
+                                                            strip_tags($post->content ?? '')
+                                                        )
+                                                    )
+                                                ),
+                                                220,
+                                                '...'
+                                            );
+                                        @endphp
+
+                                        @if($publishedDate)
+                                            <p>
+                                                <time datetime="{{ $publishedDate->toIso8601String() }}">
+                                                    {{ $publishedDate->format('d/m/Y') }}
+                                                </time>
+                                            </p>
+                                        @endif
+
+                                        @if($excerpt)
+                                            <p>{{ $excerpt }}</p>
+                                        @endif
+
+                                        <p>
+                                            <a href="{{ url('/posts/' . $post->slug) }}">
+                                                Lire la publication
+                                            </a>
+                                        </p>
+                                    </article>
+                                </li>
+                            @endforeach
+                        </ol>
+                    </section>
+                @endif
+            </main>
+
         @elseif(isset($seoStaff))
             @php($staff = $seoStaff['staff'])
 
