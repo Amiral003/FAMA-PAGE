@@ -10,6 +10,7 @@ use App\Http\Controllers\PublicAboutPageController;
 use App\Http\Controllers\PublicStaffPageController;
 use App\Http\Controllers\PublicNewsPageController;
 use App\Http\Controllers\PublicPhotoGalleryPageController;
+use App\Http\Controllers\PublicVideoGalleryPageController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorSetupController;
 
@@ -91,6 +92,9 @@ Route::get('/actualites', PublicNewsPageController::class)
 
 Route::get('/phototheque', PublicPhotoGalleryPageController::class)
     ->name('public.photos');
+
+Route::get('/videotheque', PublicVideoGalleryPageController::class)
+    ->name('public.videos');
 
 Route::redirect('/communiques', '/actualites', 301);
 Route::redirect('/portfolio', '/actualites', 301);

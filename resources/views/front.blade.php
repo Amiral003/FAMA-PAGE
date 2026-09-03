@@ -161,6 +161,61 @@
                 @endif
             </main>
 
+        @elseif(isset($seoVideoGallery))
+            <main>
+                <header>
+                    <p>Forces Armées Maliennes</p>
+
+                    <h1>Vidéothèque officielle</h1>
+
+                    <p>
+                        Reportages, communiqués vidéo, interviews
+                        et contenus officiels des FAMa.
+                    </p>
+                </header>
+
+                @if($seoVideoGallery['videos']->isNotEmpty())
+                    <section aria-labelledby="video-gallery-title">
+                        <h2 id="video-gallery-title">
+                            Dernières vidéos
+                        </h2>
+
+                        <div>
+                            @foreach($seoVideoGallery['videos'] as $video)
+                                <article>
+                                    <a href="{{ $video['post_url'] }}">
+                                        <img
+                                            src="{{ $video['thumbnail'] }}"
+                                            alt="{{ $video['title'] }}"
+                                            loading="lazy"
+                                            decoding="async"
+                                        >
+                                    </a>
+
+                                    <h3>
+                                        <a href="{{ $video['post_url'] }}">
+                                            {{ $video['title'] }}
+                                        </a>
+                                    </h3>
+
+                                    @if($video['published_at'])
+                                        <time
+                                            datetime="{{ $video['published_at']->toIso8601String() }}"
+                                        >
+                                            {{ $video['published_at']->format('d/m/Y') }}
+                                        </time>
+                                    @endif
+
+                                    <p>
+                                        {{ $video['description'] }}
+                                    </p>
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+            </main>
+
         @elseif(isset($seoPhotoGallery))
             <main>
                 <header>
