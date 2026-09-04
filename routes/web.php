@@ -107,6 +107,10 @@ Route::get('/posts/{slug}', PublicPostPageController::class)
 Route::get('/recrutement', PublicRecruitmentPageController::class)
     ->name('public.recruitment');
 
+// Les faux chemins de sitemap ne doivent pas être capturés par la SPA.
+Route::get('/sitemap_index.xml', fn () => abort(404));
+Route::get('/sitemap/sitemap.xml', fn () => abort(404));
+
 // 5. Capture du Front-end SPA
 
 Route::view('/{any}', 'front')
