@@ -111,7 +111,16 @@ Route::get('/recrutement', PublicRecruitmentPageController::class)
 Route::get('/sitemap_index.xml', fn () => abort(404));
 Route::get('/sitemap/sitemap.xml', fn () => abort(404));
 
-// 5. Capture du Front-end SPA
-
-Route::view('/{any}', 'front')
-    ->where('any', '^(?!admin|livewire|force-change-password|setup-2fa|user).*$');
+// 5. Routes SPA publiques restantes
+Route::view('/contact', 'front');
+Route::view('/etatmajor', 'front');
+Route::view('/EtatmajorAT', 'front');
+Route::view('/EtatmajorAA', 'front');
+Route::view('/Dttia', 'front');
+Route::view('/Dmhta', 'front');
+Route::view('/Dcssa', 'front');
+Route::view('/Gendarmerie', 'front');
+Route::view('/Dgm', 'front');
+Route::view('/EtatmajorGarde', 'front');
+Route::view('/police', 'front');
+Route::view('/com-ops', 'front');
